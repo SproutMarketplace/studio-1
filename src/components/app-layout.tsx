@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // Added useRouter
 import type { ReactNode } from "react";
 import {
   Award,
@@ -13,6 +13,8 @@ import {
   ShoppingBag,
   Sparkles,
   Sprout as SproutIcon,
+  User as UserIcon, // Added UserIcon for Profile
+  LogOut, // Added LogOut icon
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,9 +29,12 @@ import {
   SidebarInset,
   SidebarTrigger,
   useSidebar,
+  SidebarFooter, // Added SidebarFooter
+  SidebarSeparator, // Added SidebarSeparator
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast"; // Added useToast
 
 interface NavItem {
   href: string;
@@ -38,7 +43,7 @@ interface NavItem {
   tooltip: string;
 }
 
-const navItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
   { href: "/", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
   { href: "/list-plant", icon: PlusSquare, label: "List a Plant", tooltip: "Sell or Trade" },
   { href: "/ai-finder", icon: Sparkles, label: "AI Plant Finder", tooltip: "Find Similar Plants" },
@@ -47,9 +52,33 @@ const navItems: NavItem[] = [
   { href: "/rewards", icon: Award, label: "Rewards", tooltip: "Your Points & Badges" },
 ];
 
+const userNavItems: NavItem[] = [
+  { href: "/profile", icon: UserIcon, label: "Profile", tooltip: "Manage Your Profile"},
+];
+
+
 function AppSidebar() {
   const pathname = usePathname();
-  const { open } = useSidebar();
+  const router = useRouter(); // Added router
+  const { toast } = useToast(); // Added toast
+  const { open, isMobile, setOpenMobile } = useSidebar();
+
+  const handleLogout = () => {
+    console.log("User logged out");
+    // In a real app, clear auth state and redirect
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    if (isMobile) setOpenMobile(false); // Close mobile sidebar on logout
+    router.push("/login"); // Redirect to login page
+  };
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar>
@@ -59,8 +88,8 @@ function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
+          {mainNavItems.map((item) => (
+            <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
@@ -78,6 +107,41 @@ function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarSeparator />
+      <SidebarFooter className="py-2">
+        <SidebarMenu>
+           {userNavItems.map((item) => (
+            <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
+              <Link href={item.href} passHref legacyBehavior>
+                <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  tooltip={{ children: item.tooltip, className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+                  className={cn(
+                    "justify-start",
+                    !open && "justify-center"
+                  )}
+                >
+                  <item.icon aria-hidden="true" />
+                  {open && <span>{item.label}</span>}
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+          <SidebarMenuItem>
+             <SidebarMenuButton
+                onClick={handleLogout}
+                tooltip={{ children: "Sign Out", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+                className={cn(
+                  "justify-start text-destructive hover:bg-destructive/10 hover:text-destructive",
+                  !open && "justify-center"
+                )}
+              >
+                <LogOut aria-hidden="true" />
+                {open && <span>Logout</span>}
+              </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
