@@ -9,6 +9,7 @@ export interface Plant {
   type: "sale" | "trade" | "sale_trade";
   seller: string;
   location: string;
+  tags?: string[];
 }
 
 export const mockPlants: Plant[] = [

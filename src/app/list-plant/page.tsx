@@ -28,14 +28,16 @@ import { UploadCloud, DollarSign, Repeat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import Image from "next/image";
+import { MultiSelect } from "@/components/ui/multi-select"; // Assuming you have a MultiSelect component
 
 const plantListingSchema = z.object({
   name: z.string().min(3, { message: "Plant name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   price: z.coerce.number().optional(),
   type: z.enum(["sale", "trade", "sale_trade"], { required_error: "Please select a listing type." }),
-  images: z.custom<FileList>().refine((files) => files && files.length > 0, "At least one image is required.")
-    .refine((files) => files && files.length <= 5, "You can upload a maximum of 5 images."),
+  images: z.custom<FileList>().refine((files) => files && files.length > 0, "At least one image is required."),
+
+  tags: z.array(z.string()).optional(),
 });
 
 type PlantListingFormValues = z.infer<typeof plantListingSchema>;
@@ -173,6 +175,28 @@ export default function ListPlantPage() {
                 />
               )}
 
+ <FormField
+ control={form.control}
+ name="tags"
+ render={({ field }) => (
+ <FormItem>
+ <FormLabel className="text-lg">Tags (Optional)</FormLabel>
+ <FormControl>
+ <MultiSelect
+ placeholder="Select relevant tags"
+ options={[ // Example tags, replace with your actual tag list
+ { label: "Low Light", value: "low-light" },
+ { label: "Pet Friendly", value: "pet-friendly" },
+ { label: "Beginner", value: "beginner" },
+ { label: "Rare", value: "rare" },
+ ]}
+ {...field}
+ />
+ </FormControl>
+ <FormMessage />
+ </FormItem>
+ )}
+ />
               <FormField
                 control={form.control}
                 name="images"

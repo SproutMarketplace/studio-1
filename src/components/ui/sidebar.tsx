@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import type { ButtonProps } from "@/components/ui/button" // Import ButtonProps for typing
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet" // Added SheetTitle
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -208,6 +208,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <SheetTitle className="sr-only">Main Navigation Menu</SheetTitle>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -263,8 +264,8 @@ Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
-  ButtonProps // Use ButtonProps to correctly type 'asChild' and 'children'
->(({ className, onClick, children, asChild, ...restProps }, ref) => {
+  ButtonProps
+>(({ className, onClick, children, asChild = false, ...restProps }, ref) => {
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -281,15 +282,13 @@ const SidebarTrigger = React.forwardRef<
       asChild={asChild}
       {...restProps}
     >
-      {asChild ? (
+      {asChild && children ? (
         children
       ) : (
-        children !== undefined ? children : (
-          <>
-            <PanelLeft />
-            <span className="sr-only">Toggle Sidebar</span>
-          </>
-        )
+        <>
+          <PanelLeft />
+          <span className="sr-only">Toggle Sidebar</span>
+        </>
       )}
     </Button>
   );
@@ -772,3 +771,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    

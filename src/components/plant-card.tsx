@@ -35,6 +35,16 @@ export function PlantCard({ plant }: PlantCardProps) {
         return "";
     }
   };
+  const getTagColor = (tag: string) => {
+    switch (tag.toLowerCase()) {
+      case "trade":
+        return "bg-yellow-500 hover:bg-yellow-600"; // Example yellow from tailwind palette
+      case "for sale":
+        return "bg-primary hover:bg-primary/90"; // Default primary color
+      default:
+        return "bg-secondary hover:bg-secondary/80"; // Default secondary for other tags
+    }
+  };
 
   return (
     <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-all hover:shadow-xl">
@@ -58,10 +68,18 @@ export function PlantCard({ plant }: PlantCardProps) {
               ${plant.price}
             </Badge>
           )}
+
         </div>
-        <Badge variant={plant.type === "sale" ? "default" : "outline"} className="mb-2">
+        {/* This badge should be inside the div with other badges if they are inline */}
+        {/* <Badge variant="default" className={`mb-2 ${getTagColor(getTradeTypeText(plant.type))}`}>
           {getTradeTypeText(plant.type)}
+        </Badge> */}
+        {plant.tags && plant.tags.map(tag => (
+ <Badge key={tag} variant="default" className={`mb-2 mr-1 ${getTagColor(tag)}`}>
+          {tag}
         </Badge>
+        ))} {/* Close the map here */}
+
         <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-3">
           {plant.description}
         </CardDescription>
@@ -83,3 +101,4 @@ export function PlantCard({ plant }: PlantCardProps) {
     </Card>
   );
 }
+
