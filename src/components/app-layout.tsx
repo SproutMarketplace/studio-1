@@ -15,7 +15,7 @@ import {
   Sprout as SproutIcon,
   User as UserIcon,
   LogOut,
-  LogIn as LogInIcon, // Added LogIn icon
+  LogIn as LogInIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,17 +32,18 @@ import {
   useSidebar,
   SidebarFooter,
   SidebarSeparator,
-  SidebarMenuSkeleton, // For loading state
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; // Import auth
-import { signOut } from "firebase/auth"; // Import signOut
-import { useAuth } from "@/contexts/auth-context"; // Import useAuth
-import { AuthGuard } from "@/components/auth-guard"; // Import AuthGuard
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useAuth } from "@/contexts/auth-context";
+import { AuthGuard } from "@/components/auth-guard";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
 interface NavItem {
   href: string;
@@ -62,7 +63,6 @@ const mainNavItems: NavItem[] = [
 
 function AppSidebar() {
   const pathname = usePathname();
-  // const router = useRouter(); // router not directly used in this version of AppSidebar
   const { toast } = useToast();
   const { open, isMobile, setOpenMobile } = useSidebar();
   const { user, loading } = useAuth();
@@ -75,7 +75,6 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
-      // AuthGuard will handle redirection
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -92,7 +91,7 @@ function AppSidebar() {
     }
   };
 
-  if (loading && !isMobile) { // Show skeleton sidebar on desktop during initial auth load
+  if (loading && !isMobile) {
     return (
         <Sidebar>
             <SidebarHeader className={cn("items-center", !open && "justify-center")}>
@@ -114,7 +113,6 @@ function AppSidebar() {
         </Sidebar>
     );
   }
-
 
   return (
     <Sidebar>
@@ -138,7 +136,7 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
           ))}
-          {!user && !loading && isMobile && ( // Show simplified message for mobile when logged out
+          {!user && !loading && isMobile && (
              <SidebarMenuItem>
                 <div className="p-2 text-center text-sm text-sidebar-foreground/70">
                     Sign in to see more.
@@ -202,6 +200,22 @@ function AppSidebar() {
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+
+  if (isAuthRoute) {
+    // For auth routes, render only the children (which will be the (auth)/layout.tsx content)
+    // wrapped by AuthGuard. The AuthProvider is already in RootLayout.
+    // The Toaster is also needed for auth pages.
+    return (
+      <>
+        <AuthGuard>{children}</AuthGuard>
+        <Toaster />
+      </>
+    );
+  }
+
+  // For non-auth routes, render the full layout with sidebar
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
