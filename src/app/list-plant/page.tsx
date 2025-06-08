@@ -52,6 +52,7 @@ export default function ListPlantPage() {
       name: "",
       description: "",
       type: undefined, // Initially no type selected
+      tags: [], // Initialize tags as an empty array
     },
   });
 
