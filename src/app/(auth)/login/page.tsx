@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { signInWithEmailAndPassword } from "firebase/auth"; // Import Firebase auth function
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -39,15 +41,41 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(data: LoginFormValues) {
-    console.log("Login data:", data);
-    // In a real app, you would authenticate with a backend (e.g., Firebase)
-    toast({
-      title: "Login Attempted",
-      description: "Check console for login data. Redirecting to catalog...",
-    });
-    // Simulate successful login
-    router.push("/");
+  async function onSubmit(data: LoginFormValues) {
+    form.clearErrors();
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back! Redirecting to the catalog...",
+      });
+      router.push("/");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (error.code) {
+        switch (error.code) {
+          case "auth/user-not-found":
+          case "auth/wrong-password":
+          case "auth/invalid-credential":
+            errorMessage = "Invalid email or password. Please try again.";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "The email address is not valid.";
+            break;
+          case "auth/user-disabled":
+            errorMessage = "This user account has been disabled.";
+            break;
+          default:
+            errorMessage = error.message || errorMessage;
+        }
+      }
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: errorMessage,
+      });
+    }
   }
 
   return (

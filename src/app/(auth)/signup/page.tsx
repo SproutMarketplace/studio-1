@@ -19,6 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { createUserWithEmailAndPassword } from "firebase/auth"; // Import Firebase auth function
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -27,7 +29,7 @@ const signupSchema = z.object({
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"], // path of error
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -46,15 +48,41 @@ export default function SignupPage() {
     },
   });
 
-  function onSubmit(data: SignupFormValues) {
-    console.log("Signup data:", data);
-    // In a real app, you would create a user with a backend (e.g., Firebase)
-    toast({
-      title: "Account Creation Attempted",
-      description: "Check console for signup data. Redirecting to catalog...",
-    });
-    // Simulate successful signup and login
-    router.push("/");
+  async function onSubmit(data: SignupFormValues) {
+    form.clearErrors();
+    try {
+      // In a real app, you might want to also store the user's name in Firestore
+      // after successful account creation. For now, we just create the auth user.
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: "Account Created!",
+        description: "Welcome to Sprout! Redirecting to the catalog...",
+      });
+      router.push("/");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (error.code) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            errorMessage = "This email address is already in use.";
+            break;
+          case "auth/invalid-email":
+            errorMessage = "The email address is not valid.";
+            break;
+          case "auth/weak-password":
+            errorMessage = "The password is too weak. Please choose a stronger password.";
+            break;
+          default:
+            errorMessage = error.message || errorMessage;
+        }
+      }
+      toast({
+        variant: "destructive",
+        title: "Sign Up Failed",
+        description: errorMessage,
+      });
+    }
   }
 
   return (

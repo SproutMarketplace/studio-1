@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, KeyRound, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { sendPasswordResetEmail } from "firebase/auth"; // Import Firebase auth function
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -35,14 +37,43 @@ export default function ForgotPasswordPage() {
     },
   });
 
-  function onSubmit(data: ForgotPasswordFormValues) {
-    console.log("Forgot password data:", data);
-    // In a real app, you would send a password reset email (e.g., via Firebase)
-    toast({
-      title: "Password Reset Link Sent",
-      description: `If an account exists for ${data.email}, a reset link has been sent.`,
-    });
-    form.reset();
+  async function onSubmit(data: ForgotPasswordFormValues) {
+    form.clearErrors();
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      toast({
+        title: "Password Reset Link Sent",
+        description: `If an account exists for ${data.email}, a password reset link has been sent. Please check your inbox (and spam folder).`,
+      });
+      form.reset();
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (error.code) {
+        switch (error.code) {
+          case "auth/invalid-email":
+            errorMessage = "The email address is not valid.";
+            break;
+          case "auth/user-not-found":
+            // We typically don't want to confirm if an email exists for security reasons
+            // So we show a generic message.
+            errorMessage = "If an account exists for this email, a reset link has been sent.";
+            toast({
+              title: "Password Reset Link Sent",
+              description: errorMessage,
+            });
+            form.reset();
+            return;
+          default:
+            errorMessage = error.message || errorMessage;
+        }
+      }
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Reset Link",
+        description: errorMessage,
+      });
+    }
   }
 
   return (
