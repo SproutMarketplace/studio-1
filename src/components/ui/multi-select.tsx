@@ -24,11 +24,10 @@ interface Option {
   value: string;
 }
 
-// Allow standard button props like onBlur, but override onChange and value
 interface MultiSelectProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange' | 'value'> {
   options: Option[];
-  value: string[]; // This will be field.value from react-hook-form
-  onChange: (value: string[]) => void; // This will be field.onChange
+  value: string[];
+  onChange: (value: string[]) => void;
   placeholder?: string;
 }
 
@@ -56,18 +55,20 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            ref={ref} // Apply the forwarded ref here
+            ref={ref}
             variant="outline"
             role="combobox"
             aria-expanded={open}
             className={cn("w-full justify-between h-auto min-h-[38px] text-sm", className)}
-            {...props} // Spread other props like onBlur from react-hook-form's field
+            {...props}
           >
             <div className="flex flex-wrap gap-1">
-              {internalValue.length === 0 && (
+              {/* Added explicit check for internalValue before accessing .length */}
+              {internalValue && internalValue.length === 0 && (
                 <span className="text-muted-foreground font-normal">{placeholder}</span>
               )}
-              {internalValue.map((item) => {
+              {/* Added explicit check for internalValue before calling .map */}
+              {internalValue && internalValue.map((item) => {
                 const option = options.find((opt) => opt.value === item);
                 return (
                   <Badge key={item} variant="secondary" className="flex items-center gap-1 font-normal">
@@ -75,7 +76,7 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
                     <button
                       type="button"
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent popover from closing
+                        e.stopPropagation();
                         handleRemove(item);
                       }}
                       className="ml-1 outline-none ring-offset-background rounded-full focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -96,16 +97,13 @@ const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>(
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value} // Used by Command for filtering/value
-                  onSelect={(currentValue) => { // currentValue is option.value (the string)
+                  value={option.value}
+                  onSelect={(currentValue) => {
                     handleSelect(currentValue);
-                    // For multi-select, typically we don't close the popover on select
-                    // setOpen(false); 
                   }}
                   className="text-sm"
                 >
                   {option.label}
-                  {/* You could add a checkmark here if internalValue.includes(option.value) */}
                 </CommandItem>
               ))}
               {options.length === 0 && (
