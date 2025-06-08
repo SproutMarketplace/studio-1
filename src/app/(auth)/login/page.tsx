@@ -119,11 +119,7 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <div className="text-right">
-              <Button variant="link" asChild className="px-0 text-sm text-primary hover:text-primary/80">
-                <Link href="/forgot-password">Forgot password?</Link>
-              </Button>
-            </div>
+            {/* Forgot password link was here, now moved to CardFooter */}
             <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Signing In..." : (
                 <>
@@ -134,7 +130,10 @@ export default function LoginPage() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center">
+      <CardFooter className="flex flex-col items-center justify-center pt-6 space-y-2">
+        <Button variant="link" asChild className="px-0 text-sm text-primary hover:text-primary/80">
+          <Link href="/forgot-password">Forgot password?</Link>
+        </Button>
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Button variant="link" asChild className="px-0 text-primary hover:text-primary/80">
