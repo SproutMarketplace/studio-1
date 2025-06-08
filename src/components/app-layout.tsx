@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image"; // Import next/image
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
@@ -34,6 +35,7 @@ import {
   SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
+import { SheetTitle } from "@/components/ui/sheet"; // Corrected import path for SheetTitle
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -94,9 +96,12 @@ function AppSidebar() {
   if (loading && !isMobile) {
     return (
         <Sidebar>
-            <SidebarHeader className={cn("items-center", !open && "justify-center")}>
-                <SproutIcon className={cn("text-primary", open ? "mr-2 size-8" : "size-8")} aria-hidden="true" />
-                {open && <h1 className="text-2xl font-semibold text-primary">Sprout</h1>}
+            <SidebarHeader className={cn("items-center h-[60px]", !open && "justify-center")}>
+                 {open ? (
+                    <Skeleton className="h-8 w-32" />
+                 ) : (
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                 )}
             </SidebarHeader>
             <SidebarContent>
                 <SidebarMenu>
@@ -116,9 +121,15 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className={cn("items-center", !open && "justify-center")}>
-        <SproutIcon className={cn("text-primary", open ? "mr-2 size-8" : "size-8")} aria-hidden="true" />
-        {open && <h1 className="text-2xl font-semibold text-primary">Sprout</h1>}
+      <SidebarHeader className={cn("items-center h-[60px] px-2", !open && "justify-center")}>
+        {open ? (
+          <Link href="/" passHref aria-label="Sprout Home">
+            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+          </Link>
+        ) : (
+          <SproutIcon className="text-primary size-8" aria-hidden="true" />
+        )}
+         {isMobile && <SheetTitle className="sr-only">Sprout Main Menu</SheetTitle>}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -204,9 +215,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
   if (isAuthRoute) {
-    // For auth routes, render only the children (which will be the (auth)/layout.tsx content)
-    // wrapped by AuthGuard. The AuthProvider is already in RootLayout.
-    // The Toaster is also needed for auth pages.
     return (
       <>
         <AuthGuard>{children}</AuthGuard>
@@ -215,7 +223,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // For non-auth routes, render the full layout with sidebar
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
@@ -228,8 +235,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </Button>
           </SidebarTrigger>
           <div className="flex items-center ml-4">
-            <SproutIcon className="w-6 h-6 mr-2 text-primary" />
-            <h1 className="text-xl font-semibold text-primary">Sprout</h1>
+            <Link href="/" passHref aria-label="Sprout Home">
+              <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
