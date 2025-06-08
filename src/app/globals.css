@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,99 +9,99 @@ body {
 
 @layer base {
   :root {
-    --background: 60 56% 91%; /* Light Beige */
-    --foreground: 40 20% 30%; /* Dark Brown for text on beige */
+    --background: 60 56% 91%; /* Light Beige (from PRD) */
+    --foreground: 28 51% 26%; /* Dark Brown (Logo Text #664121) */
 
-    --card: 60 56% 94%; /* Slightly lighter beige for cards */
-    --card-foreground: 40 20% 30%;
+    --card: 60 56% 94%; /* Slightly Lighter Beige */
+    --card-foreground: 28 51% 26%; /* Dark Brown */
 
-    --popover: 60 56% 96%; /* Popover background */
-    --popover-foreground: 40 20% 30%;
+    --popover: 60 56% 96%; /* Even Lighter Beige for Popovers */
+    --popover-foreground: 28 51% 26%; /* Dark Brown */
 
-    --primary: 127 36% 74%; /* Soft Green */
-    --primary-foreground: 127 30% 25%; /* Dark Green for text on primary */
+    --primary: 150 56% 30%; /* Medium Green (Logo Sprout Icon #22764e) */
+    --primary-foreground: 0 0% 98%; /* White for text on primary */
 
-    --secondary: 127 25% 85%; /* Lighter green for secondary elements */
-    --secondary-foreground: 127 30% 25%; /* Dark Green for text on secondary */
+    --secondary: 150 40% 70%; /* Lighter version of Primary Green */
+    --secondary-foreground: 150 50% 20%; /* Dark Green for text on light green secondary */
 
-    --muted: 60 40% 88%; /* Muted beige for less emphasis */
-    --muted-foreground: 60 15% 45%; /* Darker muted text */
+    --muted: 60 40% 88%; /* Muted Beige */
+    --muted-foreground: 28 30% 45%; /* Brownish Gray for muted text */
 
-    --accent: 353 30% 74%; /* Muted Rose/Terracotta */
-    --accent-foreground: 353 25% 30%; /* Darker shade for text on accent */
+    --accent: 88 24% 65%; /* Muted Green/Khaki (Logo Background #a9b893) */
+    --accent-foreground: 28 51% 20%; /* Darker Brown for text on accent */
 
-    --destructive: 0 72% 51%; /* Vibrant Red */
+    --destructive: 0 72% 51%; /* Standard Red */
     --destructive-foreground: 0 0% 98%; /* White */
 
-    --border: 60 30% 82%; /* Border color based on beige */
-    --input: 60 30% 88%; /* Input background based on beige */
-    --ring: 127 40% 65%; /* Ring color based on primary green */
+    --border: 60 30% 82%; /* Beige-based Border */
+    --input: 60 30% 88%; /* Beige-based Input Background */
+    --ring: 150 56% 30%; /* Primary Green for focus rings */
 
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 120 10% 97%; /* Very light, almost white green-ish gray */
-    --sidebar-foreground: 120 25% 25%; /* Dark green text */
-    --sidebar-primary: 127 36% 68%; /* Slightly darker/more saturated green for active item background */
-    --sidebar-primary-foreground: 0 0% 100%; /* White text on active item */
-    --sidebar-accent: 120 15% 92%; /* Hover background */
-    --sidebar-accent-foreground: 120 25% 20%; /* Darker green for hover text */
-    --sidebar-border: 120 10% 88%;
-    --sidebar-ring: 127 40% 65%;
+    --sidebar-background: 88 30% 95%; /* Very Light Khaki/Green */
+    --sidebar-foreground: 28 51% 26%; /* Dark Brown */
+    --sidebar-primary: 150 56% 30%; /* Medium Green (Same as app primary) */
+    --sidebar-primary-foreground: 0 0% 98%; /* White */
+    --sidebar-accent: 88 24% 88%; /* Lighter Khaki for hover */
+    --sidebar-accent-foreground: 28 51% 26%; /* Dark Brown */
+    --sidebar-border: 88 24% 82%; /* Slightly darker Khaki for border */
+    --sidebar-ring: 150 56% 30%; /* Primary Green */
     
-    --chart-1: 127 36% 74%;
-    --chart-2: 353 30% 74%;
-    --chart-3: 60 56% 80%;
-    --chart-4: 127 25% 85%;
-    --chart-5: 40 20% 50%;
+    --chart-1: 150 56% 30%; /* Primary Green */
+    --chart-2: 88 24% 65%;  /* Accent Khaki */
+    --chart-3: 28 51% 45%;  /* Medium Brown */
+    --chart-4: 150 40% 70%; /* Secondary Light Green */
+    --chart-5: 60 50% 75%;  /* Muted Beige */
   }
 
   .dark {
-    --background: 40 10% 10%;
-    --foreground: 60 30% 95%;
+    --background: 28 10% 12%; /* Very Dark Brown */
+    --foreground: 88 25% 85%; /* Light Muted Khaki/Green for text */
 
-    --card: 40 10% 15%;
-    --card-foreground: 60 30% 95%;
+    --card: 28 10% 18%; /* Darker Brown for cards */
+    --card-foreground: 88 25% 85%; /* Light Muted Khaki/Green */
 
-    --popover: 40 10% 12%;
-    --popover-foreground: 60 30% 95%;
+    --popover: 28 10% 15%; /* Darker Popover Background */
+    --popover-foreground: 88 25% 85%; /* Light Muted Khaki/Green */
 
-    --primary: 127 36% 60%; /* Darker Soft Green */
-    --primary-foreground: 127 20% 15%; /* Very Dark Green */
+    --primary: 150 50% 55%; /* Brighter Green for Dark Mode */
+    --primary-foreground: 150 60% 15%; /* Very Dark Green for text on primary */
 
-    --secondary: 127 25% 50%;
-    --secondary-foreground: 60 30% 95%;
+    --secondary: 150 40% 45%; /* Darker shade of Primary for secondary */
+    --secondary-foreground: 150 30% 85%; /* Light Green text */
 
-    --muted: 40 10% 20%;
-    --muted-foreground: 60 20% 70%;
+    --muted: 28 10% 22%; /* Dark Muted Brown */
+    --muted-foreground: 88 20% 65%; /* Muted Khaki text */
 
-    --accent: 353 30% 60%; /* Darker Muted Rose */
-    --accent-foreground: 353 20% 15%;
+    --accent: 88 30% 50%; /* Medium Khaki for Dark Mode */
+    --accent-foreground: 88 50% 15%; /* Very Dark Khaki/Brown for text on accent */
 
-    --destructive: 0 60% 45%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 60% 50%; /* Standard Red for Dark Mode */
+    --destructive-foreground: 0 0% 98%; /* White */
 
-    --border: 40 10% 25%;
-    --input: 40 10% 22%;
-    --ring: 127 40% 55%;
+    --border: 28 10% 25%; /* Dark Border */
+    --input: 28 10% 28%; /* Dark Input Background */
+    --ring: 150 50% 55%; /* Dark Mode Primary Green for focus rings */
     
     --radius: 0.5rem;
 
     /* Sidebar specific colors for dark mode */
-    --sidebar-background: 120 5% 12%; /* Dark grey-green */
-    --sidebar-foreground: 120 15% 80%; /* Light green text */
-    --sidebar-primary: 127 36% 55%; /* Primary for active */
-    --sidebar-primary-foreground: 0 0% 100%; /* White text */
-    --sidebar-accent: 120 5% 18%; /* Hover background */
-    --sidebar-accent-foreground: 120 15% 85%; /* Hover text */
-    --sidebar-border: 120 5% 20%;
-    --sidebar-ring: 127 40% 55%;
+    --sidebar-background: 28 8% 10%; /* Almost Black-Brown */
+    --sidebar-foreground: 88 25% 75%; /* Medium-Light Khaki text */
+    --sidebar-primary: 150 50% 55%; /* Dark Mode Primary Green */
+    --sidebar-primary-foreground: 150 60% 15%; /* Very Dark Green text */
+    --sidebar-accent: 28 12% 20%; /* Dark Brown for hover, slightly lighter than bg */
+    --sidebar-accent-foreground: 88 25% 80%; /* Light Khaki text on hover */
+    --sidebar-border: 28 10% 22%; /* Darker Sidebar Border */
+    --sidebar-ring: 150 50% 55%; /* Dark Mode Primary Green */
 
-    --chart-1: 127 36% 60%;
-    --chart-2: 353 30% 60%;
-    --chart-3: 60 40% 40%;
-    --chart-4: 127 25% 50%;
-    --chart-5: 40 20% 30%;
+    --chart-1: 150 50% 55%; /* Primary Green DM */
+    --chart-2: 88 24% 50%;  /* Accent Khaki DM */
+    --chart-3: 28 35% 65%;  /* Light Brown */
+    --chart-4: 150 40% 45%; /* Secondary Dark Green DM */
+    --chart-5: 60 20% 55%;  /* Muted Dark Beige */
   }
 }
 
@@ -113,3 +114,5 @@ body {
     font-feature-settings: "rlig" 1, "calt" 1; /* Enable ligatures and contextual alternates */
   }
 }
+
+    
