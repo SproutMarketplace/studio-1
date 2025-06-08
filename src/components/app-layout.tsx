@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // Added useRouter
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   Award,
@@ -13,8 +13,9 @@ import {
   ShoppingBag,
   Sparkles,
   Sprout as SproutIcon,
-  User as UserIcon, // Added UserIcon for Profile
-  LogOut, // Added LogOut icon
+  User as UserIcon,
+  LogOut,
+  LogIn as LogInIcon, // Added LogIn icon
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -29,12 +30,19 @@ import {
   SidebarInset,
   SidebarTrigger,
   useSidebar,
-  SidebarFooter, // Added SidebarFooter
-  SidebarSeparator, // Added SidebarSeparator
+  SidebarFooter,
+  SidebarSeparator,
+  SidebarMenuSkeleton, // For loading state
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast"; // Added useToast
+import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase"; // Import auth
+import { signOut } from "firebase/auth"; // Import signOut
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
+import { AuthGuard } from "@/components/auth-guard"; // Import AuthGuard
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 interface NavItem {
   href: string;
@@ -52,26 +60,30 @@ const mainNavItems: NavItem[] = [
   { href: "/rewards", icon: Award, label: "Rewards", tooltip: "Your Points & Badges" },
 ];
 
-const userNavItems: NavItem[] = [
-  { href: "/profile", icon: UserIcon, label: "Profile", tooltip: "Manage Your Profile"},
-];
-
-
 function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter(); // Added router
-  const { toast } = useToast(); // Added toast
+  // const router = useRouter(); // router not directly used in this version of AppSidebar
+  const { toast } = useToast();
   const { open, isMobile, setOpenMobile } = useSidebar();
+  const { user, loading } = useAuth();
 
-  const handleLogout = () => {
-    console.log("User logged out");
-    // In a real app, clear auth state and redirect
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    if (isMobile) setOpenMobile(false); // Close mobile sidebar on logout
-    router.push("/login"); // Redirect to login page
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      if (isMobile) setOpenMobile(false);
+      // AuthGuard will handle redirection
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout Failed",
+        description: "There was an issue logging you out. Please try again.",
+      });
+    }
   };
 
   const closeMobileSidebar = () => {
@@ -79,6 +91,30 @@ function AppSidebar() {
       setOpenMobile(false);
     }
   };
+
+  if (loading && !isMobile) { // Show skeleton sidebar on desktop during initial auth load
+    return (
+        <Sidebar>
+            <SidebarHeader className={cn("items-center", !open && "justify-center")}>
+                <SproutIcon className={cn("text-primary", open ? "mr-2 size-8" : "size-8")} aria-hidden="true" />
+                {open && <h1 className="text-2xl font-semibold text-primary">Sprout</h1>}
+            </SidebarHeader>
+            <SidebarContent>
+                <SidebarMenu>
+                    {[...Array(6)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
+                </SidebarMenu>
+            </SidebarContent>
+            <SidebarSeparator />
+            <SidebarFooter className="py-2">
+                <SidebarMenu>
+                     <SidebarMenuSkeleton showIcon={open} />
+                     <SidebarMenuSkeleton showIcon={open} />
+                </SidebarMenu>
+            </SidebarFooter>
+        </Sidebar>
+    );
+  }
+
 
   return (
     <Sidebar>
@@ -88,16 +124,13 @@ function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {mainNavItems.map((item) => (
+          {user && mainNavItems.map((item) => (
             <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={{ children: item.tooltip, className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                  className={cn(
-                    "justify-start",
-                    !open && "justify-center"
-                  )}
+                  className={cn( "justify-start", !open && "justify-center" )}
                 >
                   <item.icon aria-hidden="true" />
                   {open && <span>{item.label}</span>}
@@ -105,41 +138,63 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
           ))}
+          {!user && !loading && isMobile && ( // Show simplified message for mobile when logged out
+             <SidebarMenuItem>
+                <div className="p-2 text-center text-sm text-sidebar-foreground/70">
+                    Sign in to see more.
+                </div>
+             </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarSeparator />
+      
+      {user && <SidebarSeparator />}
+      
       <SidebarFooter className="py-2">
         <SidebarMenu>
-           {userNavItems.map((item) => (
-            <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
-              <Link href={item.href} passHref legacyBehavior>
+           {user && (
+            <>
+              <SidebarMenuItem onClick={closeMobileSidebar}>
+                <Link href="/profile" passHref legacyBehavior>
+                  <SidebarMenuButton
+                    isActive={pathname === "/profile"}
+                    tooltip={{ children: "Manage Your Profile", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+                    className={cn("justify-start", !open && "justify-center")}
+                  >
+                    <UserIcon aria-hidden="true" />
+                    {open && <span>Profile</span>}
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                 <SidebarMenuButton
+                    onClick={handleLogout}
+                    tooltip={{ children: "Sign Out", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+                    className={cn(
+                      "justify-start text-destructive hover:bg-destructive/10 hover:text-destructive",
+                      !open && "justify-center"
+                    )}
+                  >
+                    <LogOut aria-hidden="true" />
+                    {open && <span>Logout</span>}
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+           )}
+           {!user && !loading && (
+            <SidebarMenuItem onClick={closeMobileSidebar}>
+              <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  tooltip={{ children: item.tooltip, className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                  className={cn(
-                    "justify-start",
-                    !open && "justify-center"
-                  )}
+                  isActive={pathname === "/login"}
+                  tooltip={{ children: "Sign In", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+                  className={cn("justify-start", !open && "justify-center")}
                 >
-                  <item.icon aria-hidden="true" />
-                  {open && <span>{item.label}</span>}
+                  <LogInIcon aria-hidden="true" />
+                  {open && <span>Sign In</span>}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
-          ))}
-          <SidebarMenuItem>
-             <SidebarMenuButton
-                onClick={handleLogout}
-                tooltip={{ children: "Sign Out", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                className={cn(
-                  "justify-start text-destructive hover:bg-destructive/10 hover:text-destructive",
-                  !open && "justify-center"
-                )}
-              >
-                <LogOut aria-hidden="true" />
-                {open && <span>Logout</span>}
-              </SidebarMenuButton>
-          </SidebarMenuItem>
+           )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
@@ -164,7 +219,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          {children}
+          <AuthGuard>{children}</AuthGuard>
         </main>
         <Toaster />
       </SidebarInset>
