@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -32,11 +33,13 @@ interface MultiSelectProps {
 
 const MultiSelect: React.FC<MultiSelectProps> = ({
   options,
-  value,
+  value: propValue, // Renamed to avoid conflict with internal safeValue
   onChange,
   placeholder = "Select options...",
 }) => {
   const [open, setOpen] = React.useState(false);
+  // Ensure 'value' is always an array for internal operations
+  const value = Array.isArray(propValue) ? propValue : [];
 
   const handleSelect = (currentValue: string) => {
     const isSelected = value.includes(currentValue);
@@ -72,10 +75,11 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.stopPropagation(); // Prevent popover from closing if it's configured to do so
                       handleRemove(item);
                     }}
                     className="ml-1 outline-none ring-offset-background rounded-full"
+                    aria-label={`Remove ${option?.label || item}`}
                   >
                     <XCircle className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                   </button>
@@ -92,11 +96,14 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             {options.map((option) => (
               <CommandItem
                 key={option.value}
+                value={option.value} // Used by Command for filtering, if CommandInput is present
                 onSelect={() => {
                   handleSelect(option.value);
+                  // setOpen(false); // Optionally close popover on select, though for multi-select, users might want to keep it open
                 }}
               >
                 {option.label}
+                {/* Consider adding a visual indicator like a checkmark if the option is selected */}
               </CommandItem>
             ))}
           </CommandGroup>
