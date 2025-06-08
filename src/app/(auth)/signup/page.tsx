@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
+import Image from "next/image"; // Added import
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
-import { createUserWithEmailAndPassword } from "firebase/auth"; // Import Firebase auth function
+import { auth } from "@/lib/firebase"; 
+import { createUserWithEmailAndPassword } from "firebase/auth"; 
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,8 +52,6 @@ export default function SignupPage() {
   async function onSubmit(data: SignupFormValues) {
     form.clearErrors();
     try {
-      // In a real app, you might want to also store the user's name in Firestore
-      // after successful account creation. For now, we just create the auth user.
       await createUserWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: "Account Created!",
@@ -87,7 +86,10 @@ export default function SignupPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-3 pb-4">
+      <CardHeader className="text-center px-6 pt-8 pb-4"> {/* Adjusted padding */}
+        <div className="flex justify-center mb-6"> {/* Added logo container */}
+          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+        </div>
         <CardTitle className="text-3xl font-bold text-primary">Create Account</CardTitle>
         <CardDescription>Join the Sprout community today!</CardDescription>
       </CardHeader>

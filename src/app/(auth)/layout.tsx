@@ -6,10 +6,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <div className="flex flex-col items-center justify-center flex-grow w-full">
-        <div className="mb-2"> {/* Small bottom margin for the logo */}
-          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
-        </div>
-        <div className="w-full max-w-md -mt-3"> {/* Negative top margin to pull card up */}
+        {/* Logo is now inside the children (auth pages) */}
+        <div className="w-full max-w-md">
           {children}
         </div>
       </div>

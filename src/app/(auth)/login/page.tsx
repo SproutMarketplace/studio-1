@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
+import Image from "next/image"; // Added import
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
-import { signInWithEmailAndPassword } from "firebase/auth"; // Import Firebase auth function
+import { auth } from "@/lib/firebase"; 
+import { signInWithEmailAndPassword } from "firebase/auth"; 
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -80,7 +81,10 @@ export default function LoginPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-3 pb-4">
+      <CardHeader className="text-center px-6 pt-8 pb-4"> {/* Adjusted padding */}
+        <div className="flex justify-center mb-6"> {/* Added logo container */}
+          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+        </div>
         <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>
         <CardDescription>Sign in to continue to Sprout.</CardDescription>
       </CardHeader>
@@ -129,7 +133,7 @@ export default function LoginPage() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center pt-6 space-y-2">
+      <CardFooter className="flex flex-col items-center justify-center pt-6 space-y-1"> {/* Reduced space-y */}
         <Button variant="link" asChild className="px-0 text-sm text-primary hover:text-primary/80">
           <Link href="/forgot-password">Forgot password?</Link>
         </Button>

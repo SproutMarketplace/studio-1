@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
+import Image from "next/image"; // Added import
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, KeyRound, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
-import { sendPasswordResetEmail } from "firebase/auth"; // Import Firebase auth function
+import { auth } from "@/lib/firebase"; 
+import { sendPasswordResetEmail } from "firebase/auth"; 
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -55,8 +56,6 @@ export default function ForgotPasswordPage() {
             errorMessage = "The email address is not valid.";
             break;
           case "auth/user-not-found":
-            // We typically don't want to confirm if an email exists for security reasons
-            // So we show a generic message.
             errorMessage = "If an account exists for this email, a reset link has been sent.";
             toast({
               title: "Password Reset Link Sent",
@@ -78,7 +77,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-3 pb-4">
+      <CardHeader className="text-center px-6 pt-8 pb-4"> {/* Adjusted padding */}
+        <div className="flex justify-center mb-6"> {/* Added logo container */}
+          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+        </div>
         <CardTitle className="text-3xl font-bold text-primary">Forgot Password?</CardTitle>
         <CardDescription>Enter your email to receive a reset link.</CardDescription>
       </CardHeader>
