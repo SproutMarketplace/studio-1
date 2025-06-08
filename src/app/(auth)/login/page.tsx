@@ -80,7 +80,7 @@ export default function LoginPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center">
+      <CardHeader className="text-center px-6 pt-3 pb-4">
         <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>
         <CardDescription>Sign in to continue to Sprout.</CardDescription>
       </CardHeader>
@@ -119,7 +119,6 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            {/* Forgot password link was here, now moved to CardFooter */}
             <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Signing In..." : (
                 <>

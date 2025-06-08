@@ -87,7 +87,7 @@ export default function SignupPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center">
+      <CardHeader className="text-center px-6 pt-3 pb-4">
         <CardTitle className="text-3xl font-bold text-primary">Create Account</CardTitle>
         <CardDescription>Join the Sprout community today!</CardDescription>
       </CardHeader>
