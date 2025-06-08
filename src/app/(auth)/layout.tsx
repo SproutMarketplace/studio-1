@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <div className="flex flex-col items-center justify-center flex-grow w-full">
-        <div className="mb-4">
+        <div className="mb-2"> {/* Changed from mb-4 to mb-2 */}
           <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
         </div>
         <div className="w-full max-w-md">
