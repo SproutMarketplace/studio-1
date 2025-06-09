@@ -660,10 +660,12 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  const [dynamicWidth, setDynamicWidth] = React.useState<string>("75%"); // Default width
+
+  React.useEffect(() => {
+    // Calculate random width only on the client-side after hydration
+    setDynamicWidth(`${Math.floor(Math.random() * 40) + 50}%`);
+  }, []); // Empty dependency array ensures this runs once on mount (client-side)
 
   return (
     <div
@@ -683,13 +685,13 @@ const SidebarMenuSkeleton = React.forwardRef<
         data-sidebar="menu-skeleton-text"
         style={
           {
-            "--skeleton-width": width,
+            "--skeleton-width": dynamicWidth, // Use state variable for width
           } as React.CSSProperties
         }
       />
     </div>
-  )
-})
+  );
+});
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton"
 
 const SidebarMenuSub = React.forwardRef<
