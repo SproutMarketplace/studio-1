@@ -17,7 +17,7 @@ export const mockPlants: Plant[] = [
     id: "1",
     name: "Monstera Deliciosa",
     description: "Large, healthy Monstera with beautiful fenestrations. Easy to care for.",
-    imageUrl: "/images/plants/monstera-deliciosa.png", // Updated path
+    imageUrl: "/plant-images/monstera.jpg", // Corrected path
     imageHint: "monstera plant",
     price: 45,
     type: "sale",
@@ -29,7 +29,7 @@ export const mockPlants: Plant[] = [
     id: "2",
     name: "Snake Plant (Sansevieria)",
     description: "Tall and vibrant Snake Plant. Great for air purification. Low maintenance.",
-    imageUrl: "/images/plants/snake-plant.png", // Updated path
+    imageUrl: "/images/plants/snake-plant.png", 
     imageHint: "snake plant",
     type: "trade",
     seller: "GreenThumbSF",
@@ -40,7 +40,7 @@ export const mockPlants: Plant[] = [
     id: "3",
     name: "Pothos Collection",
     description: "Various Pothos cuttings: Golden, Marble Queen, Neon. Willing to sell or trade.",
-    imageUrl: "/images/plants/pothos-collection.png", // Updated path
+    imageUrl: "/images/plants/pothos-collection.png", 
     imageHint: "pothos cuttings",
     price: 5,
     type: "sale_trade",
@@ -52,7 +52,7 @@ export const mockPlants: Plant[] = [
     id: "4",
     name: "Fiddle Leaf Fig",
     description: "Stunning Fiddle Leaf Fig, about 3ft tall. Needs bright, indirect light.",
-    imageUrl: "/images/plants/fiddle-leaf-fig.png", // Updated path
+    imageUrl: "/images/plants/fiddle-leaf-fig.png", 
     imageHint: "fiddle leaf",
     price: 70,
     type: "sale",
@@ -64,7 +64,7 @@ export const mockPlants: Plant[] = [
     id: "5",
     name: "String of Pearls",
     description: "Delicate String of Pearls succulent in a hanging pot. Thrives in bright light.",
-    imageUrl: "/images/plants/string-of-pearls.png", // Updated path
+    imageUrl: "/images/plants/string-of-pearls.png", 
     imageHint: "string pearls",
     type: "trade",
     seller: "SucculentQueen",
@@ -75,7 +75,7 @@ export const mockPlants: Plant[] = [
     id: "6",
     name: "ZZ Plant",
     description: "Hardy ZZ Plant, perfect for beginners. Tolerates low light.",
-    imageUrl: "/images/plants/zz-plant.png", // Updated path
+    imageUrl: "/images/plants/zz-plant.png", 
     imageHint: "zz plant",
     price: 30,
     type: "sale",
@@ -87,7 +87,7 @@ export const mockPlants: Plant[] = [
     id: "7",
     name: "Spider Plant",
     description: "Classic Spider Plant with many plantlets. Easy to propagate.",
-    imageUrl: "/images/plants/spider-plant.png", // Updated path
+    imageUrl: "/images/plants/spider-plant.png", 
     imageHint: "spider plant",
     price: 15,
     type: "sale_trade",
@@ -99,7 +99,7 @@ export const mockPlants: Plant[] = [
     id: "8",
     name: "Calathea Orbifolia",
     description: "Beautiful Calathea Orbifolia with large, striped leaves. Loves humidity.",
-    imageUrl: "/images/plants/calathea-orbifolia.png", // Updated path
+    imageUrl: "/images/plants/calathea-orbifolia.png", 
     imageHint: "calathea plant",
     type: "trade",
     seller: "PrayerPlantsGalore",
