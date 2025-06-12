@@ -35,7 +35,7 @@ import {
   SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { SheetTitle } from "@/components/ui/sheet"; // Corrected import path for SheetTitle
+import { SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +77,8 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
+      // After logout, if we are in "dev bypass mode", we might want to stay on the current page
+      // or redirect to login. For now, it stays, which is fine for editing.
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -93,7 +95,9 @@ function AppSidebar() {
     }
   };
 
-  if (loading && !isMobile) {
+  // Show skeleton if loading and not on mobile (mobile has its own sheet loading state)
+  // Or if loading and on mobile, but the sidebar is not yet open (AuthGuard handles full page loader)
+  if (loading && !isMobile && !AUTH_ROUTES.includes(pathname)) {
     return (
         <Sidebar>
             <SidebarHeader className={cn("items-center h-[60px]", !open && "justify-center")}>
@@ -105,7 +109,7 @@ function AppSidebar() {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarMenu>
-                    {[...Array(6)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
+                    {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
                 </SidebarMenu>
             </SidebarContent>
             <SidebarSeparator />
@@ -118,6 +122,7 @@ function AppSidebar() {
         </Sidebar>
     );
   }
+
 
   return (
     <Sidebar>
@@ -133,7 +138,8 @@ function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {user && mainNavItems.map((item) => (
+          {/* Always show main nav items for editing purposes */}
+          {mainNavItems.map((item) => (
             <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
@@ -147,21 +153,22 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
           ))}
-          {!user && !loading && isMobile && (
+          {/* Message for mobile if not logged in and not loading - might be redundant with always showing nav items */}
+          {/* {!user && !loading && isMobile && (
              <SidebarMenuItem>
                 <div className="p-2 text-center text-sm text-sidebar-foreground/70">
-                    Sign in to see more.
+                    Main navigation enabled for editing.
                 </div>
              </SidebarMenuItem>
-          )}
+          )} */}
         </SidebarMenu>
       </SidebarContent>
       
-      {user && <SidebarSeparator />}
+      {(user || !loading) && <SidebarSeparator />} {/* Show separator if user is loaded or logged in */}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
-           {user && (
+           {user && ( // Only show Profile and Logout if actually logged in
             <>
               <SidebarMenuItem onClick={closeMobileSidebar}>
                 <Link href="/profile" passHref legacyBehavior>
@@ -190,7 +197,7 @@ function AppSidebar() {
               </SidebarMenuItem>
             </>
            )}
-           {!user && !loading && (
+           {!user && !loading && ( // Show Sign In if not logged in and auth state is loaded
             <SidebarMenuItem onClick={closeMobileSidebar}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
@@ -217,6 +224,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (isAuthRoute) {
     return (
       <>
+        {/* AuthGuard still wraps auth routes to redirect if logged in */}
         <AuthGuard>{children}</AuthGuard>
         <Toaster />
       </>
@@ -241,6 +249,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
+          {/* AuthGuard wraps main content; its behavior is now modified for dev bypass */}
           <AuthGuard>{children}</AuthGuard>
         </main>
         <Toaster />

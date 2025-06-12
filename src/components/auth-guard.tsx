@@ -26,26 +26,26 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
-    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    // const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname); // Not strictly needed for this bypass
 
-    if (!user && !pathIsAuthRoute && !pathIsPublicRoute) {
-      // Not logged in, not on an auth/public page -> redirect to login
-      router.push("/login");
-    } else if (user && pathIsAuthRoute) {
-      // Logged in and on an auth page -> redirect to home
+    // For development/editing:
+    // If a user is logged in AND on an auth page, redirect to home.
+    // Otherwise, allow access. This effectively makes non-auth pages accessible without login.
+    if (user && pathIsAuthRoute) {
       router.push("/");
     }
+    // If !user and !pathIsAuthRoute, we no longer redirect to /login, allowing access for editing.
+    // If !user and pathIsAuthRoute, user can stay on login/signup page.
+
   }, [user, loading, router, pathname]);
 
-  if (loading) {
+  if (loading && !AUTH_ROUTES.includes(pathname)) { // Show loader on non-auth pages while auth state loads
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]"> {/* Adjust height if needed */}
+      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
-  // If a redirect is pending, children might render briefly.
-  // This is usually acceptable, or more complex handling (like returning null until redirect is confirmed) can be added.
   return <>{children}</>;
 }
