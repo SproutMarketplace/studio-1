@@ -1,8 +1,8 @@
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { getAuth, GoogleAuthProvider, signInWithPopup, type Auth, onAuthStateChanged, type UserCredential } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -28,5 +28,37 @@ if (!getApps().length) {
 auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
+
+// Google Authentication Provider
+const googleProvider = new GoogleAuthProvider();
+
+// Function to handle Google Sign-In with Popup
+export async function signInWithGooglePopup(): Promise<UserCredential> {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    // const credential = GoogleAuthProvider.credentialFromResult(result);
+    // const token = credential?.accessToken; // Optional: use token if needed
+    // const user = result.user;
+    // console.log('User signed in with Google:', user);
+    return result;
+  } catch (error: any) {
+    // console.error("Error during Google Sign-in:", error.message);
+    // const errorCode = error.code;
+    // const errorMessage = error.message;
+    // const email = error.customData?.email;
+    // const credential = GoogleAuthProvider.credentialFromError(error);
+    // Re-throw the error so it can be caught by the caller
+    throw error;
+  }
+}
+
+// Listener for authentication state changes (useful for debugging or app-wide logic)
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log('Auth state changed: User is signed in with UID', user.uid);
+  } else {
+    console.log('Auth state changed: User is signed out');
+  }
+});
 
 export { app, auth, db, storage };
