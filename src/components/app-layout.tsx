@@ -36,7 +36,7 @@ import {
   SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { SheetClose, SheetTitle } from "@/components/ui/sheet"; // Imported SheetClose
+import { SheetClose, SheetTitle } from "@/components/ui/sheet"; 
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -125,12 +125,11 @@ function AppSidebar() {
     <Sidebar>
       <SidebarHeader
         className={cn(
-          "h-[60px]", // Common height for the header
           isMobile
-            ? "flex justify-between items-center mb-4" // Mobile: flex for logo & X, and bottom margin
+            ? "flex justify-between items-center mb-4" // Mobile: flex, space between, vertical center, bottom margin. No fixed height.
             : open
-              ? "items-center px-2" // Desktop open: has internal padding and centers content
-              : "justify-center px-2 items-center" // Desktop collapsed: centers the icon and has padding
+              ? "items-center px-2 h-[60px]" // Desktop open: has internal padding and centers content, fixed height
+              : "justify-center px-2 items-center h-[60px]" // Desktop collapsed: centers the icon and has padding, fixed height
         )}
       >
         {isMobile ? (
@@ -172,7 +171,6 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {/* Show separator if user is loaded or if it's not loading (for anon state) */}
       {(!loading || user) && <SidebarSeparator />}
       
       <SidebarFooter className="py-2">
@@ -220,7 +218,6 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
            )}
-           {/* Skeleton for footer items during initial load if not an auth route */}
            {loading && !AUTH_ROUTES.includes(pathname) && (
             <>
               <SidebarMenuSkeleton showIcon={open || isMobile} />
