@@ -14,6 +14,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Optional
 };
 
+// Check for essential Firebase configuration
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authDomain) {
+  console.error(
+    "CRITICAL FIREBASE CONFIGURATION ERROR: \n" +
+    "One or more NEXT_PUBLIC_FIREBASE_ environment variables are missing in your .env file.\n" +
+    "Please ensure the following are set:\n" +
+    "- NEXT_PUBLIC_FIREBASE_API_KEY\n" +
+    "- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN\n" +
+    "- NEXT_PUBLIC_FIREBASE_PROJECT_ID\n" +
+    "Firebase will not initialize correctly without them."
+  );
+  // You might choose to throw an error here to halt execution if preferred,
+  // but a console error is often sufficient for development.
+}
+
+
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -36,28 +52,19 @@ const googleProvider = new GoogleAuthProvider();
 export async function signInWithGooglePopup(): Promise<UserCredential> {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    // const credential = GoogleAuthProvider.credentialFromResult(result);
-    // const token = credential?.accessToken; // Optional: use token if needed
-    // const user = result.user;
-    // console.log('User signed in with Google:', user);
     return result;
   } catch (error: any) {
-    // console.error("Error during Google Sign-in:", error.message);
-    // const errorCode = error.code;
-    // const errorMessage = error.message;
-    // const email = error.customData?.email;
-    // const credential = GoogleAuthProvider.credentialFromError(error);
-    // Re-throw the error so it can be caught by the caller
+    console.error("Error during Google Sign-in:", error.code, error.message);
     throw error;
   }
 }
 
-// Listener for authentication state changes (useful for debugging or app-wide logic)
+// Listener for authentication state changes
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    console.log('Auth state changed: User is signed in with UID', user.uid);
+    // console.log('Auth state changed: User is signed in with UID', user.uid);
   } else {
-    console.log('Auth state changed: User is signed out');
+    // console.log('Auth state changed: User is signed out');
   }
 });
 
