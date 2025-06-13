@@ -17,6 +17,7 @@ import {
   User as UserIcon,
   LogOut,
   LogIn as LogInIcon,
+  X, // Added X icon
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -35,7 +36,7 @@ import {
   SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { SheetTitle } from "@/components/ui/sheet";
+import { SheetClose, SheetTitle } from "@/components/ui/sheet"; // Imported SheetClose
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -122,24 +123,35 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader 
+      <SidebarHeader
         className={cn(
-            "items-center h-[60px]", 
-            isMobile ? "mb-4" : (!open && "justify-center px-2") // For mobile, remove px-2, add mb-4. For desktop collapsed, keep px-2 and justify-center
+          "h-[60px]", // Common height for the header
+          isMobile
+            ? "flex justify-between items-center mb-4" // Mobile: flex for logo & X, and bottom margin
+            : open
+              ? "items-center px-2" // Desktop open: has internal padding and centers content
+              : "justify-center px-2 items-center" // Desktop collapsed: centers the icon and has padding
         )}
       >
         {isMobile ? (
-          <Link href="/" passHref aria-label="Sprout Home" className="flex items-center">
-            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
-          </Link>
+          <>
+            <Link href="/" passHref aria-label="Sprout Home" className="flex items-center">
+              <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+            </Link>
+            <SheetClose asChild>
+              <Button variant="ghost" size="icon" className="text-sidebar-foreground">
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close menu</span>
+              </Button>
+            </SheetClose>
+          </>
         ) : open ? (
-          <Link href="/" passHref aria-label="Sprout Home" className="px-2"> {/* Added px-2 here for consistency when open */}
+          <Link href="/" passHref aria-label="Sprout Home" className="px-2">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : (
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
-         {isMobile && <SheetTitle className="sr-only">Sprout Main Menu</SheetTitle>}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -160,11 +172,12 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(user || !loading) && <SidebarSeparator />}
+      {/* Show separator if user is loaded or if it's not loading (for anon state) */}
+      {(!loading || user) && <SidebarSeparator />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
-           {user && ( 
+           {user && !loading && ( 
             <>
               <SidebarMenuItem onClick={closeMobileSidebar}>
                 <Link href="/profile" passHref legacyBehavior>
@@ -206,6 +219,13 @@ function AppSidebar() {
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
+           )}
+           {/* Skeleton for footer items during initial load if not an auth route */}
+           {loading && !AUTH_ROUTES.includes(pathname) && (
+            <>
+              <SidebarMenuSkeleton showIcon={open || isMobile} />
+              <SidebarMenuSkeleton showIcon={open || isMobile} />
+            </>
            )}
         </SidebarMenu>
       </SidebarFooter>
@@ -251,4 +271,3 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
