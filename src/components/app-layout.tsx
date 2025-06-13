@@ -17,7 +17,7 @@ import {
   User as UserIcon,
   LogOut,
   LogIn as LogInIcon,
-  X, // Added X icon
+  X, 
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -126,23 +126,18 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "flex justify-between items-center mb-4" // Mobile: flex, space between, vertical center, bottom margin. No fixed height.
+            ? "mb-4" // Mobile: only margin-bottom. Height and padding come from SheetContent.
             : open
-              ? "items-center px-2 h-[60px]" // Desktop open: has internal padding and centers content, fixed height
-              : "justify-center px-2 items-center h-[60px]" // Desktop collapsed: centers the icon and has padding, fixed height
+              ? "items-center px-2 h-[60px]" 
+              : "justify-center px-2 items-center h-[60px]" 
         )}
       >
         {isMobile ? (
           <>
-            <Link href="/" passHref aria-label="Sprout Home" className="flex items-center">
+            <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            <SheetClose asChild>
-              <Button variant="ghost" size="icon" className="text-sidebar-foreground">
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close menu</span>
-              </Button>
-            </SheetClose>
+            {/* The Sheet's default close button will be used. No explicit X here. */}
           </>
         ) : open ? (
           <Link href="/" passHref aria-label="Sprout Home" className="px-2">
