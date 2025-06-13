@@ -201,8 +201,8 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              "w-[--sidebar-width] bg-sidebar text-sidebar-foreground [&>button]:hidden",
-              "p-4" // Changed p-0 to p-4 for proper close button visibility
+              "w-[--sidebar-width] bg-sidebar text-sidebar-foreground",
+              "p-4" 
             )}
             style={
               {
@@ -663,12 +663,11 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  const [dynamicWidth, setDynamicWidth] = React.useState<string>("75%"); // Default width
+  const [dynamicWidth, setDynamicWidth] = React.useState<string>("75%"); 
 
   React.useEffect(() => {
-    // Calculate random width only on the client-side after hydration
     setDynamicWidth(`${Math.floor(Math.random() * 40) + 50}%`);
-  }, []); // Empty dependency array ensures this runs once on mount (client-side)
+  }, []); 
 
   return (
     <div
@@ -688,7 +687,7 @@ const SidebarMenuSkeleton = React.forwardRef<
         data-sidebar="menu-skeleton-text"
         style={
           {
-            "--skeleton-width": dynamicWidth, // Use state variable for width
+            "--skeleton-width": dynamicWidth, 
           } as React.CSSProperties
         }
       />

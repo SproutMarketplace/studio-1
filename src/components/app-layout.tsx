@@ -77,8 +77,6 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
-      // After logout, if we are in "dev bypass mode", we might want to stay on the current page
-      // or redirect to login. For now, it stays, which is fine for editing.
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -95,9 +93,6 @@ function AppSidebar() {
     }
   };
 
-  // Show skeleton if loading and not on mobile (mobile has its own sheet loading state)
-  // Or if loading and on mobile, but the sidebar is not yet open (AuthGuard handles full page loader)
-  // For dev bypass: Show skeleton if loading is true, not on an auth route, and not on mobile.
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile) {
     return (
         <Sidebar>
@@ -127,13 +122,18 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className={cn("items-center h-[60px] px-2", !open && !isMobile && "justify-center")}>
+      <SidebarHeader 
+        className={cn(
+            "items-center h-[60px]", 
+            isMobile ? "mb-4" : (!open && "justify-center px-2") // For mobile, remove px-2, add mb-4. For desktop collapsed, keep px-2 and justify-center
+        )}
+      >
         {isMobile ? (
-          <Link href="/" passHref aria-label="Sprout Home">
+          <Link href="/" passHref aria-label="Sprout Home" className="flex items-center">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : open ? (
-          <Link href="/" passHref aria-label="Sprout Home">
+          <Link href="/" passHref aria-label="Sprout Home" className="px-2"> {/* Added px-2 here for consistency when open */}
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : (
@@ -149,7 +149,7 @@ function AppSidebar() {
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={{ children: item.tooltip, className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                  className={cn( "justify-start", !open && "justify-center" )}
+                  className={cn( "justify-start", !open && !isMobile && "justify-center" )}
                 >
                   <item.icon aria-hidden="true" />
                   {(open || isMobile) && <span>{item.label}</span>}
@@ -171,7 +171,7 @@ function AppSidebar() {
                   <SidebarMenuButton
                     isActive={pathname === "/profile"}
                     tooltip={{ children: "Manage Your Profile", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                    className={cn("justify-start", !open && "justify-center")}
+                    className={cn("justify-start", !open && !isMobile && "justify-center")}
                   >
                     <UserIcon aria-hidden="true" />
                     {(open || isMobile) && <span>Profile</span>}
@@ -184,7 +184,7 @@ function AppSidebar() {
                     tooltip={{ children: "Sign Out", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
                     className={cn(
                       "justify-start text-destructive hover:bg-destructive/10 hover:text-destructive",
-                      !open && "justify-center"
+                      !open && !isMobile && "justify-center"
                     )}
                   >
                     <LogOut aria-hidden="true" />
@@ -199,7 +199,7 @@ function AppSidebar() {
                 <SidebarMenuButton
                   isActive={pathname === "/login"}
                   tooltip={{ children: "Sign In", className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-                  className={cn("justify-start", !open && "justify-center")}
+                  className={cn("justify-start", !open && !isMobile && "justify-center")}
                 >
                   <LogInIcon aria-hidden="true" />
                   {(open || isMobile) && <span>Sign In</span>}
