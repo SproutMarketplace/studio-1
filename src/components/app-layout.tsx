@@ -128,11 +128,15 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className={cn("items-center h-[60px] px-2", !open && !isMobile && "justify-center")}>
-        {(open || isMobile) ? (
+        {isMobile ? (
           <Link href="/" passHref aria-label="Sprout Home">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-        ) : ( 
+        ) : open ? (
+          <Link href="/" passHref aria-label="Sprout Home">
+            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+          </Link>
+        ) : (
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
          {isMobile && <SheetTitle className="sr-only">Sprout Main Menu</SheetTitle>}

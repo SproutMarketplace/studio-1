@@ -200,7 +200,10 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className={cn(
+              "w-[--sidebar-width] bg-sidebar text-sidebar-foreground [&>button]:hidden",
+              "p-4" // Changed p-0 to p-4 for proper close button visibility
+            )}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -208,7 +211,7 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
-            <SheetTitle className="sr-only">Main Navigation Menu</SheetTitle>
+            <SheetTitle className="sr-only">Sprout Main Menu</SheetTitle>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
