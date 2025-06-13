@@ -97,7 +97,8 @@ function AppSidebar() {
 
   // Show skeleton if loading and not on mobile (mobile has its own sheet loading state)
   // Or if loading and on mobile, but the sidebar is not yet open (AuthGuard handles full page loader)
-  if (loading && !isMobile && !AUTH_ROUTES.includes(pathname)) {
+  // For dev bypass: Show skeleton if loading is true, not on an auth route, and not on mobile.
+  if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile) {
     return (
         <Sidebar>
             <SidebarHeader className={cn("items-center h-[60px]", !open && "justify-center")}>
@@ -126,19 +127,18 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className={cn("items-center h-[60px] px-2", !open && "justify-center")}>
-        {open ? (
+      <SidebarHeader className={cn("items-center h-[60px] px-2", !open && !isMobile && "justify-center")}>
+        {(open || isMobile) ? (
           <Link href="/" passHref aria-label="Sprout Home">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-        ) : (
+        ) : ( 
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
          {isMobile && <SheetTitle className="sr-only">Sprout Main Menu</SheetTitle>}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {/* Always show main nav items for editing purposes */}
           {mainNavItems.map((item) => (
             <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
               <Link href={item.href} passHref legacyBehavior>
@@ -148,27 +148,19 @@ function AppSidebar() {
                   className={cn( "justify-start", !open && "justify-center" )}
                 >
                   <item.icon aria-hidden="true" />
-                  {open && <span>{item.label}</span>}
+                  {(open || isMobile) && <span>{item.label}</span>}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}
-          {/* Message for mobile if not logged in and not loading - might be redundant with always showing nav items */}
-          {/* {!user && !loading && isMobile && (
-             <SidebarMenuItem>
-                <div className="p-2 text-center text-sm text-sidebar-foreground/70">
-                    Main navigation enabled for editing.
-                </div>
-             </SidebarMenuItem>
-          )} */}
         </SidebarMenu>
       </SidebarContent>
       
-      {(user || !loading) && <SidebarSeparator />} {/* Show separator if user is loaded or logged in */}
+      {(user || !loading) && <SidebarSeparator />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
-           {user && ( // Only show Profile and Logout if actually logged in
+           {user && ( 
             <>
               <SidebarMenuItem onClick={closeMobileSidebar}>
                 <Link href="/profile" passHref legacyBehavior>
@@ -178,7 +170,7 @@ function AppSidebar() {
                     className={cn("justify-start", !open && "justify-center")}
                   >
                     <UserIcon aria-hidden="true" />
-                    {open && <span>Profile</span>}
+                    {(open || isMobile) && <span>Profile</span>}
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
@@ -192,12 +184,12 @@ function AppSidebar() {
                     )}
                   >
                     <LogOut aria-hidden="true" />
-                    {open && <span>Logout</span>}
+                    {(open || isMobile) && <span>Logout</span>}
                   </SidebarMenuButton>
               </SidebarMenuItem>
             </>
            )}
-           {!user && !loading && ( // Show Sign In if not logged in and auth state is loaded
+           {!user && !loading && ( 
             <SidebarMenuItem onClick={closeMobileSidebar}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
@@ -206,7 +198,7 @@ function AppSidebar() {
                   className={cn("justify-start", !open && "justify-center")}
                 >
                   <LogInIcon aria-hidden="true" />
-                  {open && <span>Sign In</span>}
+                  {(open || isMobile) && <span>Sign In</span>}
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
@@ -224,7 +216,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (isAuthRoute) {
     return (
       <>
-        {/* AuthGuard still wraps auth routes to redirect if logged in */}
         <AuthGuard>{children}</AuthGuard>
         <Toaster />
       </>
@@ -249,7 +240,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          {/* AuthGuard wraps main content; its behavior is now modified for dev bypass */}
           <AuthGuard>{children}</AuthGuard>
         </main>
         <Toaster />
@@ -257,3 +247,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
