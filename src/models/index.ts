@@ -34,11 +34,13 @@ export interface Community {
   id?: string; // Firestore document ID
   name: string;
   description: string;
+  rules?: string;
+  imageUrl?: string;
+  bannerUrl?: string;
   creatorId: string; // UID of the user who created it
   memberCount?: number; // Denormalized, can be updated with a counter
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  // Future fields: bannerImageUrl, rules, etc.
 }
 
 export interface ForumPost {
