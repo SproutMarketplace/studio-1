@@ -104,6 +104,7 @@ function AppSidebar() {
                     <Skeleton className="h-8 w-8 rounded-full" />
                  )}
             </SidebarHeader>
+            <SidebarSeparator />
             <SidebarContent>
                 <SidebarMenu>
                     {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
@@ -126,7 +127,7 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "mb-4 flex justify-center items-center" 
+            ? "flex justify-center items-center mb-4" 
             : open
               ? "items-center px-2 h-[60px]" 
               : "justify-center px-2 items-center h-[60px]" 
@@ -147,6 +148,7 @@ function AppSidebar() {
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
+      <SidebarSeparator /> {/* New separator added here */}
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
@@ -166,7 +168,7 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user) && <SidebarSeparator />}
+      {(!loading || user || isMobile) && <SidebarSeparator />} {/* Adjusted condition for dev mode bypass */}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
@@ -199,7 +201,7 @@ function AppSidebar() {
               </SidebarMenuItem>
             </>
            )}
-           {!user && !loading && ( 
+           {(!user && !loading) && (  // Show Sign In if not logged in AND not loading
             <SidebarMenuItem onClick={closeMobileSidebar}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
@@ -213,7 +215,7 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
            )}
-           {loading && !AUTH_ROUTES.includes(pathname) && (
+           {(loading && !AUTH_ROUTES.includes(pathname)) && ( // Show skeletons if loading and not on an auth route
             <>
               <SidebarMenuSkeleton showIcon={open || isMobile} />
               <SidebarMenuSkeleton showIcon={open || isMobile} />
@@ -263,4 +265,3 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
