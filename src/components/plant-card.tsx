@@ -27,11 +27,11 @@ export function PlantCard({ plant }: PlantCardProps) {
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
       case "for sale":
-        return "bg-primary text-primary-foreground hover:bg-primary/90";
+        return "bg-primary text-white hover:bg-primary/90";
       case "for trade":
-        return "bg-accent text-accent-foreground hover:bg-accent/90";
+        return "bg-[#664121] text-white hover:bg-[#52341A]"; // Dark brown with white text
       default:
-        return "bg-secondary text-secondary-foreground hover:bg-secondary/80";
+        return "bg-secondary text-white hover:bg-secondary/80"; // Other tags with white text
     }
   };
 
