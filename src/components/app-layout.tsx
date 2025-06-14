@@ -94,7 +94,6 @@ function AppSidebar() {
     }
   };
   
-  // Skeleton for loading state when sidebar is initially collapsed on desktop
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile && !open && !openMobile) {
      return (
         <Sidebar>
@@ -120,17 +119,16 @@ function AppSidebar() {
     );
   }
   
-  // Skeleton for loading state when sidebar is expanded or on mobile
   if (loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open || openMobile )) {
     return (
         <Sidebar>
             <SidebarHeader className={cn(
                 "p-2 flex items-center",
-                isMobile ? "justify-center mb-2" : (open ? "justify-between" : "justify-center") 
+                 isMobile ? "justify-center mb-2" : (open ? "justify-between" : "justify-center") 
               )}>
                  <Skeleton className="h-8 w-32" /> 
                  { (open && !isMobile) && <Skeleton className="h-7 w-7 rounded-md" /> }
-                 { isMobile && <div className="w-7 h-7" /> } {/* Placeholder for mobile Sheet X */}
+                 { isMobile && <div className="w-7 h-7" /> } 
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
@@ -255,16 +253,18 @@ function PersistentHeader() {
   const shouldShowHeaderElements = !(isMobile ? openMobile : open);
 
   return (
-    <header className="sticky top-0 z-10 flex items-center h-14 px-4 border-b bg-background/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
       {shouldShowHeaderElements && (
         <>
-          <SidebarTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Toggle Menu">
-              <PanelLeft />
-            </Button>
-          </SidebarTrigger>
-          <Link href="/" passHref aria-label="Sprout Home" className="ml-4">
-            <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            <SidebarTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Toggle Menu">
+                <PanelLeft />
+              </Button>
+            </SidebarTrigger>
+          </div>
+          <Link href="/" passHref aria-label="Sprout Home">
+            <Image src="/logo.png" alt="Sprout Logo" width={100} height={28} priority />
           </Link>
         </>
       )}
@@ -300,4 +300,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+    
+
     
