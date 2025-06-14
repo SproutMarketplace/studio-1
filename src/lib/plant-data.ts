@@ -1,109 +1,127 @@
 
-export interface Plant {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  imageHint: string;
-  price?: number;
-  type: "sale" | "trade" | "sale_trade";
-  seller: string;
-  location: string;
-  tags?: string[];
-}
+import type { Plant } from "@/models";
+import { Timestamp } from "firebase/firestore";
+
+// Note: This mock data is illustrative. 
+// Timestamps are hardcoded for simplicity in mocks, but Firestore uses serverTimestamp().
+const mockTimestamp = Timestamp.now();
 
 export const mockPlants: Plant[] = [
   {
     id: "1",
     name: "Monstera Deliciosa",
     description: "Large, healthy Monstera with beautiful fenestrations. Easy to care for.",
-    imageUrl: "/plant-images/monstera.jpg", // Corrected path
-    imageHint: "monstera plant",
+    imageUrls: ["/plant-images/monstera.jpg"],
+    imageHints: ["monstera plant"],
     price: 45,
     type: "sale",
-    seller: "PlantLover123",
+    sellerId: "mockSeller123",
+    sellerName: "PlantLover123",
     location: "San Francisco, CA",
     tags: ["For Sale", "Easy Care", "Popular"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "2",
     name: "Ariocarpus F2 Fiss. x Lloydii ",
     description: "Beautiful Ariocarpus received from Big Cactus. Huge Root.",
-    imageUrl: "/plant-images/ariocarpus.jpeg", 
-    imageHint: "ariocarpus",
+    imageUrls: ["/plant-images/ariocarpus.jpeg"],
+    imageHints: ["ariocarpus"],
     type: "trade",
-    seller: "GreenThumbSF",
+    sellerId: "mockSeller456",
+    sellerName: "GreenThumbSF",
     location: "Oakland, CA",
     tags: ["For Trade", "High Light"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "3",
     name: "Annie x Bert Variegated Trichocereus Hybrid",
     description: "Annie x Bert with one yellow pup and one green pup. Open to sale and trade!",
-    imageUrl: "/plant-images/AnniexBert.jpeg", 
-    imageHint: "AnniexBert Graft",
+    imageUrls: ["/plant-images/AnniexBert.jpeg"],
+    imageHints: ["AnniexBert Graft"],
     price: 50,
     type: "sale_trade",
-    seller: "IvyLeague",
+    sellerId: "mockSeller789",
+    sellerName: "IvyLeague",
     location: "Berkeley, CA",
     tags: ["For Sale", "For Trade", "Graft", "Beginner Friendly"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "4",
     name: "Ecuadorian Pachanoi",
     description: "Stunning Ecuadorian Pachanoi Stand Needs bright, direct light.",
-    imageUrl: "/plant-images/pach.jpeg", 
-    imageHint: "pach",
+    imageUrls: ["/plant-images/pach.jpeg"],
+    imageHints: ["pach"],
     price: 70,
     type: "sale",
-    seller: "PachMan",
+    sellerId: "mockSeller101",
+    sellerName: "PachMan",
     location: "San Jose, CA",
     tags: ["For Sale", "Statement Plant", "Bright Light"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "5",
     name: "Bridgesii cv. Yehuda",
     description: "Rarely offereed Bridgesii with lots of girth. Get absolutely MASSIVE!",
-    imageUrl: "/plant-images/yehuda.jpeg", 
-    imageHint: "yehuda",
+    imageUrls: ["/plant-images/yehuda.jpeg"],
+    imageHints: ["yehuda"],
     type: "trade",
-    seller: "SucculentKing",
+    sellerId: "mockSeller202",
+    sellerName: "SucculentKing",
     location: "Palo Alto, CA",
     tags: ["For Trade", "Trichocereus", "Cacti"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "6",
     name: "ZZ Plant",
     description: "Hardy ZZ Plant, perfect for beginners. Tolerates low light.",
-    imageUrl: "/plant-images/zz.jpg", 
-    imageHint: "zz plant",
+    imageUrls: ["/plant-images/zz.jpg"],
+    imageHints: ["zz plant"],
     price: 30,
     type: "sale",
-    seller: "EasyGreens",
+    sellerId: "mockSeller303",
+    sellerName: "EasyGreens",
     location: "Fremont, CA",
     tags: ["For Sale", "Drought Tolerant", "Low Maintenance"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "7",
     name: "Spider Plant",
     description: "Classic Spider Plant with many plantlets. Easy to propagate.",
-    imageUrl: "/plant-images/spiderplant.jpg", 
-    imageHint: "spider plant",
+    imageUrls: ["/plant-images/spiderplant.jpg"],
+    imageHints: ["spider plant"],
     price: 15,
     type: "sale_trade",
-    seller: "WebOfPlants",
+    sellerId: "mockSeller404",
+    sellerName: "WebOfPlants",
     location: "Daly City, CA",
     tags: ["For Sale", "For Trade", "Easy to Propagate", "Pet Friendly"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
   {
     id: "8",
     name: "Calathea Orbifolia",
     description: "Beautiful Calathea Orbifolia with large, striped leaves. Loves humidity.",
-    imageUrl: "/plant-images/Calathea.jpg", 
-    imageHint: "calathea plant",
+    imageUrls: ["/plant-images/Calathea.jpg"],
+    imageHints: ["calathea plant"],
     type: "trade",
-    seller: "PrayerPlantsGalore",
+    sellerId: "mockSeller505",
+    sellerName: "PrayerPlantsGalore",
     location: "Walnut Creek, CA",
     tags: ["For Trade", "Prayer Plant", "Humidity Lover"],
+    createdAt: mockTimestamp,
+    updatedAt: mockTimestamp,
   },
 ];

@@ -10,19 +10,21 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { mockPlants } from "@/lib/plant-data"; 
+import type { Plant } from "@/models"; // Updated import
 import { PlantCard } from "@/components/plant-card";
 import { Edit3, List, Mail, MapPin, MessageSquare, Repeat, Save, ShieldCheck, User, Construction, UploadCloud, Loader2 } from "lucide-react";
-import { useAuth, type UserProfile } from "@/contexts/auth-context"; // Corrected import
+import { useAuth } from "@/contexts/auth-context"; 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy, type Timestamp } from "firebase/firestore";
 import { db, auth as firebaseAuth } from "@/lib/firebase";
 import { updateProfile as updateFirebaseAuthProfile } from "firebase/auth";
 import Image from "next/image";
+import type { UserProfile } from "@/models"; // Explicit import for UserProfile
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -40,6 +42,9 @@ export default function ProfilePage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [userListings, setUserListings] = useState<Plant[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -63,6 +68,31 @@ export default function ProfilePage() {
     }
   }, [profile, form]);
 
+  useEffect(() => {
+    const fetchUserListings = async () => {
+      if (user) {
+        setListingsLoading(true);
+        try {
+          const q = query(
+            collection(db, "plants"),
+            where("sellerId", "==", user.uid),
+            orderBy("createdAt", "desc")
+          );
+          const querySnapshot = await getDocs(q);
+          const listings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Plant));
+          setUserListings(listings);
+        } catch (error) {
+          console.error("Error fetching user listings:", error);
+          toast({ variant: "destructive", title: "Error", description: "Could not fetch your listings." });
+        } finally {
+          setListingsLoading(false);
+        }
+      }
+    };
+    fetchUserListings();
+  }, [user, toast]);
+
+
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -85,7 +115,7 @@ export default function ProfilePage() {
       return;
     }
     setIsSaving(true);
-    let newAvatarUrl = profile?.avatarUrl || "";
+    let newAvatarUrl = profile?.avatarUrl || user.photoURL || "";
 
     try {
       if (imageFile) {
@@ -103,12 +133,11 @@ export default function ProfilePage() {
         bio: data.bio || profile?.bio || "",
         location: data.location || profile?.location || "",
         avatarUrl: newAvatarUrl,
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as Timestamp,
       };
       
       await updateDoc(userDocRef, updatedProfileData);
 
-      // Update Firebase Auth profile as well
       if (firebaseAuth.currentUser) {
         await updateFirebaseAuthProfile(firebaseAuth.currentUser, {
           displayName: updatedProfileData.name,
@@ -144,8 +173,7 @@ export default function ProfilePage() {
     });
   };
 
-  const userListings = mockPlants.slice(0, 3);
-  const userTrades = mockPlants.slice(3, 5);
+  //const userTrades = mockPlants.slice(3, 5); // This will need a different data source
 
   if (authLoading) {
     return (
@@ -173,7 +201,7 @@ export default function ProfilePage() {
       <header className="flex flex-col md:flex-row items-center md:items-start gap-6">
         <div className="relative group">
           <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary shadow-lg">
-            <AvatarImage src={imagePreview || profile?.avatarUrl || "https://placehold.co/100x100.png"} alt={displayName} data-ai-hint="profile avatar" />
+            <AvatarImage src={imagePreview || profile?.avatarUrl || "https://placehold.co/128x128.png"} alt={displayName} data-ai-hint="profile avatar" />
             <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <label
@@ -197,7 +225,7 @@ export default function ProfilePage() {
 
       <Separator />
 
-      <Tabs defaultValue="settings" className="w-full">
+      <Tabs defaultValue="listings" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="listings"><List className="w-4 h-4 mr-2" />My Listings</TabsTrigger>
           <TabsTrigger value="trades"><Repeat className="w-4 h-4 mr-2" />My Trades</TabsTrigger>
@@ -212,14 +240,18 @@ export default function ProfilePage() {
               <CardDescription>Plants you are currently offering for sale or trade.</CardDescription>
             </CardHeader>
             <CardContent>
-              {userListings.length > 0 ? (
+              {listingsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : userListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userListings.map((plant) => (
                     <PlantCard key={plant.id} plant={plant} />
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">You have no active listings.</p>
+                <p className="text-muted-foreground text-center py-10">You have no active listings. <Button variant="link" asChild><a href="/list-plant">List a plant!</a></Button></p>
               )}
             </CardContent>
           </Card>
@@ -232,21 +264,13 @@ export default function ProfilePage() {
               <CardDescription>Completed or ongoing trades.</CardDescription>
             </CardHeader>
             <CardContent>
-              {userTrades.length > 0 ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userTrades.map((plant) => (
-                    <PlantCard key={plant.id} plant={plant} />
-                  ))}
+               <div className="flex flex-col items-center justify-center py-12 text-center rounded-lg border-2 border-dashed border-border bg-muted/30">
+                  <Construction className="w-16 h-16 mb-4 text-muted-foreground" />
+                  <p className="text-xl font-semibold text-foreground">Trade History Coming Soon</p>
+                  <p className="text-muted-foreground">
+                    This section will show your trading activity.
+                  </p>
                 </div>
-              ) : (
-                 <div className="flex flex-col items-center justify-center py-12 text-center rounded-lg border-2 border-dashed border-border bg-muted/30">
-                    <Construction className="w-16 h-16 mb-4 text-muted-foreground" />
-                    <p className="text-xl font-semibold text-foreground">No Trades Yet</p>
-                    <p className="text-muted-foreground">
-                      Start listing or browsing to make your first trade!
-                    </p>
-                  </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -285,6 +309,7 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <Label htmlFor="profileLocation">Location</Label>
                   <Input id="profileLocation" {...form.register("location")} placeholder="e.g., Greenville, USA" />
+                   {form.formState.errors.location && <p className="text-sm text-destructive">{form.formState.errors.location.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="profileBio">Bio</Label>

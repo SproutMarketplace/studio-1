@@ -2,22 +2,12 @@
 "use client";
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
-import { auth, db, storage } from "@/lib/firebase"; // Added storage
+import { auth, db, storage } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore"; // Firestore methods
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, type Timestamp } from "firebase/firestore"; 
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-
-export interface UserProfile {
-  uid: string;
-  email: string | null;
-  name?: string;
-  bio?: string;
-  avatarUrl?: string;
-  location?: string;
-  createdAt?: any; // Firestore ServerTimestamp
-  updatedAt?: any; // Firestore ServerTimestamp
-}
+import type { UserProfile } from "@/models"; // Updated import
 
 interface AuthContextType {
   user: FirebaseAuthUser | null;
@@ -62,18 +52,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
             email: firebaseUser.email,
             name: firebaseUser.displayName || "",
             avatarUrl: firebaseUser.photoURL || "",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: serverTimestamp() as Timestamp, // Add type assertion
+            updatedAt: serverTimestamp() as Timestamp, // Add type assertion
           };
           await setDoc(userDocRef, newProfile);
           setProfile(newProfile);
         }
       } catch (error) {
         console.error("Error fetching/creating user profile:", error);
-        setProfile(null); // Set to null on error
+        setProfile(null); 
       }
     } else {
-      setProfile(null); // No user, so no profile
+      setProfile(null); 
     }
   }, []);
 
