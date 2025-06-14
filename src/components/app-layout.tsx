@@ -33,7 +33,7 @@ import {
   SidebarTrigger,
   useSidebar,
   SidebarFooter,
-  SidebarSeparator, // Ensure SidebarSeparator is imported
+  SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { SheetClose, SheetTitle } from "@/components/ui/sheet"; 
@@ -97,7 +97,7 @@ function AppSidebar() {
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile) {
     return (
         <Sidebar>
-            <SidebarHeader className={cn("items-center h-[60px]", !open && "justify-center")}>
+            <SidebarHeader className={cn("items-center", !open && "justify-center")}>
                  {open ? (
                     <Skeleton className="h-8 w-32" />
                  ) : (
@@ -127,10 +127,10 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "justify-center items-center mb-2" // Adjusted margin for mobile
+            ? "justify-center items-center mb-2" // Mobile: centers logo, adds bottom margin before separator
             : open
-              ? "items-center px-2 h-[60px]" 
-              : "justify-center px-2 items-center h-[60px]" 
+              ? "items-center" // Desktop expanded: centers logo, relies on default p-2 for spacing
+              : "justify-center items-center" // Desktop collapsed: centers icon, relies on default p-2
         )}
       >
         {isMobile ? (
@@ -138,14 +138,14 @@ function AppSidebar() {
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : open ? (
-          <Link href="/" passHref aria-label="Sprout Home" className="px-2">
+          <Link href="/" passHref aria-label="Sprout Home" className="block">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : (
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
-      <SidebarSeparator className="mb-2"/> {/* This is the separator between logo and menu, now with bottom margin */}
+      <SidebarSeparator className="mb-2"/>
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
@@ -165,7 +165,7 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user || isMobile) && <SidebarSeparator />} {/* This is the separator above profile/login */}
+      {(!loading || user || isMobile) && <SidebarSeparator />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
