@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { User asFirebaseAuthUser } from "firebase/auth";
+import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db, storage } from "@/lib/firebase"; // Added storage
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore"; // Firestore methods
@@ -14,7 +14,7 @@ export interface UserProfile {
   name?: string;
   bio?: string;
   avatarUrl?: string;
-  location?: string; // Kept from original mock user if needed
+  location?: string; 
   createdAt?: any; // Firestore ServerTimestamp
   updatedAt?: any; // Firestore ServerTimestamp
 }
