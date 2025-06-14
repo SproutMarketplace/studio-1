@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image"; // Import next/image
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
@@ -67,7 +67,7 @@ const mainNavItems: NavItem[] = [
 function AppSidebar() {
   const pathname = usePathname();
   const { toast } = useToast();
-  const { open, isMobile, setOpenMobile } = useSidebar();
+  const { open, isMobile, setOpenMobile, toggleSidebar } = useSidebar(); // Added toggleSidebar
   const { user, loading } = useAuth();
 
   const handleLogout = async () => {
@@ -127,25 +127,33 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "justify-center items-center mb-2" // Mobile: centers logo, adds bottom margin before separator
-            : open
-              ? "items-center" // Desktop expanded: centers logo, relies on default p-2 for spacing
-              : "justify-center items-center" // Desktop collapsed: centers icon, relies on default p-2
+            ? "justify-center items-center mb-2" // Mobile: centers logo
+            : open // Desktop expanded
+              ? "flex flex-row justify-between items-center" // Desktop expanded: logo left, trigger right
+              : "justify-center items-center" // Desktop collapsed: centers icon
         )}
       >
         {isMobile ? (
           <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-        ) : open ? (
-          <Link href="/" passHref aria-label="Sprout Home" className="block">
-            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
-          </Link>
-        ) : (
+        ) : open ? ( // Desktop Expanded
+          <>
+            <Link href="/" passHref aria-label="Sprout Home" className="block">
+              <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+            </Link>
+            <SidebarTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <PanelLeft />
+                <span className="sr-only">Collapse sidebar</span>
+              </Button>
+            </SidebarTrigger>
+          </>
+        ) : ( // Desktop Collapsed
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
-      <SidebarSeparator className="mb-2"/>
+      <SidebarSeparator className="mb-2 mt-0"/>
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
