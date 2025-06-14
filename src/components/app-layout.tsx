@@ -67,7 +67,7 @@ const mainNavItems: NavItem[] = [
 function AppSidebar() {
   const pathname = usePathname();
   const { toast } = useToast();
-  const { open, isMobile, setOpenMobile, toggleSidebar } = useSidebar(); // Added toggleSidebar
+  const { open, isMobile, setOpenMobile, toggleSidebar, setOpen } = useSidebar(); 
   const { user, loading } = useAuth();
 
   const handleLogout = async () => {
@@ -97,20 +97,20 @@ function AppSidebar() {
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile) {
     return (
         <Sidebar>
-            <SidebarHeader className={cn("items-center", !open && "justify-center")}>
+            <SidebarHeader className={cn("items-center p-2", !open && "justify-center")}>
                  {open ? (
                     <Skeleton className="h-8 w-32" />
                  ) : (
                     <Skeleton className="h-8 w-8 rounded-full" />
                  )}
             </SidebarHeader>
-            <SidebarSeparator className="mb-2"/>
+            <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
                 <SidebarMenu>
                     {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
                 </SidebarMenu>
             </SidebarContent>
-            <SidebarSeparator />
+            <SidebarSeparator className="mt-auto mx-2" />
             <SidebarFooter className="py-2">
                 <SidebarMenu>
                      <SidebarMenuSkeleton showIcon={open} />
@@ -124,36 +124,31 @@ function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader
-        className={cn(
-          isMobile
-            ? "justify-center items-center mb-2" // Mobile: centers logo
-            : open // Desktop expanded
-              ? "flex flex-row justify-between items-center" // Desktop expanded: logo left, trigger right
-              : "justify-center items-center" // Desktop collapsed: centers icon
-        )}
-      >
-        {isMobile ? (
-          <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
+      {isMobile ? (
+        // Mobile Sidebar Header (Sheet will provide its own 'X' close)
+        <SidebarHeader className="flex justify-center items-center mb-2">
+          <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-        ) : open ? ( // Desktop Expanded
-          <>
-            <Link href="/" passHref aria-label="Sprout Home" className="block">
-              <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
-            </Link>
-            <SidebarTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <PanelLeft />
-                <span className="sr-only">Collapse sidebar</span>
-              </Button>
-            </SidebarTrigger>
-          </>
-        ) : ( // Desktop Collapsed
+        </SidebarHeader>
+      ) : open ? (
+        // Desktop Expanded Sidebar Header
+        <SidebarHeader className="flex items-center p-2">
+          <Link href="/" passHref aria-label="Sprout Home" className="block">
+            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+          </Link>
+           {/* The SidebarTrigger to collapse is typically outside or handled by keyboard */}
+        </SidebarHeader>
+      ) : (
+        // Desktop Collapsed Sidebar Header
+        <SidebarHeader className="flex justify-center items-center p-2">
+           {/* Clicking the sidebar or rail usually expands it; or a trigger in main content area */}
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
-        )}
-      </SidebarHeader>
-      <SidebarSeparator className="mb-2 mt-0"/>
+        </SidebarHeader>
+      )}
+
+      <SidebarSeparator className="mb-2 mx-2"/> 
+      
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
@@ -173,7 +168,7 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user || isMobile) && <SidebarSeparator />}
+      {(!loading || user || isMobile) && <SidebarSeparator className="mt-auto mx-2" />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
@@ -220,7 +215,7 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
            )}
-           {(loading && !AUTH_ROUTES.includes(pathname)) && (
+           {(loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open)) && (
             <>
               <SidebarMenuSkeleton showIcon={open || isMobile} />
               <SidebarMenuSkeleton showIcon={open || isMobile} />
@@ -270,3 +265,5 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
