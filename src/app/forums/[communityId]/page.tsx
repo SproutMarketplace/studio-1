@@ -3,7 +3,7 @@
 
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { PlusCircle, UserPlus, MessagesSquare } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
