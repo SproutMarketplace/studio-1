@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -23,26 +24,14 @@ export function PlantCard({ plant }: PlantCardProps) {
     });
   };
 
-  const getTradeTypeText = (type: Plant["type"]) => {
-    switch (type) {
-      case "sale":
-        return "For Sale";
-      case "trade":
-        return "For Trade";
-      case "sale_trade":
-        return "Sale or Trade";
-      default:
-        return "";
-    }
-  };
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
-      case "trade":
-        return "bg-yellow-500 hover:bg-yellow-600"; // Example yellow from tailwind palette
       case "for sale":
-        return "bg-primary hover:bg-primary/90"; // Default primary color
+        return "bg-primary text-primary-foreground hover:bg-primary/90";
+      case "for trade":
+        return "bg-accent text-accent-foreground hover:bg-accent/90";
       default:
-        return "bg-secondary hover:bg-secondary/80"; // Default secondary for other tags
+        return "bg-secondary text-secondary-foreground hover:bg-secondary/80";
     }
   };
 
@@ -64,21 +53,21 @@ export function PlantCard({ plant }: PlantCardProps) {
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold">{plant.name}</CardTitle>
           {plant.price && (
-            <Badge variant="secondary" className="text-lg">
+            <Badge variant="outline" className="text-lg border-primary text-primary">
               ${plant.price}
             </Badge>
           )}
-
         </div>
-        {/* This badge should be inside the div with other badges if they are inline */}
-        {/* <Badge variant="default" className={`mb-2 ${getTagColor(getTradeTypeText(plant.type))}`}>
-          {getTradeTypeText(plant.type)}
-        </Badge> */}
-        {plant.tags && plant.tags.map(tag => (
- <Badge key={tag} variant="default" className={`mb-2 mr-1 ${getTagColor(tag)}`}>
-          {tag}
-        </Badge>
-        ))} {/* Close the map here */}
+        
+        {plant.tags && plant.tags.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1">
+            {plant.tags.map(tag => (
+              <Badge key={tag} variant="default" className={`${getTagColor(tag)}`}>
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-3">
           {plant.description}
@@ -101,4 +90,3 @@ export function PlantCard({ plant }: PlantCardProps) {
     </Card>
   );
 }
-
