@@ -121,28 +121,23 @@ function AppSidebar() {
     );
   }
 
-
   return (
     <Sidebar>
       {isMobile ? (
-        // Mobile Sidebar Header (Sheet will provide its own 'X' close)
         <SidebarHeader className="flex justify-center items-center mb-2">
           <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         </SidebarHeader>
       ) : open ? (
-        // Desktop Expanded Sidebar Header
-        <SidebarHeader className="flex items-center p-2">
+        <SidebarHeader className="flex items-center justify-between p-2">
           <Link href="/" passHref aria-label="Sprout Home" className="block">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-           {/* The SidebarTrigger to collapse is typically outside or handled by keyboard */}
+          <SidebarTrigger />
         </SidebarHeader>
       ) : (
-        // Desktop Collapsed Sidebar Header
         <SidebarHeader className="flex justify-center items-center p-2">
-           {/* Clicking the sidebar or rail usually expands it; or a trigger in main content area */}
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         </SidebarHeader>
       )}
@@ -265,5 +260,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
     
