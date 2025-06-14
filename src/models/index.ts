@@ -30,8 +30,20 @@ export interface UserProfile {
   updatedAt?: Timestamp;
 }
 
+export interface Community {
+  id?: string; // Firestore document ID
+  name: string;
+  description: string;
+  creatorId: string; // UID of the user who created it
+  memberCount?: number; // Denormalized, can be updated with a counter
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  // Future fields: bannerImageUrl, rules, etc.
+}
+
 export interface ForumPost {
   id?: string; // Firestore document ID
+  communityId: string; // ID of the parent Community
   title: string;
   content: string;
   authorId: string;

@@ -8,8 +8,8 @@ import type { ReactNode } from "react";
 import {
   Award,
   Heart,
-  MessageCircle, // Kept for actual messages page
-  MessagesSquare, // New icon for Forums
+  MessageCircle, 
+  MessagesSquare, 
   PanelLeft,
   PlusSquare,
   ShoppingBag,
@@ -57,7 +57,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { href: "/", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
   { href: "/list-plant", icon: PlusSquare, label: "List a Plant", tooltip: "Sell or Trade" },
-  { href: "/forums", icon: MessagesSquare, label: "Forums", tooltip: "Community Discussions" },
+  { href: "/forums", icon: MessagesSquare, label: "Community Forums", tooltip: "Community Discussions" },
   { href: "/wishlist", icon: Heart, label: "Wishlist", tooltip: "Your Saved Plants" },
   { href: "/messages", icon: MessageCircle, label: "Messages", tooltip: "Your Conversations" },
   { href: "/rewards", icon: Award, label: "Rewards", tooltip: "Your Points & Badges" },
