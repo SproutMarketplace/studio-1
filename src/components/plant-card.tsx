@@ -29,14 +29,14 @@ export function PlantCard({ plant }: PlantCardProps) {
       case "for sale":
         return "bg-primary text-white hover:bg-primary/90";
       case "for trade":
-        return "bg-[#664121] text-white hover:bg-[#52341A]"; // Dark brown with white text
+        return "bg-[#664121] text-white hover:bg-[#52341A]"; 
       default:
-        return "bg-secondary text-white hover:bg-secondary/80"; // Other tags with white text
+        return "bg-secondary text-white hover:bg-secondary/80"; 
     }
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-all hover:shadow-xl">
+    <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-all hover:shadow-xl group">
       <CardHeader className="p-0">
         <div className="relative w-full h-48 md:h-56">
           <Image
@@ -53,7 +53,7 @@ export function PlantCard({ plant }: PlantCardProps) {
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold">{plant.name}</CardTitle>
           {plant.price && (
-            <Badge variant="outline" className="text-lg border-primary text-primary">
+            <Badge variant="default" className="text-lg">
               ${plant.price}
             </Badge>
           )}
@@ -62,7 +62,7 @@ export function PlantCard({ plant }: PlantCardProps) {
         {plant.tags && plant.tags.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1">
             {plant.tags.map(tag => (
-              <Badge key={tag} variant="default" className={`${getTagColor(tag)}`}>
+              <Badge key={tag} className={`${getTagColor(tag)}`}>
                 {tag}
               </Badge>
             ))}
@@ -82,8 +82,8 @@ export function PlantCard({ plant }: PlantCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 border-t">
-        <Button variant="outline" size="sm" className="w-full group" onClick={handleAddToWishlist}>
-          <Heart className="w-4 h-4 mr-2 group-hover:fill-destructive group-hover:text-destructive transition-colors" />
+        <Button variant="outline" size="sm" className="w-full group/button" onClick={handleAddToWishlist}>
+          <Heart className="w-4 h-4 mr-2 group-hover/button:fill-destructive group-hover/button:text-destructive transition-colors" />
           Add to Wishlist
         </Button>
       </CardFooter>
