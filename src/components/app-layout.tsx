@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   Award,
@@ -67,7 +67,7 @@ const mainNavItems: NavItem[] = [
 function AppSidebar() {
   const pathname = usePathname();
   const { toast } = useToast();
-  const { open, isMobile, setOpenMobile, toggleSidebar, setOpen } = useSidebar(); 
+  const { open, isMobile, setOpenMobile, toggleSidebar } = useSidebar(); 
   const { user, loading } = useAuth();
 
   const handleLogout = async () => {
@@ -94,32 +94,59 @@ function AppSidebar() {
     }
   };
 
-  if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile) {
-    return (
+  if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile && !open) {
+    // Show skeleton for collapsed desktop sidebar during auth loading
+     return (
         <Sidebar>
-            <SidebarHeader className={cn("items-center p-2", !open && "justify-center")}>
-                 {open ? (
-                    <Skeleton className="h-8 w-32" />
-                 ) : (
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                 )}
+            <SidebarHeader className={cn("items-center p-2 justify-center")}>
+                <Skeleton className="h-8 w-8 rounded-full" />
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
                 <SidebarMenu>
-                    {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
+                    {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={false} /> ))}
                 </SidebarMenu>
             </SidebarContent>
             <SidebarSeparator className="mt-auto mx-2" />
             <SidebarFooter className="py-2">
                 <SidebarMenu>
-                     <SidebarMenuSkeleton showIcon={open} />
-                     <SidebarMenuSkeleton showIcon={open} />
+                     <SidebarMenuSkeleton showIcon={false} />
+                     <SidebarMenuSkeleton showIcon={false} />
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
     );
   }
+  
+  if (loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open)) {
+    // Show expanded skeleton for mobile or expanded desktop sidebar during auth loading
+    return (
+        <Sidebar>
+            <SidebarHeader className={cn("items-center p-2", (open || isMobile) && "justify-between")}>
+                 {(open || isMobile) ? (
+                    <Skeleton className="h-8 w-32" />
+                 ) : (
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                 )}
+                 {(open || isMobile) && <Skeleton className="h-7 w-7" />}
+            </SidebarHeader>
+            <SidebarSeparator className="mb-2 mx-2"/>
+            <SidebarContent>
+                <SidebarMenu>
+                    {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={true} /> ))}
+                </SidebarMenu>
+            </SidebarContent>
+            <SidebarSeparator className="mt-auto mx-2" />
+            <SidebarFooter className="py-2">
+                <SidebarMenu>
+                     <SidebarMenuSkeleton showIcon={true} />
+                     <SidebarMenuSkeleton showIcon={true} />
+                </SidebarMenu>
+            </SidebarFooter>
+        </Sidebar>
+    );
+  }
+
 
   return (
     <Sidebar>
@@ -128,6 +155,7 @@ function AppSidebar() {
           <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
+          {/* SheetClose is implicitly part of SheetContent in ui/sidebar.tsx -> ui/sheet.tsx */}
         </SidebarHeader>
       ) : open ? (
         <SidebarHeader className="flex items-center justify-between p-2">
@@ -138,7 +166,11 @@ function AppSidebar() {
         </SidebarHeader>
       ) : (
         <SidebarHeader className="flex justify-center items-center p-2">
-          <SproutIcon className="text-primary size-8" aria-hidden="true" />
+          <SidebarTrigger asChild>
+            <button aria-label="Expand sidebar">
+              <SproutIcon className="text-primary size-8" aria-hidden="true" />
+            </button>
+          </SidebarTrigger>
         </SidebarHeader>
       )}
 
@@ -210,7 +242,7 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
            )}
-           {(loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open)) && (
+           {(loading && (isMobile || open) && !AUTH_ROUTES.includes(pathname)) && (
             <>
               <SidebarMenuSkeleton showIcon={open || isMobile} />
               <SidebarMenuSkeleton showIcon={open || isMobile} />
@@ -241,16 +273,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <SidebarInset className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-10 flex items-center h-14 px-4 border-b bg-background/80 backdrop-blur-sm md:hidden">
           <SidebarTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button variant="ghost" size="icon">
               <PanelLeft />
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SidebarTrigger>
-          <div className="flex items-center ml-4">
-            <Link href="/" passHref aria-label="Sprout Home">
-              <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
-            </Link>
-          </div>
+          <Link href="/" passHref aria-label="Sprout Home" className="ml-4">
+            <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
+          </Link>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           <AuthGuard>{children}</AuthGuard>
@@ -261,3 +291,5 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 }
     
+
+  
