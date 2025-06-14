@@ -27,11 +27,11 @@ export function PlantCard({ plant }: PlantCardProps) {
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
       case "for sale":
-        return "bg-primary text-primary-foreground hover:bg-primary/90";
+        return "bg-primary text-white hover:bg-primary/90";
       case "for trade":
         return "bg-[#664121] text-white hover:bg-[#52341A]"; 
       default:
-        return "bg-secondary text-secondary-foreground hover:bg-secondary/80"; 
+        return "bg-secondary text-white hover:bg-secondary/80"; 
     }
   };
 
@@ -62,7 +62,7 @@ export function PlantCard({ plant }: PlantCardProps) {
         {plant.tags && plant.tags.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1">
             {plant.tags.map(tag => (
-              <Badge key={tag} className={`${getTagColor(tag)} text-white`}>
+              <Badge key={tag} className={`${getTagColor(tag)}`}>
                 {tag}
               </Badge>
             ))}
@@ -82,8 +82,13 @@ export function PlantCard({ plant }: PlantCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 border-t">
-        <Button variant="outline" size="sm" className="w-full group/button" onClick={handleAddToWishlist}>
-          <Heart className="w-4 h-4 mr-2 group-hover/button:fill-secondary group-hover/button:text-secondary-foreground transition-colors" />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full group/button hover:bg-muted hover:text-muted-foreground" 
+          onClick={handleAddToWishlist}
+        >
+          <Heart className="w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive" />
           Add to Wishlist
         </Button>
       </CardFooter>
