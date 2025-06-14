@@ -126,7 +126,7 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "mb-4" // Mobile: only margin-bottom. Height and padding come from SheetContent.
+            ? "mb-4 flex justify-center items-center" 
             : open
               ? "items-center px-2 h-[60px]" 
               : "justify-center px-2 items-center h-[60px]" 
@@ -137,7 +137,7 @@ function AppSidebar() {
             <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            {/* The Sheet's default close button will be used. No explicit X here. */}
+            {/* The Sheet's default close button will be used. */}
           </>
         ) : open ? (
           <Link href="/" passHref aria-label="Sprout Home" className="px-2">
@@ -263,3 +263,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
