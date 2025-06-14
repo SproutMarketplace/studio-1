@@ -104,7 +104,7 @@ function AppSidebar() {
                     <Skeleton className="h-8 w-8 rounded-full" />
                  )}
             </SidebarHeader>
-            <SidebarSeparator />
+            <SidebarSeparator className="mb-2"/>
             <SidebarContent>
                 <SidebarMenu>
                     {[...Array(mainNavItems.length)].map((_, i) => ( <SidebarMenuSkeleton key={i} showIcon={open} /> ))}
@@ -127,7 +127,7 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "flex justify-center items-center mb-4" 
+            ? "justify-center items-center mb-2" // Adjusted margin for mobile
             : open
               ? "items-center px-2 h-[60px]" 
               : "justify-center px-2 items-center h-[60px]" 
@@ -145,7 +145,7 @@ function AppSidebar() {
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
-      <SidebarSeparator /> {/* This is the separator between logo and menu */}
+      <SidebarSeparator className="mb-2"/> {/* This is the separator between logo and menu, now with bottom margin */}
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
