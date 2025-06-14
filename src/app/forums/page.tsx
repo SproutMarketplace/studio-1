@@ -297,14 +297,14 @@ export default function CommunityForumsPage() {
                       {currentStep === 1 && (
                         <>
                           <DialogClose asChild>
-                            <Button type="button" variant="outline">Cancel</Button>
+                            <Button type="button" variant="outline" className="hover:bg-muted hover:text-muted-foreground">Cancel</Button>
                           </DialogClose>
                           <Button type="button" onClick={handleNextStep}>Next</Button>
                         </>
                       )}
                       {currentStep === 2 && (
                         <>
-                          <Button type="button" variant="outline" onClick={handlePreviousStep}>
+                          <Button type="button" variant="outline" onClick={handlePreviousStep} className="hover:bg-muted hover:text-muted-foreground">
                              <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                           </Button>
                           <Button type="submit">Create Community</Button>
@@ -349,7 +349,7 @@ export default function CommunityForumsPage() {
               </CardContent>
               <CardFooter>
                 <Link href={`/forums/${community.id}`} className="w-full">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full hover:bg-muted hover:text-muted-foreground">
                     View Community
                   </Button>
                 </Link>
@@ -371,5 +371,3 @@ export default function CommunityForumsPage() {
     </div>
   );
 }
-
-    

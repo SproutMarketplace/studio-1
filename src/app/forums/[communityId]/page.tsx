@@ -110,7 +110,7 @@ export default function CommunityPage() {
               </CardContent> */}
               <CardFooter>
                  {/* <Link href={`/forums/${communityId}/post/${post.id}`}> */}
-                    <Button variant="outline" size="sm">View Post</Button>
+                    <Button variant="outline" size="sm" className="hover:bg-muted hover:text-muted-foreground">View Post</Button>
                  {/* </Link> */}
               </CardFooter>
             </Card>
