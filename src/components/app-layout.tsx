@@ -127,29 +127,25 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "flex justify-center items-center mb-4" // Centering logo on mobile
+            ? "flex justify-center items-center mb-4" 
             : open
               ? "items-center px-2 h-[60px]" 
               : "justify-center px-2 items-center h-[60px]" 
         )}
       >
         {isMobile ? (
-          // Mobile logo - centered by parent's flex justify-center
           <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-          // The Sheet's default close button will be used.
         ) : open ? (
-          // Desktop expanded logo
           <Link href="/" passHref aria-label="Sprout Home" className="px-2">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : (
-          // Desktop collapsed icon
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
-      <SidebarSeparator /> {/* New separator added here */}
+      <SidebarSeparator /> {/* This is the separator between logo and menu */}
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
@@ -169,7 +165,7 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user || isMobile) && <SidebarSeparator />}
+      {(!loading || user || isMobile) && <SidebarSeparator />} {/* This is the separator above profile/login */}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
