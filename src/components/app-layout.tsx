@@ -124,10 +124,10 @@ function AppSidebar() {
         <Sidebar>
             <SidebarHeader className={cn(
                 "p-2 flex items-center",
-                 isMobile ? "justify-center mb-2" : (open ? "justify-between" : "justify-center") 
+                 isMobile ? "justify-center mb-2" : (open ? "relative w-full" : "justify-center") // Adjusted for expanded desktop
               )}>
                  <Skeleton className="h-8 w-32" /> 
-                 { (open && !isMobile) && <Skeleton className="h-7 w-7 rounded-md" /> }
+                 { (open && !isMobile) && <Skeleton className="h-7 w-7 rounded-md absolute top-2 right-2" /> }
                  { isMobile && <div className="w-7 h-7" /> } 
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
@@ -151,8 +151,11 @@ function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className={cn(
-        "p-2 flex items-center",
-        isMobile ? "justify-center mb-2" : (open ? "justify-between" : "justify-center")
+        "p-2", // Base padding
+        isMobile ? "flex items-center justify-center mb-2" : // Mobile: centered logo
+        (open ? 
+          "relative flex items-center w-full" : // Desktop Expanded: relative, flex, items-center, full-width for logo
+          "flex items-center justify-center")   // Desktop Collapsed: centered icon
       )}>
         {isMobile ? (
           <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
@@ -163,11 +166,18 @@ function AppSidebar() {
             <Link href="/" passHref aria-label="Sprout Home">
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-7 w-7" aria-label="Close sidebar panel">
+            {/* "X" button for desktop expanded sidebar, absolutely positioned */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setOpen(false)} 
+              className="h-7 w-7 absolute top-2 right-2" // Positioned within header padding
+              aria-label="Close sidebar panel"
+            >
               <X />
             </Button>
           </>
-        ) : ( // Desktop Collapsed Sidebar Header
+        ) : ( // Desktop Collapsed Sidebar Header: Clickable icon to open
           <Button variant="ghost" size="icon" onClick={() => setOpen(true)} className="h-8 w-8" aria-label="Open sidebar panel">
             <SproutIcon className="text-primary size-8" aria-hidden="true" />
           </Button>
@@ -250,7 +260,8 @@ function AppSidebar() {
 
 function PersistentHeader() {
   const { open, openMobile, isMobile } = useSidebar();
-  const shouldShowHeaderElements = !(isMobile ? openMobile : open);
+  // Show header elements only if the sidebar is closed
+  const shouldShowHeaderElements = !(isMobile ? openMobile : open); 
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
@@ -264,11 +275,12 @@ function PersistentHeader() {
             </SidebarTrigger>
           </div>
           <Link href="/" passHref aria-label="Sprout Home">
+            {/* Increased size of the logo in the navbar */}
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         </>
       )}
-      {/* Placeholder to maintain header height even if elements are hidden */}
+      {/* Placeholder to maintain header height even if elements are hidden, also ensures flex centering works */}
       {!shouldShowHeaderElements && <div className="w-full h-full" />} 
     </header>
   );
