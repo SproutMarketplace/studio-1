@@ -158,17 +158,17 @@ function AppSidebar() {
           <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-        ) : open ? (
+        ) : open ? ( // Desktop Expanded Sidebar Header
           <>
             <Link href="/" passHref aria-label="Sprout Home">
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-7 w-7" aria-label="Close sidebar">
+            <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-7 w-7" aria-label="Close sidebar panel">
               <X />
             </Button>
           </>
-        ) : (
-          <Button variant="ghost" size="icon" onClick={() => setOpen(true)} className="h-8 w-8" aria-label="Open sidebar">
+        ) : ( // Desktop Collapsed Sidebar Header
+          <Button variant="ghost" size="icon" onClick={() => setOpen(true)} className="h-8 w-8" aria-label="Open sidebar panel">
             <SproutIcon className="text-primary size-8" aria-hidden="true" />
           </Button>
         )}
@@ -264,7 +264,7 @@ function PersistentHeader() {
             </SidebarTrigger>
           </div>
           <Link href="/" passHref aria-label="Sprout Home">
-            <Image src="/logo.png" alt="Sprout Logo" width={100} height={28} priority />
+            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         </>
       )}
@@ -300,6 +300,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-    
-
     
