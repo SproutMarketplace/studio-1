@@ -17,7 +17,7 @@ import {
   User as UserIcon,
   LogOut,
   LogIn as LogInIcon,
-  X, 
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -36,7 +36,8 @@ import {
   SidebarSeparator,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
-import { SheetClose, SheetTitle } from "@/components/ui/sheet"; 
+// SheetClose is not explicitly needed here if we rely on Sheet's default X for mobile.
+// For desktop, we add our own X button.
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -67,7 +68,7 @@ const mainNavItems: NavItem[] = [
 function AppSidebar() {
   const pathname = usePathname();
   const { toast } = useToast();
-  const { open, isMobile, setOpenMobile, toggleSidebar } = useSidebar(); 
+  const { open, isMobile, setOpenMobile, toggleSidebar, setOpen } = useSidebar();
   const { user, loading } = useAuth();
 
   const handleLogout = async () => {
@@ -78,6 +79,7 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
+      else setOpen(false); // Close sidebar on logout for desktop too
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -94,12 +96,23 @@ function AppSidebar() {
     }
   };
 
+  const handleDesktopSidebarClose = () => {
+    setOpen(false);
+  };
+  
+  const handleDesktopSidebarToggle = () => {
+    setOpen(!open);
+  };
+
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile && !open) {
-    // Show skeleton for collapsed desktop sidebar during auth loading
      return (
         <Sidebar>
             <SidebarHeader className={cn("items-center p-2 justify-center")}>
-                <Skeleton className="h-8 w-8 rounded-full" />
+                <SidebarTrigger asChild>
+                    <button aria-label="Expand sidebar">
+                        <SproutIcon className="text-primary size-8" aria-hidden="true" />
+                    </button>
+                </SidebarTrigger>
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
@@ -119,16 +132,19 @@ function AppSidebar() {
   }
   
   if (loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open)) {
-    // Show expanded skeleton for mobile or expanded desktop sidebar during auth loading
     return (
         <Sidebar>
-            <SidebarHeader className={cn("items-center p-2", (open || isMobile) && "justify-between")}>
+            <SidebarHeader className={cn(
+                "p-2",
+                isMobile ? "flex justify-center items-center" : "flex items-center justify-between"
+              )}>
                  {(open || isMobile) ? (
                     <Skeleton className="h-8 w-32" />
                  ) : (
                     <Skeleton className="h-8 w-8 rounded-full" />
                  )}
-                 {(open || isMobile) && <Skeleton className="h-7 w-7" />}
+                 {(open || isMobile) && !isMobile && <Skeleton className="h-7 w-7" />}
+                 {isMobile && <div className="w-7 h-7" />} {/* Placeholder for mobile X */}
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
@@ -152,19 +168,21 @@ function AppSidebar() {
     <Sidebar>
       {isMobile ? (
         <SidebarHeader className="flex justify-center items-center mb-2">
+          {/* Mobile Sheet provides its own X, logo is centered */}
           <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebar}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-          {/* SheetClose is implicitly part of SheetContent in ui/sidebar.tsx -> ui/sheet.tsx */}
         </SidebarHeader>
-      ) : open ? (
+      ) : open ? ( // Desktop Expanded
         <SidebarHeader className="flex items-center justify-between p-2">
           <Link href="/" passHref aria-label="Sprout Home" className="block">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
-          <SidebarTrigger />
+          <Button variant="ghost" size="icon" onClick={handleDesktopSidebarClose} className="h-7 w-7" aria-label="Close sidebar">
+            <X />
+          </Button>
         </SidebarHeader>
-      ) : (
+      ) : ( // Desktop Collapsed
         <SidebarHeader className="flex justify-center items-center p-2">
           <SidebarTrigger asChild>
             <button aria-label="Expand sidebar">
@@ -174,12 +192,12 @@ function AppSidebar() {
         </SidebarHeader>
       )}
 
-      <SidebarSeparator className="mb-2 mx-2"/> 
+      <SidebarSeparator className="mb-2 mx-2"/>
       
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
-            <SidebarMenuItem key={item.href} onClick={closeMobileSidebar}>
+            <SidebarMenuItem key={item.href} onClick={isMobile ? closeMobileSidebar : undefined}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
@@ -195,13 +213,13 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user || isMobile) && <SidebarSeparator className="mt-auto mx-2" />}
+      {(!loading || user || isMobile || open ) && <SidebarSeparator className="mt-auto mx-2" />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
            {user && !loading && ( 
             <>
-              <SidebarMenuItem onClick={closeMobileSidebar}>
+              <SidebarMenuItem onClick={isMobile ? closeMobileSidebar : undefined}>
                 <Link href="/profile" passHref legacyBehavior>
                   <SidebarMenuButton
                     isActive={pathname === "/profile"}
@@ -229,7 +247,7 @@ function AppSidebar() {
             </>
            )}
            {(!user && !loading) && (
-            <SidebarMenuItem onClick={closeMobileSidebar}>
+            <SidebarMenuItem onClick={isMobile ? closeMobileSidebar : undefined}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === "/login"}
@@ -268,14 +286,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={true}> {/* Default open for desktop */}
       <AppSidebar />
       <SidebarInset className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-10 flex items-center h-14 px-4 border-b bg-background/80 backdrop-blur-sm md:hidden">
+        {/* Persistent Top Header for all views (mobile and desktop) */}
+        <header className="sticky top-0 z-10 flex items-center h-14 px-4 border-b bg-background/80 backdrop-blur-sm">
           <SidebarTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" aria-label="Toggle Menu">
               <PanelLeft />
-              <span className="sr-only">Toggle Menu</span>
             </Button>
           </SidebarTrigger>
           <Link href="/" passHref aria-label="Sprout Home" className="ml-4">
@@ -291,5 +309,3 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 }
     
-
-  
