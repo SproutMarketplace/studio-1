@@ -77,7 +77,7 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
-      else setOpen(false);
+      // No need to setOpen(false) for desktop here, as logout doesn't mean close sidebar
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -88,26 +88,26 @@ function AppSidebar() {
     }
   };
 
-  const closeSidebarPanel = () => {
+  const closeMobileSidebarPanel = () => {
     if (isMobile) {
       setOpenMobile(false);
-    } else {
-      setOpen(false);
+    }
+  };
+
+  const toggleDesktopSidebar = () => {
+    if (!isMobile) {
+      setOpen(!open);
     }
   };
   
-  const toggleDesktopSidebar = () => {
-    setOpen(!open);
-  }
-
   // Skeleton for loading state when sidebar is initially collapsed on desktop
   if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile && !open && !openMobile) {
      return (
         <Sidebar>
             <SidebarHeader className={cn("items-center p-2 justify-center")}>
-                 <button aria-label="Expand sidebar">
+                 <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open sidebar">
                     <SproutIcon className="text-primary size-8" aria-hidden="true" />
-                </button>
+                </Button>
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
             <SidebarContent>
@@ -135,7 +135,7 @@ function AppSidebar() {
                 isMobile ? "justify-center" : "justify-between" 
               )}>
                  <Skeleton className="h-8 w-32" /> 
-                 { (open || isMobile) && !isMobile && <Skeleton className="h-7 w-7 rounded-full" /> }
+                 { (open || isMobile) && !isMobile && <Skeleton className="h-7 w-7 rounded-md" /> }
                  { isMobile && <div className="w-7 h-7" /> }
             </SidebarHeader>
             <SidebarSeparator className="mb-2 mx-2"/>
@@ -158,13 +158,12 @@ function AppSidebar() {
   // Actual Sidebar Content
   return (
     <Sidebar>
-      {/* Sidebar Header: Varies by state (mobile, desktop-open, desktop-collapsed) */}
       <SidebarHeader className={cn(
         "p-2 flex items-center",
         isMobile ? "justify-center" : (open ? "justify-between" : "justify-center")
       )}>
         {isMobile ? ( // Mobile: Centered Logo (Sheet provides X)
-          <Link href="/" passHref aria-label="Sprout Home" onClick={closeSidebarPanel}>
+          <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : open ? ( // Desktop Expanded: Logo left, X button right
@@ -172,7 +171,7 @@ function AppSidebar() {
             <Link href="/" passHref aria-label="Sprout Home">
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            <Button variant="ghost" size="icon" onClick={closeSidebarPanel} className="h-7 w-7" aria-label="Close sidebar">
+            <Button variant="ghost" size="icon" onClick={toggleDesktopSidebar} className="h-7 w-7" aria-label="Close sidebar">
               <X />
             </Button>
           </>
@@ -188,7 +187,7 @@ function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {mainNavItems.map((item) => (
-            <SidebarMenuItem key={item.href} onClick={isMobile ? closeSidebarPanel : undefined}>
+            <SidebarMenuItem key={item.href} onClick={isMobile ? closeMobileSidebarPanel : undefined}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
@@ -210,7 +209,7 @@ function AppSidebar() {
         <SidebarMenu>
            {user && !loading && ( 
             <>
-              <SidebarMenuItem onClick={isMobile ? closeSidebarPanel : undefined}>
+              <SidebarMenuItem onClick={isMobile ? closeMobileSidebarPanel : undefined}>
                 <Link href="/profile" passHref legacyBehavior>
                   <SidebarMenuButton
                     isActive={pathname === "/profile"}
@@ -238,7 +237,7 @@ function AppSidebar() {
             </>
            )}
            {(!user && !loading) && (
-            <SidebarMenuItem onClick={isMobile ? closeSidebarPanel : undefined}>
+            <SidebarMenuItem onClick={isMobile ? closeMobileSidebarPanel : undefined}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
                   isActive={pathname === "/login"}
@@ -260,24 +259,17 @@ function AppSidebar() {
 // New component for the persistent top header
 function PersistentHeader() {
   const { open, openMobile, isMobile } = useSidebar();
-  const sidebarIsEffectivelyOpen = isMobile ? openMobile : open;
-
+  // The top header's trigger and logo should always be visible in this refined approach.
   return (
     <header className="sticky top-0 z-10 flex items-center h-14 px-4 border-b bg-background/80 backdrop-blur-sm">
-      {!sidebarIsEffectivelyOpen && (
-        <>
-          <SidebarTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Toggle Menu">
-              <PanelLeft />
-            </Button>
-          </SidebarTrigger>
-          <Link href="/" passHref aria-label="Sprout Home" className="ml-4">
-            <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
-          </Link>
-        </>
-      )}
-      {/* Placeholder to keep header height consistent even if content is hidden */}
-      {sidebarIsEffectivelyOpen && <div className="w-full h-full" />} 
+      <SidebarTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Toggle Menu">
+          <PanelLeft />
+        </Button>
+      </SidebarTrigger>
+      <Link href="/" passHref aria-label="Sprout Home" className="ml-4">
+        <Image src="/logo.png" alt="Sprout Logo" width={90} height={25} priority />
+      </Link>
     </header>
   );
 }
@@ -309,6 +301,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-    
-
     
