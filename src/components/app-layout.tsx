@@ -33,7 +33,7 @@ import {
   SidebarTrigger,
   useSidebar,
   SidebarFooter,
-  SidebarSeparator,
+  SidebarSeparator, // Ensure SidebarSeparator is imported
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import { SheetClose, SheetTitle } from "@/components/ui/sheet"; 
@@ -127,24 +127,25 @@ function AppSidebar() {
       <SidebarHeader
         className={cn(
           isMobile
-            ? "flex justify-center items-center mb-4" 
+            ? "flex justify-center items-center mb-4" // Centering logo on mobile
             : open
               ? "items-center px-2 h-[60px]" 
               : "justify-center px-2 items-center h-[60px]" 
         )}
       >
         {isMobile ? (
-          <>
-            <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
-              <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
-            </Link>
-            {/* The Sheet's default close button will be used. */}
-          </>
+          // Mobile logo - centered by parent's flex justify-center
+          <Link href="/" passHref aria-label="Sprout Home" className="flex items-center" onClick={closeMobileSidebar}>
+            <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+          </Link>
+          // The Sheet's default close button will be used.
         ) : open ? (
+          // Desktop expanded logo
           <Link href="/" passHref aria-label="Sprout Home" className="px-2">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : (
+          // Desktop collapsed icon
           <SproutIcon className="text-primary size-8" aria-hidden="true" />
         )}
       </SidebarHeader>
@@ -168,7 +169,7 @@ function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       
-      {(!loading || user || isMobile) && <SidebarSeparator />} {/* Adjusted condition for dev mode bypass */}
+      {(!loading || user || isMobile) && <SidebarSeparator />}
       
       <SidebarFooter className="py-2">
         <SidebarMenu>
@@ -201,7 +202,7 @@ function AppSidebar() {
               </SidebarMenuItem>
             </>
            )}
-           {(!user && !loading) && (  // Show Sign In if not logged in AND not loading
+           {(!user && !loading) && (
             <SidebarMenuItem onClick={closeMobileSidebar}>
               <Link href="/login" passHref legacyBehavior>
                 <SidebarMenuButton
@@ -215,7 +216,7 @@ function AppSidebar() {
               </Link>
             </SidebarMenuItem>
            )}
-           {(loading && !AUTH_ROUTES.includes(pathname)) && ( // Show skeletons if loading and not on an auth route
+           {(loading && !AUTH_ROUTES.includes(pathname)) && (
             <>
               <SidebarMenuSkeleton showIcon={open || isMobile} />
               <SidebarMenuSkeleton showIcon={open || isMobile} />
