@@ -2,9 +2,9 @@
 "use client";
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase"; // Added storage
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore"; // Firestore methods
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
@@ -14,9 +14,9 @@ export interface UserProfile {
   name?: string;
   bio?: string;
   avatarUrl?: string;
-  location?: string; 
-  createdAt?: any; 
-  updatedAt?: any; 
+  location?: string;
+  createdAt?: any; // Firestore ServerTimestamp
+  updatedAt?: any; // Firestore ServerTimestamp
 }
 
 interface AuthContextType {
@@ -51,55 +51,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser | null) => {
     if (firebaseUser) {
       const userDocRef = doc(db, "users", firebaseUser.uid);
-      // No try-catch here, will be handled by the caller
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
-      } else {
-        const newProfile: UserProfile = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || "",
-          avatarUrl: firebaseUser.photoURL || "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        await setDoc(userDocRef, newProfile);
-        setProfile(newProfile);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        } else {
+          // Profile doesn't exist, create a basic one
+          const newProfile: UserProfile = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || "",
+            avatarUrl: firebaseUser.photoURL || "",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(userDocRef, newProfile);
+          setProfile(newProfile);
+        }
+      } catch (error) {
+        console.error("Error fetching/creating user profile:", error);
+        setProfile(null); // Set to null on error
       }
     } else {
-      setProfile(null);
+      setProfile(null); // No user, so no profile
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser); // Set user first
-      try {
-        await fetchUserProfile(currentUser);
-      } catch (error) {
-        console.error("Error during initial profile fetch:", error);
-        // Set profile to null or a default state if fetch fails, to avoid inconsistent states
-        setProfile(null); 
-      } finally {
-        setLoading(false); // Ensure loading is set to false in all cases
-      }
+      setUser(currentUser);
+      await fetchUserProfile(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
 
   const refreshUserProfile = useCallback(async () => {
-    if (user) { // Only refresh if there's a user
-      setLoading(true); // Indicate loading state
-      try {
-        await fetchUserProfile(user);
-      } catch (error) {
-        console.error("Error refreshing user profile:", error);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    }
+    setLoading(true);
+    await fetchUserProfile(user);
+    setLoading(false);
   }, [user, fetchUserProfile]);
 
   const updateUserProfileInContext = (updatedProfileData: Partial<UserProfile>) => {
@@ -110,5 +100,3 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-    
