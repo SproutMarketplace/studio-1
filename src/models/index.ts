@@ -28,13 +28,35 @@ export interface UserProfile {
   location?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  // Example for preferences/settings - can be expanded
-  // notificationPreferences?: {
-  //   newMessages?: boolean;
-  //   newOffers?: boolean;
-  // };
-  // plantCareStats?: {
-  //  totalPlantsManaged?: number;
-  //  successfulTrades?: number;
-  // };
 }
+
+export interface ForumPost {
+  id?: string; // Firestore document ID
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string; // Denormalized
+  authorAvatar?: string; // Denormalized
+  category?: string; // e.g., "Questions", "Show Off", "Trade Requests"
+  tags?: string[];
+  imageUrls?: string[]; // Optional for users showing off plants
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastReplyAt?: Timestamp; // To sort by recent activity
+  replyCount?: number; // Denormalized
+  viewCount?: number; // Optional
+}
+
+export interface ForumComment {
+  id?: string; // Firestore document ID
+  postId: string; // ID of the parent ForumPost
+  content: string;
+  authorId: string;
+  authorName: string; // Denormalized
+  authorAvatar?: string; // Denormalized
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  parentCommentId?: string; // For threaded replies, optional
+}
+
+    

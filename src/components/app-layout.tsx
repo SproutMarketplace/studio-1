@@ -8,11 +8,11 @@ import type { ReactNode } from "react";
 import {
   Award,
   Heart,
-  MessageCircle,
+  MessageCircle, // Kept for actual messages page
+  MessagesSquare, // New icon for Forums
   PanelLeft,
   PlusSquare,
   ShoppingBag,
-  Sparkles,
   Sprout as SproutIcon,
   User as UserIcon,
   LogOut,
@@ -57,7 +57,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { href: "/", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
   { href: "/list-plant", icon: PlusSquare, label: "List a Plant", tooltip: "Sell or Trade" },
-  { href: "/ai-finder", icon: Sparkles, label: "AI Plant Finder", tooltip: "Find Similar Plants" },
+  { href: "/forums", icon: MessagesSquare, label: "Forums", tooltip: "Community Discussions" },
   { href: "/wishlist", icon: Heart, label: "Wishlist", tooltip: "Your Saved Plants" },
   { href: "/messages", icon: MessageCircle, label: "Messages", tooltip: "Your Conversations" },
   { href: "/rewards", icon: Award, label: "Rewards", tooltip: "Your Points & Badges" },
@@ -77,7 +77,6 @@ function AppSidebar() {
         description: "You have been successfully logged out.",
       });
       if (isMobile) setOpenMobile(false);
-      // No explicit action needed for desktop 'open' state on logout
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -308,4 +307,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+    
+
     
