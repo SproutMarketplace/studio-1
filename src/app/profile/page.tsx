@@ -10,10 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { mockPlants } from "@/lib/plant-data"; // Keep for other tabs for now
+import { mockPlants } from "@/lib/plant-data"; 
 import { PlantCard } from "@/components/plant-card";
 import { Edit3, List, Mail, MapPin, MessageSquare, Repeat, Save, ShieldCheck, User, Construction, UploadCloud, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth, type UserProfile } from "@/contexts/auth-context"; // Corrected import
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,7 +22,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth as firebaseAuth } from "@/lib/firebase";
 import { updateProfile as updateFirebaseAuthProfile } from "firebase/auth";
-import Image from "next/image"; // For placeholder if needed in other tabs
+import Image from "next/image";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -116,15 +116,13 @@ export default function ProfilePage() {
         });
       }
       
-      updateUserProfileInContext(updatedProfileData); // Update context immediately
+      updateUserProfileInContext(updatedProfileData); 
 
       toast({
         title: "Profile Updated",
         description: "Your profile information has been saved.",
       });
-      setImageFile(null); // Clear staged image file
-      // await refreshUserProfile(); // Optionally re-fetch from server to confirm context is good.
-
+      setImageFile(null); 
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -140,15 +138,12 @@ export default function ProfilePage() {
 
   const handleChangePassword = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Password change logic (e.g., sendPasswordResetEmail) would go here
-    // For now, it's just a placeholder as in the original code
     toast({
       title: "Password Change (Not Implemented)",
       description: "Password change functionality would be here.",
     });
   };
 
-  // Mock data for other tabs - these would be replaced with real data fetching
   const userListings = mockPlants.slice(0, 3);
   const userTrades = mockPlants.slice(3, 5);
 
@@ -197,7 +192,6 @@ export default function ProfilePage() {
           <p className="text-sm text-muted-foreground flex items-center justify-center md:justify-start">
             <MapPin className="w-4 h-4 mr-2" />{displayLocation}
           </p>
-          {/* Removed Edit Profile button from header as edit is in tabs */}
         </div>
       </header>
 
@@ -336,3 +330,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
