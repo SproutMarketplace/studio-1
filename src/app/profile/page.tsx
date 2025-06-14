@@ -10,83 +10,200 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { mockPlants } from "@/lib/plant-data";
+import { mockPlants } from "@/lib/plant-data"; // Keep for other tabs for now
 import { PlantCard } from "@/components/plant-card";
-import { Edit3, List, Mail, MapPin, MessageSquare, Repeat, Save, ShieldCheck, User, Construction } from "lucide-react";
-import Image from "next/image";
+import { Edit3, List, Mail, MapPin, MessageSquare, Repeat, Save, ShieldCheck, User, Construction, UploadCloud, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db, auth as firebaseAuth } from "@/lib/firebase";
+import { updateProfile as updateFirebaseAuthProfile } from "firebase/auth";
+import Image from "next/image"; // For placeholder if needed in other tabs
 
-// Mock user data - in a real app, this would come from your auth context/API
-const mockUser = {
-  name: "Flora Enthusiast",
-  email: "flora.enthusiast@example.com",
-  avatarUrl: "https://placehold.co/100x100.png",
-  bio: "Passionate plant parent, always looking to trade and share green joy! Collector of rare aroids and hoyas.",
-  location: "Greenville, USA"
-};
+const profileFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
+  bio: z.string().max(500, { message: "Bio cannot exceed 500 characters." }).optional(),
+  location: z.string().optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const { user, profile, loading: authLoading, refreshUserProfile, updateUserProfileInContext } = useAuth();
 
-  // Mock data for listings and trades
-  const userListings = mockPlants.slice(0, 3); // Example: first 3 plants
-  const userTrades = mockPlants.slice(3, 5);   // Example: next 2 plants
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleProfileUpdate = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    console.log("Profile updated:", data);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved.",
-    });
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      name: "",
+      bio: "",
+      location: "",
+    },
+  });
+
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        name: profile.name || "",
+        bio: profile.bio || "",
+        location: profile.location || "",
+      });
+      if (profile.avatarUrl) {
+        setImagePreview(profile.avatarUrl);
+      }
+    }
+  }, [profile, form]);
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({ variant: "destructive", title: "Image too large", description: "Please select an image smaller than 2MB." });
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
-  
+
+  const handleProfileUpdate = async (data: ProfileFormValues) => {
+    if (!user) {
+      toast({ variant: "destructive", title: "Not Authenticated", description: "You must be logged in to update your profile." });
+      return;
+    }
+    setIsSaving(true);
+    let newAvatarUrl = profile?.avatarUrl || "";
+
+    try {
+      if (imageFile) {
+        setIsUploading(true);
+        const fStorage = getStorage();
+        const fileRef = storageRef(fStorage, `profilePictures/${user.uid}/${imageFile.name}`);
+        const snapshot = await uploadBytes(fileRef, imageFile);
+        newAvatarUrl = await getDownloadURL(snapshot.ref);
+        setIsUploading(false);
+      }
+
+      const userDocRef = doc(db, "users", user.uid);
+      const updatedProfileData: Partial<UserProfile> = {
+        name: data.name || profile?.name || user.displayName || "",
+        bio: data.bio || profile?.bio || "",
+        location: data.location || profile?.location || "",
+        avatarUrl: newAvatarUrl,
+        updatedAt: serverTimestamp(),
+      };
+      
+      await updateDoc(userDocRef, updatedProfileData);
+
+      // Update Firebase Auth profile as well
+      if (firebaseAuth.currentUser) {
+        await updateFirebaseAuthProfile(firebaseAuth.currentUser, {
+          displayName: updatedProfileData.name,
+          photoURL: newAvatarUrl,
+        });
+      }
+      
+      updateUserProfileInContext(updatedProfileData); // Update context immediately
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved.",
+      });
+      setImageFile(null); // Clear staged image file
+      // await refreshUserProfile(); // Optionally re-fetch from server to confirm context is good.
+
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "Could not update your profile. Please try again.",
+      });
+    } finally {
+      setIsUploading(false);
+      setIsSaving(false);
+    }
+  };
+
   const handleChangePassword = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    console.log("Password change requested:", data);
-    if (data.newPassword !== data.confirmPassword) {
-        toast({
-            variant: "destructive",
-            title: "Password Mismatch",
-            description: "New password and confirm password do not match.",
-        });
-        return;
-    }
+    // Password change logic (e.g., sendPasswordResetEmail) would go here
+    // For now, it's just a placeholder as in the original code
     toast({
-      title: "Password Change",
-      description: "Password change request processed (check console).",
+      title: "Password Change (Not Implemented)",
+      description: "Password change functionality would be here.",
     });
-    (event.target as HTMLFormElement).reset();
   };
 
+  // Mock data for other tabs - these would be replaced with real data fetching
+  const userListings = mockPlants.slice(0, 3);
+  const userTrades = mockPlants.slice(3, 5);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <p>Please log in to view your profile.</p>
+        <Button onClick={() => window.location.href = '/login'} className="mt-4">Login</Button>
+      </div>
+    );
+  }
+
+  const displayName = profile?.name || user.displayName || "User";
+  const displayEmail = profile?.email || user.email || "No email";
+  const displayLocation = profile?.location || "Not set";
 
   return (
     <div className="container mx-auto py-8 space-y-8">
       <header className="flex flex-col md:flex-row items-center md:items-start gap-6">
-        <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary shadow-lg">
-          <AvatarImage src={mockUser.avatarUrl} alt={mockUser.name} data-ai-hint="profile avatar" />
-          <AvatarFallback>{mockUser.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <div className="relative group">
+          <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-primary shadow-lg">
+            <AvatarImage src={imagePreview || profile?.avatarUrl || "https://placehold.co/100x100.png"} alt={displayName} data-ai-hint="profile avatar" />
+            <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <label
+            htmlFor="avatarUpload"
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 rounded-full cursor-pointer"
+          >
+            <UploadCloud className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+          </label>
+        </div>
         <div className="text-center md:text-left">
-          <h1 className="text-4xl font-bold text-foreground">{mockUser.name}</h1>
+          <h1 className="text-4xl font-bold text-foreground">{displayName}</h1>
           <p className="text-lg text-muted-foreground flex items-center justify-center md:justify-start">
-            <Mail className="w-4 h-4 mr-2" />{mockUser.email}
+            <Mail className="w-4 h-4 mr-2" />{displayEmail}
           </p>
           <p className="text-sm text-muted-foreground flex items-center justify-center md:justify-start">
-            <MapPin className="w-4 h-4 mr-2" />{mockUser.location}
+            <MapPin className="w-4 h-4 mr-2" />{displayLocation}
           </p>
-          <Button variant="outline" size="sm" className="mt-3">
-            <Edit3 className="w-4 h-4 mr-2" /> Edit Profile
-          </Button>
+          {/* Removed Edit Profile button from header as edit is in tabs */}
         </div>
       </header>
 
       <Separator />
 
-      <Tabs defaultValue="listings" className="w-full">
+      <Tabs defaultValue="settings" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="listings"><List className="w-4 h-4 mr-2" />My Listings</TabsTrigger>
           <TabsTrigger value="trades"><Repeat className="w-4 h-4 mr-2" />My Trades</TabsTrigger>
@@ -162,29 +279,29 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Edit Profile Information</CardTitle>
-              <CardDescription>Update your personal details.</CardDescription>
+              <CardDescription>Update your personal details. Email is managed by Firebase Auth.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleProfileUpdate)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="profileName">Full Name</Label>
-                  <Input id="profileName" name="name" defaultValue={mockUser.name} />
+                  <Input id="profileName" {...form.register("name")} />
+                  {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="profileEmail">Email Address</Label>
-                  <Input id="profileEmail" name="email" type="email" defaultValue={mockUser.email} />
-                </div>
-                 <div className="space-y-2">
                   <Label htmlFor="profileLocation">Location</Label>
-                  <Input id="profileLocation" name="location" defaultValue={mockUser.location} />
+                  <Input id="profileLocation" {...form.register("location")} placeholder="e.g., Greenville, USA" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="profileBio">Bio</Label>
-                  <Textarea id="profileBio" name="bio" defaultValue={mockUser.bio} placeholder="Tell us about yourself and your plant interests..." className="min-h-[100px]" />
+                  <Textarea id="profileBio" {...form.register("bio")} placeholder="Tell us about yourself and your plant interests..." className="min-h-[100px]" />
+                  {form.formState.errors.bio && <p className="text-sm text-destructive">{form.formState.errors.bio.message}</p>}
                 </div>
-                <Button type="submit" className="w-full md:w-auto">
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
+                <Button type="submit" className="w-full md:w-auto" disabled={isSaving || isUploading}>
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  {isUploading ? "Uploading Image..." : isSaving ? "Saving..." : "Save Changes"}
                 </Button>
+                {imageFile && <p className="text-xs text-muted-foreground">New image selected. Click "Save Changes" to upload.</p>}
               </form>
             </CardContent>
           </Card>
@@ -198,18 +315,18 @@ export default function ProfilePage() {
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input id="currentPassword" name="currentPassword" type="password" placeholder="••••••••" />
+                  <Input id="currentPassword" name="currentPassword" type="password" placeholder="••••••••" disabled/>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input id="newPassword" name="newPassword" type="password" placeholder="••••••••" />
+                  <Input id="newPassword" name="newPassword" type="password" placeholder="••••••••" disabled/>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" />
+                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" disabled/>
                 </div>
-                <Button type="submit" variant="outline" className="w-full md:w-auto">
-                  <ShieldCheck className="w-4 h-4 mr-2" /> Change Password
+                <Button type="submit" variant="outline" className="w-full md:w-auto" disabled>
+                  <ShieldCheck className="w-4 h-4 mr-2" /> Change Password (Not Implemented)
                 </Button>
               </form>
             </CardContent>
