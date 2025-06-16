@@ -129,7 +129,7 @@ export default function PlantCatalogPage() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="shrink-0 text-lg py-2 h-auto">
+            <Button variant="outline" className="shrink-0 text-lg py-2 h-auto hover:bg-muted hover:text-muted-foreground">
               <ListFilter className="mr-2 h-5 w-5" />
               Filters
             </Button>
