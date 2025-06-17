@@ -1,194 +1,129 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { PlantCard } from "@/components/plant-card";
-import type { Plant } from "@/models";
-import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Loader2 } from "lucide-react";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, where, limit, startAfter, type QueryDocumentSnapshot } from "firebase/firestore";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Mail, ArrowRight, Sparkles } from "lucide-react";
 
-const PLANTS_PER_PAGE = 8;
+const landingEmailSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+});
 
-export default function PlantCatalogPage() {
-  const [plants, setPlants] = useState<Plant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<{ type: string[]; tags: string[] }>({ type: [], tags: [] });
+type LandingEmailFormValues = z.infer<typeof landingEmailSchema>;
 
-  const fetchPlants = async (loadMore = false) => {
-    if (!loadMore) {
-      setIsLoading(true);
-      setPlants([]); 
-      setLastVisible(null); 
-      setHasMore(true);
-    } else if (!hasMore) {
-      return;
-    }
+export default function LandingPage() {
+  const { toast } = useToast();
 
-    setError(null);
-
-    try {
-      let plantsQuery = query(
-        collection(db, "plants"),
-        orderBy("createdAt", "desc"),
-        limit(PLANTS_PER_PAGE)
-      );
-
-      if (loadMore && lastVisible) {
-        plantsQuery = query(plantsQuery, startAfter(lastVisible));
-      }
-      
-      // Basic client-side search after fetching initial/paginated batch
-      // For more robust search, server-side querying or a search service (Algolia) would be needed.
-
-      const querySnapshot = await getDocs(plantsQuery);
-      const fetchedPlants = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Plant));
-      
-      setPlants(prevPlants => loadMore ? [...prevPlants, ...fetchedPlants] : fetchedPlants);
-      
-      const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastVisible(newLastVisible || null);
-      setHasMore(querySnapshot.docs.length === PLANTS_PER_PAGE);
-
-    } catch (err) {
-      console.error("Error fetching plants:", err);
-      setError("Failed to load plants. Please try again later.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPlants();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Initial fetch
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value.toLowerCase());
-  };
-
-  // Client-side filtering for simplicity. Real app would integrate this into Firestore query
-  const filteredPlants = plants.filter(plant => {
-    const matchesSearch = plant.name.toLowerCase().includes(searchTerm) ||
-                          plant.description.toLowerCase().includes(searchTerm) ||
-                          (plant.tags && plant.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
-    
-    const matchesType = filters.type.length === 0 || filters.type.includes(plant.type);
-    // const matchesTags = filters.tags.length === 0 || (plant.tags && filters.tags.every(ft => plant.tags.includes(ft)));
-
-    return matchesSearch && matchesType; // && matchesTags; (Tag filtering can be added)
+  const form = useForm<LandingEmailFormValues>({
+    resolver: zodResolver(landingEmailSchema),
+    defaultValues: {
+      email: "",
+    },
   });
 
-  const handleFilterChange = (filterType: "type", value: string, checked: boolean) => {
-    setFilters(prev => {
-      const currentValues = prev[filterType];
-      if (checked) {
-        return { ...prev, [filterType]: [...currentValues, value] };
-      } else {
-        return { ...prev, [filterType]: currentValues.filter(v => v !== value) };
-      }
+  function onSubmit(data: LandingEmailFormValues) {
+    console.log("Email submitted:", data.email); // Placeholder for actual submission
+    toast({
+      title: "Subscribed!",
+      description: "Thanks for your interest! We'll keep you updated on Sprout.",
     });
-  };
-
+    form.reset();
+  }
 
   return (
-    <div className="container mx-auto">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-          Discover Your Next Plant
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Browse our community's collection of plants for sale or trade.
-        </p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+      <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
+        <Image src="/logo.png" alt="Sprout Logo" width={140} height={39} priority />
+        <div className="space-x-2">
+          <Button variant="ghost" asChild className="hover:bg-primary/10 hover:text-primary">
+            <Link href="/login">Sign In</Link>
+          </Button>
+          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Link href="/signup">Get Started</Link>
+          </Button>
+        </div>
       </header>
 
-      <div className="mb-8 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search by name, description, tags..."
-            className="w-full rounded-lg bg-background pl-10 pr-4 py-2 text-lg"
-            onChange={handleSearchChange}
-            value={searchTerm}
-          />
+      <main className="text-center space-y-8 max-w-2xl">
+        <div className="flex justify-center mb-8">
+            <Image src="/logo.png" alt="Sprout Logo" width={320} height={89} priority data-ai-hint="logo plant" />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="shrink-0 text-lg py-2 h-auto hover:bg-muted hover:text-muted-foreground">
-              <ListFilter className="mr-2 h-5 w-5" />
-              Filters
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Listing Type</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem
-              checked={filters.type.includes("sale")}
-              onCheckedChange={(checked) => handleFilterChange("type", "sale", Boolean(checked))}
-            >
-              For Sale
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={filters.type.includes("trade")}
-              onCheckedChange={(checked) => handleFilterChange("type", "trade", Boolean(checked))}
-            >
-              For Trade
-            </DropdownMenuCheckboxItem>
-             <DropdownMenuCheckboxItem
-              checked={filters.type.includes("sale_trade")}
-              onCheckedChange={(checked) => handleFilterChange("type", "sale_trade", Boolean(checked))}
-            >
-              Sale or Trade
-            </DropdownMenuCheckboxItem>
-            {/* Future: Add tag filters here */}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        
+        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-foreground">
+          Welcome to <span className="text-primary">Sprout</span>
+        </h1>
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto">
+          The best place to discover, trade, and sell plants. Join our growing community of plant enthusiasts!
+        </p>
 
-      {isLoading && plants.length === 0 ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : error ? (
-        <div className="text-center py-12 text-destructive">
-          <h2 className="text-2xl font-semibold">{error}</h2>
-        </div>
-      ) : filteredPlants.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredPlants.map((plant) => (
-              <PlantCard key={plant.id} plant={plant} />
-            ))}
-          </div>
-          {hasMore && !isLoading && filteredPlants.length > 0 && (
-            <div className="mt-8 text-center">
-              <Button onClick={() => fetchPlants(true)} disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : "Load More Plants"}
+        <div className="w-full max-w-md mx-auto pt-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="sr-only">Email for updates</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                        <Input 
+                          type="email" 
+                          placeholder="Enter your email for updates" 
+                          {...field} 
+                          className="pl-10 text-lg py-6 rounded-full shadow-lg focus:ring-2 focus:ring-primary" 
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button 
+                type="submit" 
+                className="w-full text-lg py-6 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Submitting..." : (
+                  <>
+                    <Sparkles className="mr-2 h-5 w-5" /> Stay Updated
+                  </>
+                )}
               </Button>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold text-muted-foreground">No plants found.</h2>
-          <p className="mt-2 text-muted-foreground">Try adjusting your search or filters, or check back later.</p>
+            </form>
+          </Form>
         </div>
-      )}
+        
+        <div className="pt-8">
+            <p className="text-muted-foreground">Ready to dive in?</p>
+            <Button variant="link" asChild className="text-lg text-primary hover:text-primary/80 px-0">
+                <Link href="/signup">
+                Create Your Account <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+            </Button>
+        </div>
+      </main>
+
+      <footer className="absolute bottom-0 left-0 right-0 p-4 text-center">
+        <p className="text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} Sprout Plant Marketplace. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 }

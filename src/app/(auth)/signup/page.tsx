@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import Image from "next/image"; // Added import
+import Image from "next/image"; 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +57,7 @@ export default function SignupPage() {
         title: "Account Created!",
         description: "Welcome to Sprout! Redirecting to the catalog...",
       });
-      router.push("/");
+      router.push("/catalog");
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";
@@ -86,8 +86,8 @@ export default function SignupPage() {
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-8 pb-4"> {/* Adjusted padding */}
-        <div className="flex justify-center mb-6"> {/* Added logo container */}
+      <CardHeader className="text-center px-6 pt-8 pb-4"> 
+        <div className="flex justify-center mb-6"> 
           <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
         </div>
         <CardTitle className="text-3xl font-bold text-primary">Create Account</CardTitle>

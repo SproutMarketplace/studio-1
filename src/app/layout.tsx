@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
-import { AppLayout } from "@/components/app-layout";
-import { AuthProvider } from "@/contexts/auth-context"; // Import AuthProvider
+import { AuthProvider } from "@/contexts/auth-context";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Sprout - Plant Marketplace",
-  description: "Buy, sell, and trade plants with Sprout.",
+  description: "Buy, sell, and trade plants with Sprout. Discover your next green companion.",
 };
 
 export default function RootLayout({
@@ -21,8 +21,9 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
-        <AuthProvider> {/* Wrap AppLayout with AuthProvider */}
-          <AppLayout>{children}</AppLayout>
+        <AuthProvider>
+          {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

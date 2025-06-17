@@ -8,8 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-// Add any other genuinely public routes here. For now, none.
-const PUBLIC_ROUTES: string[] = []; 
+const PUBLIC_ROUTES: string[] = ["/"]; // Landing page is public
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -22,30 +21,49 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (loading) {
-      return; // Wait for auth state to load
+      return; 
     }
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
-    // const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname); // Not strictly needed for this bypass
+    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-    // For development/editing:
-    // If a user is logged in AND on an auth page, redirect to home.
-    // Otherwise, allow access. This effectively makes non-auth pages accessible without login.
-    if (user && pathIsAuthRoute) {
-      router.push("/");
+    if (user) {
+      // User is logged in
+      if (pathIsAuthRoute) {
+        // Logged-in user trying to access login/signup page
+        router.push("/catalog"); // Redirect to main app catalog
+      }
+      // If user is logged in and on any other page (public or main app), allow access.
+    } else {
+      // User is not logged in
+      if (!pathIsAuthRoute && !pathIsPublicRoute) {
+        // Trying to access a protected main app page without being logged in
+        router.push("/login"); // Redirect to login
+      }
+      // If !user and on an auth page, or on a public page, allow access.
     }
-    // If !user and !pathIsAuthRoute, we no longer redirect to /login, allowing access for editing.
-    // If !user and pathIsAuthRoute, user can stay on login/signup page.
-
   }, [user, loading, router, pathname]);
 
-  if (loading && !AUTH_ROUTES.includes(pathname)) { // Show loader on non-auth pages while auth state loads
+  // Show loader for main app routes or auth routes if auth state is still loading
+  if (loading && (!PUBLIC_ROUTES.includes(pathname))) { 
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+  
+  // If user is not logged in and trying to access a non-public, non-auth page,
+  // AuthGuard will redirect, but we might briefly render children before redirect.
+  // This check prevents flashing content on protected routes if not logged in.
+  if (!user && !loading && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   return <>{children}</>;
 }

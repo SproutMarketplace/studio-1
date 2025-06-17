@@ -45,7 +45,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
 interface NavItem {
   href: string;
@@ -55,7 +54,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-  { href: "/", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
+  { href: "/catalog", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
   { href: "/list-plant", icon: PlusSquare, label: "List a Plant", tooltip: "Sell or Trade" },
   { href: "/forums", icon: MessagesSquare, label: "Community Forums", tooltip: "Community Discussions" },
   { href: "/wishlist", icon: Heart, label: "Wishlist", tooltip: "Your Saved Plants" },
@@ -93,7 +92,7 @@ function AppSidebar() {
     }
   };
   
-  if (loading && !AUTH_ROUTES.includes(pathname) && !isMobile && !open && !openMobile) {
+  if (loading && !isMobile && !open && !openMobile) {
      return (
         <Sidebar>
             <SidebarHeader className={cn("items-center p-2 justify-center")}>
@@ -118,7 +117,7 @@ function AppSidebar() {
     );
   }
   
-  if (loading && !AUTH_ROUTES.includes(pathname) && (isMobile || open || openMobile )) {
+  if (loading && (isMobile || open || openMobile )) {
     return (
         <Sidebar>
             <SidebarHeader className={cn(
@@ -146,7 +145,6 @@ function AppSidebar() {
     );
   }
 
-  // Actual Sidebar Content
   return (
     <Sidebar>
       <SidebarHeader className={cn(
@@ -157,12 +155,12 @@ function AppSidebar() {
           "justify-center")  
       )}>
         {isMobile ? (
-          <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
+          <Link href="/catalog" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         ) : open ? ( 
           <>
-            <Link href="/" passHref aria-label="Sprout Home">
+            <Link href="/catalog" passHref aria-label="Sprout Home">
               <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
             <Button 
@@ -190,7 +188,7 @@ function AppSidebar() {
             <SidebarMenuItem key={item.href} onClick={isMobile ? closeMobileSidebarPanel : undefined}>
               <Link href={item.href} passHref legacyBehavior>
                 <SidebarMenuButton
-                  isActive={pathname === item.href}
+                  isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)} // For nested routes like /forums/[id]
                   tooltip={{ children: item.tooltip, className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
                   className={cn( "justify-start", !open && !isMobile && "justify-center" )}
                 >
@@ -271,7 +269,7 @@ function PersistentHeader() {
               </Button>
             </SidebarTrigger>
           </div>
-          <Link href="/" passHref aria-label="Sprout Home">
+          <Link href="/catalog" passHref aria-label="Sprout Home">
             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
           </Link>
         </>
@@ -282,18 +280,6 @@ function PersistentHeader() {
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
-
-  if (isAuthRoute) {
-    return (
-      <>
-        <AuthGuard>{children}</AuthGuard>
-        <Toaster />
-      </>
-    );
-  }
-
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
@@ -302,11 +288,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           <AuthGuard>{children}</AuthGuard>
         </main>
-        <Toaster />
+        {/* Toaster is now in RootLayout */}
       </SidebarInset>
     </SidebarProvider>
   );
 }
-    
-
-    

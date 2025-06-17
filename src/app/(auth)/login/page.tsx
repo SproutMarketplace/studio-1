@@ -7,7 +7,7 @@ import * as z from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react"; // Added useState import
+import { useState } from "react"; 
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,7 +25,6 @@ import { auth, signInWithGooglePopup } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { Separator } from "@/components/ui/separator";
 
-// Inline SVG for Google G Logo
 const GoogleLogo = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -64,7 +63,7 @@ export default function LoginPage() {
         title: "Login Successful!",
         description: "Welcome back! Redirecting to the catalog...",
       });
-      router.push("/");
+      router.push("/catalog");
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";
@@ -101,7 +100,7 @@ export default function LoginPage() {
         title: "Google Sign-In Successful!",
         description: "Welcome! Redirecting to the catalog...",
       });
-      router.push("/");
+      router.push("/catalog");
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
       let errorMessage = "An unexpected error occurred with Google Sign-In. Please try again.";
