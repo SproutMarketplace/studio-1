@@ -4,7 +4,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Sparkles } from "lucide-react";
 
 const landingEmailSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -46,18 +45,6 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
-      <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
-        <Image src="/logo.png" alt="Sprout Logo" width={140} height={39} priority />
-        <div className="space-x-2">
-          <Button variant="ghost" asChild className="hover:bg-primary/10 hover:text-primary">
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/signup">Get Started</Link>
-          </Button>
-        </div>
-      </header>
-
       <main className="text-center space-y-8 max-w-2xl">
         <div className="flex justify-center mb-8">
             <Image src="/logo.png" alt="Sprout Logo" width={320} height={89} priority data-ai-hint="logo plant" />
@@ -67,7 +54,7 @@ export default function LandingPage() {
           Welcome to <span className="text-primary">Sprout</span>
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto">
-          The best place to discover, trade, and sell plants. Join our growing community of plant enthusiasts!
+          The best place to discover, trade, and sell plants. Join our growing community of plant enthusiasts! Get updates on our development.
         </p>
 
         <div className="w-full max-w-md mx-auto pt-4">
@@ -107,15 +94,6 @@ export default function LandingPage() {
               </Button>
             </form>
           </Form>
-        </div>
-        
-        <div className="pt-8">
-            <p className="text-muted-foreground">Ready to dive in?</p>
-            <Button variant="link" asChild className="text-lg text-primary hover:text-primary/80 px-0">
-                <Link href="/signup">
-                Create Your Account <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-            </Button>
         </div>
       </main>
 
