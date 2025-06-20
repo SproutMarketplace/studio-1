@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = []; // Root "/" is no longer public
+const PUBLIC_ROUTES: string[] = ["/"]; // Root "/" is now public
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -25,29 +25,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
+    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
     if (user) {
       // User is logged in
       if (pathIsAuthRoute) {
         // Logged-in user trying to access login/signup page
-        router.push("/catalog");
-      } else if (pathname === "/") {
-        // Logged-in user at root, redirect to catalog
-        router.push("/catalog");
+        router.push("/catalog"); // Redirect to main app content
       }
-      // If user is logged in and on any other page (e.g. /catalog, /profile), allow access.
+      // If user is logged in and on a public route (like /) or any other non-auth route, allow access.
     } else {
       // User is not logged in
-      if (!pathIsAuthRoute) {
-        // Trying to access a protected page (including "/") without being logged in
+      if (!pathIsAuthRoute && !pathIsPublicRoute) {
+        // Trying to access a protected page (not auth, not public) without being logged in
         router.push("/login"); // Redirect to login
       }
-      // If !user and on an auth page, allow access.
+      // If !user and on an auth page or a public page, allow access.
     }
   }, [user, loading, router, pathname]);
 
-  // Show loader if auth state is still loading AND user is trying to access a non-auth route.
-  if (loading && !AUTH_ROUTES.includes(pathname)) {
+  // Show loader if auth state is still loading AND user is trying to access a non-auth, non-public route.
+  if (loading && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -56,7 +54,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Prevents flashing content on protected routes if not logged in and not yet redirected.
-  if (!user && !loading && !AUTH_ROUTES.includes(pathname)) {
+  if (!user && !loading && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
