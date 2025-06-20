@@ -1,48 +1,9 @@
 
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { Mail, Sparkles } from "lucide-react";
-
-const landingEmailSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-});
-
-type LandingEmailFormValues = z.infer<typeof landingEmailSchema>;
 
 export default function LandingPage() {
-  const { toast } = useToast();
-
-  const form = useForm<LandingEmailFormValues>({
-    resolver: zodResolver(landingEmailSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  function onSubmit(data: LandingEmailFormValues) {
-    console.log("Email submitted:", data.email); // Placeholder for actual submission
-    toast({
-      title: "Subscribed!",
-      description: "Thanks for your interest! We'll keep you updated on Sprout.",
-    });
-    form.reset();
-  }
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <main className="text-center space-y-8 max-w-2xl">
@@ -54,47 +15,12 @@ export default function LandingPage() {
           Welcome to <span className="text-primary">Sprout</span>
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto">
-          The best place to discover, trade, and sell plants. Join our growing community of plant enthusiasts! Get updates on our development.
+          The best place to discover, trade, and sell plants. Join our growing community of plant enthusiasts!
+        </p>
+        <p className="text-md text-muted-foreground max-w-xl mx-auto pt-4">
+          Our platform is currently under development. Please check back soon!
         </p>
 
-        <div className="w-full max-w-md mx-auto pt-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Email for updates</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                        <Input 
-                          type="email" 
-                          placeholder="Enter your email for updates" 
-                          {...field} 
-                          className="pl-10 text-lg py-6 rounded-full shadow-lg focus:ring-2 focus:ring-primary" 
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button 
-                type="submit" 
-                className="w-full text-lg py-6 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Submitting..." : (
-                  <>
-                    <Sparkles className="mr-2 h-5 w-5" /> Stay Updated
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </div>
       </main>
 
       <footer className="absolute bottom-0 left-0 right-0 p-4 text-center">
