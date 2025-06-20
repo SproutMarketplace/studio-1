@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/"]; // Root "/" is now public
+const PUBLIC_ROUTES: string[] = []; // Root "/" is no longer public here, handled by src/app/page.tsx
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -25,7 +25,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
-    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname); // Will always be false now
 
     if (user) {
       // User is logged in
@@ -33,14 +33,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
         // Logged-in user trying to access login/signup page
         router.push("/catalog"); // Redirect to main app content
       }
-      // If user is logged in and on a public route (like /) or any other non-auth route, allow access.
+      // If user is logged in and on a public route (none defined here) or any other non-auth route, allow access.
     } else {
       // User is not logged in
       if (!pathIsAuthRoute && !pathIsPublicRoute) {
         // Trying to access a protected page (not auth, not public) without being logged in
+        // This AuthGuard is within (main) layout, so / is handled by src/app/page.tsx
         router.push("/login"); // Redirect to login
       }
-      // If !user and on an auth page or a public page, allow access.
+      // If !user and on an auth page, allow access.
     }
   }, [user, loading, router, pathname]);
 
