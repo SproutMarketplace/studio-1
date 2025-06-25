@@ -30,7 +30,7 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
     
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (user && chatId) {
@@ -65,12 +65,7 @@ export default function ChatPage() {
 
     // Auto-scroll to bottom
     useEffect(() => {
-        if(scrollAreaRef.current) {
-            // Using a timeout to ensure the DOM has updated before scrolling
-            setTimeout(() => {
-                scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-            }, 100);
-        }
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
 
@@ -113,7 +108,7 @@ export default function ChatPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
-                    <ScrollArea className="h-full p-6" viewportRef={scrollAreaRef}>
+                    <ScrollArea className="h-full p-6">
                         <div className="space-y-4">
                         {messages.map(message => (
                              <div key={message.id} className={cn("flex items-end gap-2", message.senderId === user?.uid ? "justify-end" : "justify-start")}>
@@ -132,6 +127,7 @@ export default function ChatPage() {
                                 </div>
                              </div>
                         ))}
+                        <div ref={messagesEndRef} />
                         </div>
                     </ScrollArea>
                 </CardContent>
