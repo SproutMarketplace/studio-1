@@ -130,6 +130,9 @@ export default function LoginPage() {
   }
 
   const handleBypass = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('devBypassAuth', 'true');
+    }
     router.push("/catalog");
   };
 

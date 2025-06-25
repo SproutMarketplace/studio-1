@@ -20,6 +20,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Check for bypass flag in local storage. This is for development convenience.
+    const isBypassed = typeof window !== 'undefined' && window.localStorage.getItem('devBypassAuth') === 'true';
+    
+    // If we're in bypass mode, don't apply any auth rules.
+    if (isBypassed) {
+      return;
+    }
+
     if (loading) {
       return;
     }
@@ -54,7 +62,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Prevents flashing content on protected routes if not logged in and not yet redirected.
-  if (!user && !loading && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
+  const isBypassed = typeof window !== 'undefined' && window.localStorage.getItem('devBypassAuth') === 'true';
+  if (!isBypassed && !user && !loading && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

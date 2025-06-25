@@ -72,6 +72,9 @@ function AppSidebar() {
     const handleLogout = async () => {
         try {
             await signOut(auth);
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('devBypassAuth');
+            }
             toast({
                 title: "Logged Out",
                 description: "You have been successfully logged out.",
