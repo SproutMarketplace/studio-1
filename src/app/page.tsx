@@ -1,4 +1,28 @@
-// This file is intentionally left empty to allow the (main) route group to handle the root path.
-// The root route "/" is now handled by src/app/(main)/page.tsx, which shows the plant catalog.
-// The AuthGuard in the main layout will redirect unauthenticated users to /login.
-export {};
+
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { Loader2 } from "lucide-react";
+
+export default function RootPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.push("/catalog");
+      } else {
+        router.push("/login");
+      }
+    }
+  }, [user, loading, router]);
+
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+  );
+}

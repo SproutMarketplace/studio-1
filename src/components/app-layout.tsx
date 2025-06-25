@@ -55,7 +55,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-    { href: "/", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
+    { href: "/catalog", icon: ShoppingBag, label: "Plant Catalog", tooltip: "Browse Plants" },
     { href: "/list-plant", icon: PlusSquare, label: "List a Plant", tooltip: "Sell or Trade" },
     { href: "/forums", icon: MessagesSquare, label: "Community Forums", tooltip: "Community Discussions" },
     { href: "/wishlist", icon: Heart, label: "Wishlist", tooltip: "Your Saved Plants" },
@@ -157,12 +157,12 @@ function AppSidebar() {
                         "justify-center")
             )}>
                 {isMobile ? (
-                    <Link href="/" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
+                    <Link href="/catalog" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
                         <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                     </Link>
                 ) : open ? (
                     <>
-                        <Link href="/" passHref aria-label="Sprout Home">
+                        <Link href="/catalog" passHref aria-label="Sprout Home">
                             <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                         </Link>
                         <Button
@@ -271,7 +271,7 @@ function PersistentHeader() {
                             </Button>
                         </SidebarTrigger>
                     </div>
-                    <Link href="/" passHref aria-label="Sprout Home">
+                    <Link href="/catalog" passHref aria-label="Sprout Home">
                         <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                     </Link>
                 </>
@@ -284,7 +284,19 @@ function PersistentHeader() {
 export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isRootRoute = pathname === "/";
 
+    // The root page has its own full-screen layout (for redirection)
+    if (isRootRoute) {
+      return (
+        <>
+            {children}
+            <Toaster />
+        </>
+      )
+    }
+
+    // Auth pages have a simpler layout
     if (isAuthRoute) {
         return (
             <>
@@ -294,6 +306,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         );
     }
 
+    // Main application pages get the full sidebar layout
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
@@ -302,11 +315,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     <AuthGuard>{children}</AuthGuard>
                 </main>
-                <Toaster />
             </SidebarInset>
+            <Toaster />
         </SidebarProvider>
     );
 }
-
-
-

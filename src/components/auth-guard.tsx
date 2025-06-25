@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = []; // Root "/" is handled by src/app/page.tsx redirector
+const PUBLIC_ROUTES: string[] = ["/"]; // Root "/" is handled by the redirector page
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -40,7 +40,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         // Trying to access a protected page (not auth, not public) without being logged in
         router.push("/login"); // Redirect to login
       }
-      // If !user and on an auth page, allow access.
+      // If !user and on an auth page or public page, allow access.
     }
   }, [user, loading, router, pathname]);
 
