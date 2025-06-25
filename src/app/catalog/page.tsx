@@ -3,12 +3,12 @@
 
 import { useEffect, useState } from "react";
 import { PlantCard } from "@/components/plant-card";
-import type { Plant } from "@/models";
+import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ListFilter, Loader2 } from "lucide-react";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, where, limit, startAfter, type QueryDocumentSnapshot } from "firebase/firestore";
+import { getAvailablePlantListings } from "@/lib/firestoreService";
+import type { DocumentSnapshot } from "firebase/firestore";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -21,13 +21,14 @@ import {
 const PLANTS_PER_PAGE = 8;
 
 export default function PlantCatalogPage() {
-    const [plants, setPlants] = useState<Plant[]>([]);
+    const [plants, setPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null);
+    const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filters, setFilters] = useState<{ type: string[]; tags: string[] }>({ type: [], tags: [] });
+    const [filters, setFilters] = useState<{ tradeOnly: boolean | null }>({ tradeOnly: null });
+
 
     const fetchPlants = async (loadMore = false) => {
         if (!loadMore) {
@@ -35,34 +36,23 @@ export default function PlantCatalogPage() {
             setPlants([]);
             setLastVisible(null);
             setHasMore(true);
-        } else if (!hasMore) {
+        } else if (!hasMore || isLoading) {
             return;
         }
 
+        setIsLoading(true);
         setError(null);
 
         try {
-            let plantsQuery = query(
-                collection(db, "plants"),
-                orderBy("createdAt", "desc"),
-                limit(PLANTS_PER_PAGE)
+            // Use the firestoreService function
+            const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
+                loadMore ? lastVisible : undefined,
+                PLANTS_PER_PAGE
             );
 
-            if (loadMore && lastVisible) {
-                plantsQuery = query(plantsQuery, startAfter(lastVisible));
-            }
-
-            // Basic client-side search after fetching initial/paginated batch
-            // For more robust search, server-side querying or a search service (Algolia) would be needed.
-
-            const querySnapshot = await getDocs(plantsQuery);
-            const fetchedPlants = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Plant));
-
             setPlants(prevPlants => loadMore ? [...prevPlants, ...fetchedPlants] : fetchedPlants);
-
-            const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-            setLastVisible(newLastVisible || null);
-            setHasMore(querySnapshot.docs.length === PLANTS_PER_PAGE);
+            setLastVisible(newLastVisible);
+            setHasMore(fetchedPlants.length === PLANTS_PER_PAGE);
 
         } catch (err) {
             console.error("Error fetching plants:", err);
@@ -80,28 +70,24 @@ export default function PlantCatalogPage() {
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value.toLowerCase());
     };
-
+    
     // Client-side filtering for simplicity. Real app would integrate this into Firestore query
     const filteredPlants = plants.filter(plant => {
         const matchesSearch = plant.name.toLowerCase().includes(searchTerm) ||
             plant.description.toLowerCase().includes(searchTerm) ||
             (plant.tags && plant.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
 
-        const matchesType = filters.type.length === 0 || filters.type.includes(plant.type);
-        // const matchesTags = filters.tags.length === 0 || (plant.tags && filters.tags.every(ft => plant.tags.includes(ft)));
+        const matchesFilter = filters.tradeOnly === null || plant.tradeOnly === filters.tradeOnly;
 
-        return matchesSearch && matchesType; // && matchesTags; (Tag filtering can be added)
+        return matchesSearch && matchesFilter;
     });
 
-    const handleFilterChange = (filterType: "type", value: string, checked: boolean) => {
-        setFilters(prev => {
-            const currentValues = prev[filterType];
-            if (checked) {
-                return { ...prev, [filterType]: [...currentValues, value] };
-            } else {
-                return { ...prev, [filterType]: currentValues.filter(v => v !== value) };
-            }
-        });
+    const handleFilterChange = (filterType: "forSale" | "forTrade" | "all", checked: boolean) => {
+        if (checked) {
+            if (filterType === 'forSale') setFilters({ tradeOnly: false });
+            else if (filterType === 'forTrade') setFilters({ tradeOnly: true });
+            else setFilters({ tradeOnly: null });
+        }
     };
 
 
@@ -138,24 +124,23 @@ export default function PlantCatalogPage() {
                         <DropdownMenuLabel>Listing Type</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuCheckboxItem
-                            checked={filters.type.includes("sale")}
-                            onCheckedChange={(checked) => handleFilterChange("type", "sale", Boolean(checked))}
+                            checked={filters.tradeOnly === null}
+                            onCheckedChange={(checked) => handleFilterChange("all", Boolean(checked))}
+                        >
+                            All Listings
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                           checked={filters.tradeOnly === false}
+                           onCheckedChange={(checked) => handleFilterChange("forSale", Boolean(checked))}
                         >
                             For Sale
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
-                            checked={filters.type.includes("trade")}
-                            onCheckedChange={(checked) => handleFilterChange("type", "trade", Boolean(checked))}
+                            checked={filters.tradeOnly === true}
+                            onCheckedChange={(checked) => handleFilterChange("forTrade", Boolean(checked))}
                         >
                             For Trade
                         </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={filters.type.includes("sale_trade")}
-                            onCheckedChange={(checked) => handleFilterChange("type", "sale_trade", Boolean(checked))}
-                        >
-                            Sale or Trade
-                        </DropdownMenuCheckboxItem>
-                        {/* Future: Add tag filters here */}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -175,7 +160,7 @@ export default function PlantCatalogPage() {
                             <PlantCard key={plant.id} plant={plant} />
                         ))}
                     </div>
-                    {hasMore && !isLoading && filteredPlants.length > 0 && (
+                    {hasMore && !isLoading && (
                         <div className="mt-8 text-center">
                             <Button onClick={() => fetchPlants(true)} disabled={isLoading}>
                                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : "Load More Plants"}

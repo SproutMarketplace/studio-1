@@ -2,16 +2,16 @@
 "use client";
 
 import Image from "next/image";
-import type { Plant } from "@/models"; // Updated import
+import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, DollarSign } from "lucide-react"; // Added DollarSign
+import { Heart, MapPin, User, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link"; // For linking to user profiles or plant details later
+import Link from "next/link";
 
 export interface PlantCardProps {
-  plant: Plant;
+  plant: PlantListing;
 }
 
 export function PlantCard({ plant }: PlantCardProps) {
@@ -32,19 +32,15 @@ export function PlantCard({ plant }: PlantCardProps) {
       case "for trade":
         return "bg-[#664121] text-white hover:bg-[#52341A]"; 
       default:
-        // Use a less prominent color for general tags
         return "bg-muted text-muted-foreground hover:bg-muted/80"; 
     }
   };
   
   const displayImageUrl = plant.imageUrls && plant.imageUrls.length > 0 
     ? plant.imageUrls[0] 
-    : "https://placehold.co/600x400.png"; // Fallback placeholder
+    : "https://placehold.co/600x400.png";
 
-  const displayImageHint = plant.imageHints && plant.imageHints.length > 0
-    ? plant.imageHints[0]
-    : plant.name.toLowerCase().split(" ").slice(0,2).join(" ");
-
+  const displayImageHint = plant.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
   return (
     <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-all hover:shadow-xl group">
@@ -58,7 +54,7 @@ export function PlantCard({ plant }: PlantCardProps) {
             data-ai-hint={displayImageHint}
             className="transition-transform duration-300 group-hover:scale-105"
           />
-           {plant.isSold && (
+           {!plant.isAvailable && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <span className="text-white text-xl font-bold uppercase tracking-wider">Sold</span>
             </div>
@@ -68,16 +64,14 @@ export function PlantCard({ plant }: PlantCardProps) {
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-            {/* <Link href={`/plant/${plant.id}`}> */}
-              {plant.name}
-            {/* </Link> */}
+            {plant.name}
           </CardTitle>
-          {plant.price && plant.type !== "trade" && ( // Only show price if it exists and not exclusively for trade
+          {plant.price && !plant.tradeOnly && (
             <Badge variant="default" className="text-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
               ${plant.price.toFixed(2)}
             </Badge>
           )}
-           {!plant.price && plant.type === "sale" && ( // Show free if price is 0 or undefined for "sale"
+           {!plant.price && !plant.tradeOnly && (
             <Badge variant="default" className="text-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
               Free
             </Badge>
@@ -85,39 +79,41 @@ export function PlantCard({ plant }: PlantCardProps) {
         </div>
         
         <div className="mb-2 flex flex-wrap gap-1">
-          {plant.type === "sale" && <Badge className={`${getTagColor("For Sale")}`}>For Sale</Badge>}
-          {plant.type === "trade" && <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>}
-          {plant.type === "sale_trade" && (
+          {plant.tradeOnly ? (
+             <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>
+          ) : (
             <>
               <Badge className={`${getTagColor("For Sale")}`}>For Sale</Badge>
-              <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>
+              {plant.price === undefined || plant.price === null ? null : (
+                 <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>
+              )}
             </>
           )}
-          {plant.tags?.slice(0, 2).map(tag => ( // Show max 2 additional tags
+
+          {plant.tags?.slice(0, 2).map(tag => (
             <Badge key={tag} className={`${getTagColor(tag)}`}>
               {tag}
             </Badge>
           ))}
         </div>
 
-        <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-3 h-[3.75rem]"> {/* Fixed height for 3 lines */}
+        <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-3 h-[3.75rem]">
           {plant.description}
         </CardDescription>
         <div className="text-xs text-muted-foreground space-y-1">
           <div className="flex items-center">
-            {plant.sellerAvatar ? (
-              <Image src={plant.sellerAvatar} alt={plant.sellerName || "seller"} width={16} height={16} className="w-4 h-4 rounded-full mr-1.5" />
+            {plant.ownerAvatarUrl ? (
+              <Image src={plant.ownerAvatarUrl} alt={plant.ownerUsername} width={16} height={16} className="w-4 h-4 rounded-full mr-1.5" />
             ) : (
               <User className="w-3 h-3 mr-1.5" />
             )}
-            {/* <Link href={`/profile/${plant.sellerId}`} className="hover:underline"> */}
-              {plant.sellerName || "Anonymous"}
-            {/* </Link> */}
+              {plant.ownerUsername}
           </div>
           {plant.location && (
             <div className="flex items-center">
               <MapPin className="w-3 h-3 mr-1.5" /> {plant.location}
             </div>
+
           )}
         </div>
       </CardContent>
@@ -127,7 +123,7 @@ export function PlantCard({ plant }: PlantCardProps) {
           size="sm" 
           className="w-full group/button hover:bg-muted hover:text-muted-foreground" 
           onClick={handleAddToWishlist}
-          disabled={plant.isSold}
+          disabled={!plant.isAvailable}
         >
           <Heart className="w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive" />
           Add to Wishlist
