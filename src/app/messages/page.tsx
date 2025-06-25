@@ -51,7 +51,7 @@ export default function MessagesPage() {
     if (!user) {
         return (
             <div className="container mx-auto py-8 text-center">
-                <Card className="max-w-md mx-auto">
+                <Card className="max-w-md mx-auto shadow-lg">
                     <CardHeader>
                         <CardTitle>View Your Messages</CardTitle>
                         <CardDescription>Please log in to see your conversations.</CardDescription>
@@ -81,7 +81,7 @@ export default function MessagesPage() {
                 </p>
             </header>
 
-            <Card>
+            <Card className="shadow-lg">
                 <CardContent className="p-0">
                     {chats.length > 0 ? (
                         <ul className="divide-y divide-border">
