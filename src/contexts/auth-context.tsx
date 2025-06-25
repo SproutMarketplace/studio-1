@@ -2,19 +2,19 @@
 "use client";
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc, type Timestamp } from "firebase/firestore"; 
+import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from "firebase/firestore"; 
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import type { UserProfile } from "@/models"; // Updated import
+import type { User } from "@/models";
 
 interface AuthContextType {
   user: FirebaseAuthUser | null;
-  profile: UserProfile | null;
+  profile: User | null;
   loading: boolean;
   refreshUserProfile: () => Promise<void>;
-  updateUserProfileInContext: (updatedProfileData: Partial<UserProfile>) => void;
+  updateUserProfileInContext: (updatedProfileData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -35,7 +35,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<FirebaseAuthUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser | null) => {
@@ -44,19 +44,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          setProfile(docSnap.data() as UserProfile);
+          setProfile({ id: docSnap.id, ...docSnap.data() } as User);
         } else {
-          // Profile doesn't exist, create a basic one
-          const newProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName || "",
+          // This profile is created for users signing up with a social provider (e.g., Google)
+          // for the first time. Email/password signup profile creation is handled in firestoreService.
+          const newProfile: Omit<User, 'id'> = {
+            userId: firebaseUser.uid,
+            email: firebaseUser.email!,
+            username: firebaseUser.displayName || "New User",
             avatarUrl: firebaseUser.photoURL || "",
-            createdAt: serverTimestamp() as Timestamp, // Add type assertion
-            updatedAt: serverTimestamp() as Timestamp, // Add type assertion
+            joinedDate: serverTimestamp() as Timestamp,
+            plantsListed: 0,
+            plantsTraded: 0,
+            rewardPoints: 0,
+            favoritePlants: [],
+            followers: [],
+            following: [],
           };
           await setDoc(userDocRef, newProfile);
-          setProfile(newProfile);
+          setProfile({ id: firebaseUser.uid, ...newProfile });
         }
       } catch (error) {
         console.error("Error fetching/creating user profile:", error);
@@ -77,12 +83,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [fetchUserProfile]);
 
   const refreshUserProfile = useCallback(async () => {
-    setLoading(true);
-    await fetchUserProfile(user);
-    setLoading(false);
+    if (user) {
+      setLoading(true);
+      await fetchUserProfile(user);
+      setLoading(false);
+    }
   }, [user, fetchUserProfile]);
 
-  const updateUserProfileInContext = (updatedProfileData: Partial<UserProfile>) => {
+  const updateUserProfileInContext = (updatedProfileData: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
   };
 
