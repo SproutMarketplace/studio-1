@@ -1,3 +1,4 @@
+
 // src/lib/firestoreService.ts
 import { db, auth } from './firebase'; // Your Firebase instances
 import { storage } from './firebase'; // For file uploads
@@ -124,8 +125,6 @@ export const updatePlantListing = async (plantId: string, data: Partial<PlantLis
 export const deletePlantListing = async (plantId: string): Promise<void> => {
     const docRef = doc(db, 'plants', plantId);
     await deleteDoc(docRef);
-    // Optional: Delete associated images from storage
-    // You would need to retrieve the plant data first to get image URLs
 };
 
 export const uploadPlantImage = async (plantId: string, file: File, index: number): Promise<string> => {
@@ -141,7 +140,6 @@ export const deletePlantImage = async (imageUrl: string): Promise<void> => {
 
 
 // --- Messaging Functions (Messages Page: /messages) ---
-// Helper to generate a consistent chat ID
 const getChatDocumentId = (userId1: string, userId2: string): string => {
     return [userId1, userId2].sort().join('_');
 };
@@ -152,10 +150,23 @@ export const createOrGetChat = async (userId1: string, userId2: string): Promise
     const chatSnap = await getDoc(chatRef);
 
     if (!chatSnap.exists()) {
+        const user1Profile = await getUserProfile(userId1);
+        const user2Profile = await getUserProfile(userId2);
+
         await setDoc(chatRef, {
             participants: [userId1, userId2],
-            lastMessage: '', // Initialize
+            lastMessage: 'Chat started!',
             lastMessageTimestamp: serverTimestamp(),
+            participantDetails: {
+                [userId1]: {
+                    username: user1Profile?.username || 'User 1',
+                    avatarUrl: user1Profile?.avatarUrl || '',
+                },
+                [userId2]: {
+                    username: user2Profile?.username || 'User 2',
+                    avatarUrl: user2Profile?.avatarUrl || '',
+                }
+            }
         });
     }
     return chatId;
@@ -173,17 +184,15 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
         read: false,
     });
 
-    // Update last message in chat document (consider using transactions for atomicity)
     await updateDoc(chatDocRef, {
         lastMessage: text,
         lastMessageTimestamp: serverTimestamp(),
     });
 };
 
-// Use onSnapshot for real-time messages in a client component
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
     const messagesCollectionRef = collection(db, 'chats', chatId, 'messages');
-    const q = query(messagesCollectionRef, orderBy('timestamp'));
+    const q = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
     return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
         const messages: Message[] = [];
         snapshot.forEach((doc: DocumentSnapshot) => {
@@ -193,10 +202,26 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
     });
 };
 
+export const getChatDocument = async (chatId: string): Promise<Chat | null> => {
+    const docRef = doc(db, 'chats', chatId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Chat;
+    }
+    return null;
+}
+
+export const getOtherParticipantProfile = async (chatId: string, currentUserId: string): Promise<User | null> => {
+    const chat = await getChatDocument(chatId);
+    if (!chat) return null;
+    const otherUserId = chat.participants.find(p => p !== currentUserId);
+    if (!otherUserId) return null;
+    return await getUserProfile(otherUserId);
+}
+
 export const getUserChats = async (userId: string): Promise<Chat[]> => {
-    // Query for chats where the user is a participant
-    const q1 = query(collection(db, 'chats'), where('participants', 'array-contains', userId), orderBy('lastMessageTimestamp', 'desc'));
-    const querySnapshot = await getDocs(q1);
+    const q = query(collection(db, 'chats'), where('participants', 'array-contains', userId), orderBy('lastMessageTimestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
     const chats: Chat[] = [];
     querySnapshot.forEach((doc: DocumentSnapshot) => {
         chats.push({ id: doc.id, ...doc.data() } as Chat);
@@ -259,9 +284,8 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
     const commentsCollectionRef = collection(db, 'forums', forumId, 'posts', postId, 'comments');
     const docRef = await addDoc(commentsCollectionRef, { ...comment, createdAt: serverTimestamp() });
 
-    // Increment comment count on the post (consider using a transaction or Cloud Function for atomic updates)
     const postDocRef = doc(db, 'forums', forumId, 'posts', postId);
-    await updateDoc(postDocRef, { commentCount: increment(1) }); // Use increment for atomic update
+    await updateDoc(postDocRef, { commentCount: increment(1) });
 
     return docRef.id;
 };
@@ -288,19 +312,15 @@ export const togglePostVote = async (forumId: string, postId: string, userId: st
 
     if (voteType === 'upvote') {
         if (newUpvotes.includes(userId)) {
-            // User already upvoted, remove upvote
             newUpvotes = newUpvotes.filter(id => id !== userId);
         } else {
-            // Add upvote, remove downvote if present
             newUpvotes.push(userId);
             newDownvotes = newDownvotes.filter(id => id !== userId);
         }
     } else if (voteType === 'downvote') {
         if (newDownvotes.includes(userId)) {
-            // User already downvoted, remove downvote
             newDownvotes = newDownvotes.filter(id => id !== userId);
         } else {
-            // Add downvote, remove upvote if present
             newDownvotes.push(userId);
             newUpvotes = newUpvotes.filter(id => id !== userId);
         }
@@ -314,7 +334,6 @@ export const togglePostVote = async (forumId: string, postId: string, userId: st
 
 
 // --- Wishlist Functions (Wishlist Page: /wishlist) ---
-// This assumes a user's wishlist is an array of plant IDs within their user document
 export const addPlantToWishlist = async (userId: string, plantId: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
@@ -329,8 +348,6 @@ export const removePlantFromWishlist = async (userId: string, plantId: string): 
     });
 };
 
-// To get the actual plant details for a wishlist, you'd fetch the user's wishlist IDs
-// then loop through them to get each plant's data from the 'plants' collection.
 export const getWishlistPlants = async (userId: string): Promise<PlantListing[]> => {
     const user = await getUserProfile(userId);
     if (!user || !user.favoritePlants || user.favoritePlants.length === 0) {
@@ -340,7 +357,6 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
     const plantPromises = user.favoritePlants.map(plantId => getPlantListing(plantId));
     const plants = await Promise.all(plantPromises);
 
-    // Filter out any nulls if a plant was deleted or not found
     return plants.filter(plant => plant !== null) as PlantListing[];
 };
 
@@ -355,7 +371,6 @@ export const registerUser = async (email: string, password: string, username: st
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const newUser = userCredential.user;
     if (newUser) {
-        // Create Firestore profile immediately after successful registration
         await createUserProfile({
             userId: newUser.uid,
             username: username,
@@ -383,10 +398,9 @@ export const logoutUser = async () => {
 export const awardRewardPoints = async (userId: string, points: number, description: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
-        rewardPoints: increment(points), // Atomically increase points
+        rewardPoints: increment(points),
     });
 
-    // Record transaction
     await addDoc(collection(db, 'rewardsTransactions'), {
         userId,
         type: 'earn',
@@ -398,12 +412,10 @@ export const awardRewardPoints = async (userId: string, points: number, descript
 
 export const redeemRewardPoints = async (userId: string, points: number, description: string): Promise<void> => {
     const userRef = doc(db, 'users', userId);
-    // You might want to check if the user has enough points before decrementing
     await updateDoc(userRef, {
-        rewardPoints: increment(-points), // Atomically decrease points
+        rewardPoints: increment(-points),
     });
 
-    // Record transaction
     await addDoc(collection(db, 'rewardsTransactions'), {
         userId,
         type: 'spend',

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserPlantListings } from "@/lib/firestoreService";
+import { getUserPlantListings, getWishlistPlants } from "@/lib/firestoreService";
 import type { PlantListing } from "@/models";
 import { format } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
@@ -19,25 +19,43 @@ import { PlantCard } from "@/components/plant-card";
 export default function ProfilePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
-  const [plantsLoading, setPlantsLoading] = useState(true);
+  const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
 
   useEffect(() => {
     if (user?.uid) {
       const fetchUserPlants = async () => {
-        setPlantsLoading(true);
+        setListingsLoading(true);
         try {
           const plants = await getUserPlantListings(user.uid);
           setUserPlants(plants);
         } catch (error) {
           console.error("Failed to fetch user plants:", error);
-          // Handle error, maybe show a toast
         } finally {
-          setPlantsLoading(false);
+          setListingsLoading(false);
         }
       };
       fetchUserPlants();
     }
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      const fetchWishlist = async () => {
+        setWishlistLoading(true);
+        try {
+          const plants = await getWishlistPlants(user.uid);
+          setWishlistPlants(plants);
+        } catch (error) {
+          console.error("Failed to fetch wishlist:", error);
+        } finally {
+          setWishlistLoading(false);
+        }
+      };
+      fetchWishlist();
+    }
+  }, [user?.uid, profile?.favoritePlants]);
 
   if (authLoading) {
     return (
@@ -65,7 +83,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Safely format date
   const joinedDate = profile.joinedDate ? format((profile.joinedDate as Timestamp).toDate(), 'MMMM yyyy') : 'N/A';
 
   return (
@@ -93,7 +110,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="listings" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
-          <TabsTrigger value="wishlist" disabled><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>
+          <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>
           <TabsTrigger value="settings" disabled><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>
         </TabsList>
         <TabsContent value="listings" className="mt-6">
@@ -103,7 +120,7 @@ export default function ProfilePage() {
               <CardDescription>The plants you have listed for sale or trade.</CardDescription>
             </CardHeader>
             <CardContent>
-              {plantsLoading ? (
+              {listingsLoading ? (
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
@@ -124,12 +141,36 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="wishlist">
-           {/* Wishlist content will go here */}
-           <Card><CardContent className="p-6 text-center text-muted-foreground">Wishlist functionality is coming soon!</CardContent></Card>
+        <TabsContent value="wishlist" className="mt-6">
+          <Card>
+            <CardHeader>
+                <CardTitle>My Wishlist</CardTitle>
+                <CardDescription>The plants you've saved for future consideration.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            {wishlistLoading ? (
+              <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              </div>
+              ) : wishlistPlants.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {wishlistPlants.map(plant => (
+                  <PlantCard key={plant.id} plant={plant} />
+                  ))}
+              </div>
+              ) : (
+              <div className="text-center py-12">
+                  <h3 className="text-xl font-semibold">Your wishlist is empty.</h3>
+                  <p className="text-muted-foreground mt-2">Browse the catalog to find plants to add.</p>
+                  <Button asChild className="mt-4">
+                  <Link href="/catalog">Find Plants</Link>
+                  </Button>
+              </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="settings">
-          {/* Edit profile form will go here */}
           <Card><CardContent className="p-6 text-center text-muted-foreground">Profile editing is coming soon!</CardContent></Card>
         </TabsContent>
       </Tabs>

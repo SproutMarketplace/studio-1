@@ -2,13 +2,17 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, DollarSign } from "lucide-react";
+import { Heart, MapPin, User, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
+import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
+import { cn } from "@/lib/utils";
+
 
 export interface PlantCardProps {
   plant: PlantListing;
@@ -16,14 +20,49 @@ export interface PlantCardProps {
 
 export function PlantCard({ plant }: PlantCardProps) {
   const { toast } = useToast();
+  const { user, profile, loading: authLoading, refreshUserProfile } = useAuth();
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
-  const handleAddToWishlist = () => {
-    // In a real app, this would interact with a wishlist state/API
-    toast({
-      title: "Added to Wishlist!",
-      description: `${plant.name} has been added to your wishlist.`,
-    });
+  const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
+
+  const handleWishlistToggle = async () => {
+    if (!user || !profile || !plant.id) {
+      toast({
+        variant: "destructive",
+        title: "Please log in",
+        description: "You need to be logged in to manage your wishlist.",
+      });
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    try {
+      if (isInWishlist) {
+        await removePlantFromWishlist(user.uid, plant.id);
+        toast({
+          title: "Removed from Wishlist",
+          description: `${plant.name} has been removed from your wishlist.`,
+        });
+      } else {
+        await addPlantToWishlist(user.uid, plant.id);
+        toast({
+          title: "Added to Wishlist!",
+          description: `${plant.name} has been added to your wishlist.`,
+        });
+      }
+      await refreshUserProfile();
+    } catch (error) {
+      console.error("Wishlist error:", error);
+      toast({
+        variant: "destructive",
+        title: "Something went wrong",
+        description: "Could not update your wishlist. Please try again.",
+      });
+    } finally {
+      setIsWishlistLoading(false);
+    }
   };
+
 
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
@@ -122,11 +161,15 @@ export function PlantCard({ plant }: PlantCardProps) {
           variant="outline" 
           size="sm" 
           className="w-full group/button hover:bg-muted hover:text-muted-foreground" 
-          onClick={handleAddToWishlist}
-          disabled={!plant.isAvailable}
+          onClick={handleWishlistToggle}
+          disabled={!plant.isAvailable || authLoading || isWishlistLoading}
         >
-          <Heart className="w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive" />
-          Add to Wishlist
+          {isWishlistLoading ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Heart className={cn("w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
+          )}
+          {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
         </Button>
       </CardFooter>
     </Card>
