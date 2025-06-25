@@ -236,8 +236,17 @@ export const getUserChats = async (userId: string): Promise<Chat[]> => {
 
 
 // --- Forum Functions (Forums Pages: /forums, /forums/[communityId]) ---
+export const createForum = async (forumData: Omit<Forum, 'id' | 'createdAt' | 'memberCount'>): Promise<string> => {
+    const docRef = await addDoc(collection(db, 'forums'), {
+        ...forumData,
+        createdAt: serverTimestamp(),
+        memberCount: 1, // Start with the creator as a member
+    });
+    return docRef.id;
+};
+
 export const getForums = async (): Promise<Forum[]> => {
-    const q = query(collection(db, 'forums'), orderBy('createdAt', 'asc'));
+    const q = query(collection(db, 'forums'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     const forums: Forum[] = [];
     querySnapshot.forEach((doc: DocumentSnapshot) => {
