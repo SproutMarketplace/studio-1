@@ -1,22 +1,43 @@
-
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Users, PlusCircle } from "lucide-react";
+import { Search, Users, PlusCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const mockCommunities = [
-    { id: "1", name: "Cactus Collectors", description: "A community for lovers of all things spiky.", members: 125 },
-    { id: "2", name: "Houseplant Heroes", description: "Share your indoor jungles and get care tips.", members: 340 },
-    { id: "3", name: "Rare Plant Traders", description: "For those hunting and trading unique specimens.", members: 88 },
-    { id: "4", name: "Bonsai Beginners", description: "Learn the art of bonsai with fellow novices.", members: 55 },
-];
+import { getForums } from "@/lib/firestoreService";
+import type { Forum } from "@/models";
 
 export default function ForumsListPage() {
+    const [forums, setForums] = useState<Forum[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchForums = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const fetchedForums = await getForums();
+                setForums(fetchedForums);
+            } catch (err) {
+                console.error("Error fetching forums:", err);
+                setError("Failed to load communities. Please try again later.");
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not fetch community list.",
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchForums();
+    }, [toast]);
 
     const handleCreateCommunity = () => {
         toast({
@@ -51,30 +72,45 @@ export default function ForumsListPage() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockCommunities.map(community => (
-                    <Card key={community.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow">
-                        <CardHeader>
-                            <CardTitle className="text-xl group-hover:text-primary">
-                                <Link href={`/forums/${community.id}`} className="hover:underline">
-                                    {community.name}
-                                </Link>
-                            </CardTitle>
-                            <CardDescription>{community.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow" />
-                        <CardFooter className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
-                            <div className="flex items-center">
-                                <Users className="mr-2 h-4 w-4" />
-                                <span>{community.members} members</span>
-                            </div>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={`/forums/${community.id}`}>View</Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
+            {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+            ) : error ? (
+                <div className="text-center py-12 text-destructive">
+                    <h2 className="text-2xl font-semibold">{error}</h2>
+                </div>
+            ) : forums.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {forums.map(forum => (
+                        <Card key={forum.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow">
+                            <CardHeader>
+                                <CardTitle className="text-xl group-hover:text-primary">
+                                    <Link href={`/forums/${forum.id}`} className="hover:underline">
+                                        {forum.name}
+                                    </Link>
+                                </CardTitle>
+                                <CardDescription>{forum.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-grow" />
+                            <CardFooter className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+                                <div className="flex items-center">
+                                    <Users className="mr-2 h-4 w-4" />
+                                    <span>{forum.memberCount || 0} members</span>
+                                </div>
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={`/forums/${forum.id}`}>View</Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                 <div className="text-center py-12">
+                    <h2 className="text-2xl font-semibold text-muted-foreground">No communities found.</h2>
+                    <p className="mt-2 text-muted-foreground">Why not be the first to create one?</p>
+                </div>
+            )}
         </div>
     );
 }
