@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import type { Timestamp } from "firebase/firestore";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +69,9 @@ export default function ListPlantPage() {
     },
   });
 
+  const isPro = profile?.subscription?.status === 'pro' && 
+              (!profile.subscription.expiryDate || (profile.subscription.expiryDate as Timestamp).toDate() > new Date());
+
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const files = Array.from(event.target.files);
@@ -122,7 +126,7 @@ export default function ListPlantPage() {
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: profile.name || "Anonymous",
+        ownerUsername: profile.username || "Anonymous",
         ownerAvatarUrl: profile.avatarUrl || "",
         isAvailable: true,
         imageUrls: [], // Initially empty
@@ -247,7 +251,12 @@ export default function ListPlantPage() {
                       <FormControl>
                         <Input type="number" placeholder="e.g., 25.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value ?? ''}/>
                       </FormControl>
-                      <FormDescription>Leave blank or 0 if it's free or for trade only.</FormDescription>
+                      <FormDescription>
+                        {isPro
+                          ? "You're a Pro member! No platform fees will be applied."
+                          : "A 5% platform fee applies to sales. Upgrade to Pro to list for free."
+                        }
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

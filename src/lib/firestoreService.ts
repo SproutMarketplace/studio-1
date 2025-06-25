@@ -57,12 +57,32 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
 
 export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): Promise<void> => {
     const userRef = doc(db, 'users', user.userId); // Use userId as doc ID
-    await setDoc(userRef, { ...user, joinedDate: serverTimestamp() });
+    await setDoc(userRef, { 
+        ...user, 
+        joinedDate: serverTimestamp(),
+        subscription: {
+            status: 'free',
+            expiryDate: null,
+        }
+    });
 };
 
 export const updateUserData = async (userId: string, data: Partial<User>): Promise<void> => {
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, data);
+};
+
+export const updateUserSubscription = async (userId: string): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+    await updateDoc(userRef, {
+        subscription: {
+            status: 'pro',
+            expiryDate: Timestamp.fromDate(expiryDate),
+        }
+    });
 };
 
 export const uploadProfileImage = async (userId: string, file: File): Promise<string> => {

@@ -60,6 +60,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             favoritePlants: [],
             followers: [],
             following: [],
+            subscription: {
+                status: 'free',
+                expiryDate: null,
+            },
           };
           await setDoc(userDocRef, newProfile);
           setProfile({ id: firebaseUser.uid, ...newProfile });
