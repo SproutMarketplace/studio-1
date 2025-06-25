@@ -129,6 +129,10 @@ export default function LoginPage() {
     }
   }
 
+  const handleBypass = () => {
+    router.push("/catalog");
+  };
+
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center px-6 pt-8 pb-4">
@@ -219,6 +223,9 @@ export default function LoginPage() {
             <Link href="/signup">Sign Up</Link>
           </Button>
         </p>
+        <Button variant="ghost" onClick={handleBypass} className="mt-4 text-muted-foreground">
+          Bypass Login (for development)
+        </Button>
       </CardFooter>
     </Card>
   );
