@@ -86,11 +86,9 @@ export const getPlantListing = async (plantId: string): Promise<PlantListing | n
     return null;
 };
 
-// NOTE: This query requires a composite index in Firestore. 
-// If you see an error about a missing index, please create it in your Firebase console.
-// The index should be on the 'plants' collection with these fields in this order:
-// 1. 'isAvailable' (Ascending) 
-// 2. 'listedDate' (Descending)
+// NOTE: This query requires a composite index in Firestore.
+// Collection: 'plants'
+// Fields: 1. isAvailable (Ascending), 2. listedDate (Descending)
 export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limitNum: number = 10): Promise<{ plants: PlantListing[], lastVisible: DocumentSnapshot | null }> => {
     let q = query(
         collection(db, 'plants'),
@@ -112,6 +110,9 @@ export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limi
     return { plants, lastVisible };
 };
 
+// NOTE: This query requires a composite index in Firestore.
+// Collection: 'plants'
+// Fields: 1. ownerId (Ascending), 2. listedDate (Descending)
 export const getUserPlantListings = async (ownerId: string): Promise<PlantListing[]> => {
     const q = query(collection(db, 'plants'), where('ownerId', '==', ownerId), orderBy('listedDate', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -224,6 +225,9 @@ export const getOtherParticipantProfile = async (chatId: string, currentUserId: 
     return await getUserProfile(otherUserId);
 }
 
+// NOTE: This query requires a composite index in Firestore.
+// Collection: 'chats'
+// Fields: 1. participants (Array-contains), 2. lastMessageTimestamp (Descending)
 export const getUserChats = async (userId: string): Promise<Chat[]> => {
     const q = query(collection(db, 'chats'), where('participants', 'array-contains', userId), orderBy('lastMessageTimestamp', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -439,6 +443,9 @@ export const redeemRewardPoints = async (userId: string, points: number, descrip
     } as Omit<RewardTransaction, 'id'>);
 };
 
+// NOTE: This query requires a composite index in Firestore.
+// Collection: 'rewardsTransactions'
+// Fields: 1. userId (Ascending), 2. timestamp (Descending)
 export const getRewardTransactions = async (userId: string): Promise<RewardTransaction[]> => {
     const q = query(
         collection(db, 'rewardsTransactions'),
