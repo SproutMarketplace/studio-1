@@ -1,76 +1,100 @@
+import type { Timestamp, GeoPoint } from "firebase/firestore";
 
-import type { Timestamp } from "firebase/firestore";
-
-export interface Plant {
-  id?: string; // Firestore document ID, will be populated after fetching
-  name: string;
-  description: string;
-  imageUrls: string[];
-  imageHints?: string[]; 
-  price?: number;
-  type: "sale" | "trade" | "sale_trade";
-  tags?: string[];
-  sellerId: string;
-  sellerName?: string; // Denormalized for easier display
-  sellerAvatar?: string; // Denormalized for easier display
-  location?: string; 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  isSold?: boolean; // To track if a plant is sold
+// Replaces the old UserProfile interface
+export interface User {
+    id?: string; // Document ID from Firestore, same as userId
+    userId: string; // Firebase Auth UID
+    username: string;
+    email: string;
+    bio?: string;
+    avatarUrl?: string;
+    location?: string;
+    joinedDate: Timestamp;
+    plantsListed: number;
+    plantsTraded: number;
+    rewardPoints: number;
+    favoritePlants: string[]; // Array of PlantListing IDs for wishlist
+    followers: string[]; // Array of UserIDs
+    following: string[]; // Array of UserIDs
 }
 
-export interface UserProfile {
-  uid: string;
-  email: string | null;
-  name?: string;
-  bio?: string;
-  avatarUrl?: string;
-  location?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+// Replaces the old Plant interface
+export interface PlantListing {
+    id?: string; // Document ID from Firestore
+    name: string;
+    description: string;
+    imageUrls: string[];
+    price?: number;
+    isAvailable: boolean;
+    tradeOnly: boolean; // if true, only for trade.
+    location?: string;
+    ownerId: string;
+    ownerUsername: string; // Denormalized
+    ownerAvatarUrl?: string; // Denormalized
+    listedDate: Timestamp;
+    tags?: string[];
 }
 
-export interface Community {
-  id?: string; // Firestore document ID
-  name: string;
-  description: string;
-  rules?: string;
-  imageUrl?: string;
-  bannerUrl?: string;
-  creatorId: string; // UID of the user who created it
-  memberCount?: number; // Denormalized, can be updated with a counter
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+// New interfaces from here
+export interface Chat {
+    id?: string; // Document ID (e.g., 'userId1_userId2')
+    participants: string[]; // Array of userIDs
+    lastMessage: string;
+    lastMessageTimestamp: Timestamp;
+    participantDetails?: { [userId: string]: { username: string, avatarUrl?: string } }; // Denormalized data
 }
 
-export interface ForumPost {
-  id?: string; // Firestore document ID
-  communityId: string; // ID of the parent Community
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string; // Denormalized
-  authorAvatar?: string; // Denormalized
-  category?: string; // e.g., "Questions", "Show Off", "Trade Requests"
-  tags?: string[];
-  imageUrls?: string[]; // Optional for users showing off plants
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  lastReplyAt?: Timestamp; // To sort by recent activity
-  replyCount?: number; // Denormalized
-  viewCount?: number; // Optional
+export interface Message {
+    id?: string; // Document ID
+    senderId: string;
+    receiverId: string; // For notifications, context
+    text: string;
+    timestamp: Timestamp;
+    read: boolean;
 }
 
-export interface ForumComment {
-  id?: string; // Firestore document ID
-  postId: string; // ID of the parent ForumPost
-  content: string;
-  authorId: string;
-  authorName: string; // Denormalized
-  authorAvatar?: string; // Denormalized
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  parentCommentId?: string; // For threaded replies, optional
+// Replaces the old Community interface
+export interface Forum {
+    id?: string; // Document ID
+    name: string;
+    description: string;
+    createdAt: Timestamp;
+    memberCount?: number; // Denormalized
+    creatorId?: string; // UserID of creator
 }
 
-    
+// Replaces the old ForumPost interface
+export interface Post {
+    id?: string; // Document ID
+    forumId: string; // Which forum it belongs to
+    title: string;
+    content: string;
+    authorId: string;
+    authorUsername: string; // Denormalized
+    authorAvatarUrl?: string; // Denormalized
+    createdAt: Timestamp;
+    upvotes: string[]; // Array of userIDs
+    downvotes: string[]; // Array of userIDs
+    commentCount: number; // Denormalized
+}
+
+// Replaces the old ForumComment interface
+export interface Comment {
+    id?: string; // Document ID
+    postId: string; // Which post it belongs to
+    forumId: string; // Which forum it belongs to (for easier queries)
+    authorId: string;
+    authorUsername:string; // Denormalized
+    authorAvatarUrl?: string; // Denormalized
+    content: string;
+    createdAt: Timestamp;
+}
+
+export interface RewardTransaction {
+    id?: string; // Document ID
+    userId: string;
+    type: 'earn' | 'spend';
+    points: number;
+    description: string;
+    timestamp: Timestamp;
+}
