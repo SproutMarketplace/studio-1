@@ -87,6 +87,9 @@ export const getPlantListing = async (plantId: string): Promise<PlantListing | n
 };
 
 export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limitNum: number = 10): Promise<{ plants: PlantListing[], lastVisible: DocumentSnapshot | null }> => {
+    // NOTE: This query requires a composite index in Firestore. 
+    // If you see an error about a missing index, please create it in your Firebase console.
+    // The index should be on the 'plants' collection with 'isAvailable' (ascending) and 'listedDate' (descending).
     let q = query(
         collection(db, 'plants'),
         where('isAvailable', '==', true),
