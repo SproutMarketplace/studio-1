@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ListFilter, Loader2 } from "lucide-react";
 import { getAvailablePlantListings } from "@/lib/firestoreService";
-import type { DocumentSnapshot } from "firebase/firestore";
+import type { DocumentSnapshot, DocumentData } from "firebase/firestore";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -24,7 +24,7 @@ export default function PlantCatalogPage() {
     const [plants, setPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
+    const [lastVisible, setLastVisible] = useState<DocumentSnapshot<DocumentData> | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filters, setFilters] = useState<{ tradeOnly: boolean | null }>({ tradeOnly: null });
@@ -46,7 +46,7 @@ export default function PlantCatalogPage() {
         try {
             // Use the firestoreService function
             const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
-                loadMore ? lastVisible : undefined,
+                loadMore ? lastVisible || undefined : undefined,
                 PLANTS_PER_PAGE
             );
 
