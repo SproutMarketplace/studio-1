@@ -1,24 +1,31 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { PlantCard } from "@/components/plant-card";
 import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ListFilter, Loader2 } from "lucide-react";
 import { getAvailablePlantListings } from "@/lib/firestoreService";
-import type { DocumentSnapshot, DocumentData } from "firebase/firestore";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import type { DocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 const PLANTS_PER_PAGE = 8;
+const CATEGORY_OPTIONS = [
+  { id: "tropical", label: "Tropical" },
+  { id: "cacti", label: "Cacti" },
+  { id: "succulent", label: "Succulent" },
+  { id: "rare", label: "Rare" },
+  { id: "beginner-friendly", label: "Beginner Friendly" },
+  { id: "pet-friendly", label: "Pet Friendly" },
+  { id: "low-light", label: "Low Light" },
+  { id: "flowering", label: "Flowering" },
+];
 
 export default function PlantCatalogPage() {
     const [plants, setPlants] = useState<PlantListing[]>([]);
@@ -27,8 +34,15 @@ export default function PlantCatalogPage() {
     const [lastVisible, setLastVisible] = useState<DocumentSnapshot<DocumentData> | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filters, setFilters] = useState<{ tradeOnly: boolean | null }>({ tradeOnly: null });
-
+    const [filters, setFilters] = useState<{
+        tradeOnly: 'all' | 'sale' | 'trade';
+        sortBy: 'newest' | 'price-asc' | 'price-desc';
+        categories: string[];
+    }>({
+        tradeOnly: 'all',
+        sortBy: 'newest',
+        categories: [],
+    });
 
     const fetchPlants = async (loadMore = false) => {
         if (!loadMore) {
@@ -44,7 +58,6 @@ export default function PlantCatalogPage() {
         setError(null);
 
         try {
-            // Use the firestoreService function
             const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
                 loadMore ? lastVisible || undefined : undefined,
                 PLANTS_PER_PAGE
@@ -71,23 +84,62 @@ export default function PlantCatalogPage() {
         setSearchTerm(event.target.value.toLowerCase());
     };
     
-    // Client-side filtering for simplicity. Real app would integrate this into Firestore query
-    const filteredPlants = plants.filter(plant => {
-        const matchesSearch = plant.name.toLowerCase().includes(searchTerm) ||
-            plant.description.toLowerCase().includes(searchTerm) ||
-            (plant.tags && plant.tags.some(tag => tag.toLowerCase().includes(searchTerm)));
+    const processedPlants = useMemo(() => {
+        let processed = [...plants];
 
-        const matchesFilter = filters.tradeOnly === null || plant.tradeOnly === filters.tradeOnly;
+        // 1. Filter
+        processed = processed.filter(plant => {
+            const matchesSearch = searchTerm ?
+                plant.name.toLowerCase().includes(searchTerm) ||
+                plant.description.toLowerCase().includes(searchTerm) ||
+                (plant.tags && plant.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+                : true;
 
-        return matchesSearch && matchesFilter;
-    });
+            const matchesTradeFilter =
+                filters.tradeOnly === 'all' ||
+                (filters.tradeOnly === 'sale' && !plant.tradeOnly) ||
+                (filters.tradeOnly === 'trade' && plant.tradeOnly);
+            
+            const plantTags = plant.tags?.map(t => t.toLowerCase().replace(/ /g, '-')) || [];
+            const matchesCategoryFilter = filters.categories.length === 0 ||
+                filters.categories.every(category => plantTags.includes(category));
 
-    const handleFilterChange = (filterType: "forSale" | "forTrade" | "all", checked: boolean) => {
-        if (checked) {
-            if (filterType === 'forSale') setFilters({ tradeOnly: false });
-            else if (filterType === 'forTrade') setFilters({ tradeOnly: true });
-            else setFilters({ tradeOnly: null });
+            return matchesSearch && matchesTradeFilter && matchesCategoryFilter;
+        });
+
+        // 2. Sort
+        switch (filters.sortBy) {
+            case 'price-asc':
+                processed.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+                break;
+            case 'price-desc':
+                processed.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+                break;
+            case 'newest':
+            default:
+                processed.sort((a, b) => (b.listedDate as Timestamp).toMillis() - (a.listedDate as Timestamp).toMillis());
+                break;
         }
+
+        return processed;
+    }, [plants, searchTerm, filters]);
+
+
+    const handleCategoryChange = (categoryId: string) => {
+        setFilters(prev => {
+            const newCategories = prev.categories.includes(categoryId)
+                ? prev.categories.filter(c => c !== categoryId)
+                : [...prev.categories, categoryId];
+            return { ...prev, categories: newCategories };
+        });
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            tradeOnly: 'all',
+            sortBy: 'newest',
+            categories: [],
+        });
     };
 
 
@@ -113,36 +165,85 @@ export default function PlantCatalogPage() {
                         value={searchTerm}
                     />
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="shrink-0 text-lg py-2 h-auto">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="shrink-0 text-lg py-2 h-auto hover:bg-primary/10 hover:text-primary">
                             <ListFilter className="mr-2 h-5 w-5" />
                             Filters
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
-                        <DropdownMenuLabel>Listing Type</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={filters.tradeOnly === null}
-                            onCheckedChange={(checked) => handleFilterChange("all", Boolean(checked))}
-                        >
-                            All Listings
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                           checked={filters.tradeOnly === false}
-                           onCheckedChange={(checked) => handleFilterChange("forSale", Boolean(checked))}
-                        >
-                            For Sale
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={filters.tradeOnly === true}
-                            onCheckedChange={(checked) => handleFilterChange("forTrade", Boolean(checked))}
-                        >
-                            For Trade
-                        </DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="end">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="font-medium leading-none">Filters</h4>
+                                <Button variant="link" size="sm" onClick={clearFilters} className="p-0 h-auto text-primary">Clear all</Button>
+                            </div>
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <Label className="font-semibold">Sort by</Label>
+                                <RadioGroup
+                                    value={filters.sortBy}
+                                    onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as any }))}
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="newest" id="sort-newest" />
+                                        <Label htmlFor="sort-newest" className="font-normal">Newest First</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="price-asc" id="sort-price-asc" />
+                                        <Label htmlFor="sort-price-asc" className="font-normal">Price: Low to High</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="price-desc" id="sort-price-desc" />
+                                        <Label htmlFor="sort-price-desc" className="font-normal">Price: High to Low</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <Label className="font-semibold">Listing Type</Label>
+                                <RadioGroup
+                                    value={filters.tradeOnly}
+                                    onValueChange={(value) => setFilters(prev => ({ ...prev, tradeOnly: value as any }))}
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="all" id="type-all" />
+                                        <Label htmlFor="type-all" className="font-normal">All Listings</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="sale" id="type-sale" />
+                                        <Label htmlFor="type-sale" className="font-normal">For Sale</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="trade" id="type-trade" />
+                                        <Label htmlFor="type-trade" className="font-normal">For Trade</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <Label className="font-semibold">Categories</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {CATEGORY_OPTIONS.map(category => (
+                                        <div key={category.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`category-${category.id}`}
+                                                checked={filters.categories.includes(category.id)}
+                                                onCheckedChange={() => handleCategoryChange(category.id)}
+                                            />
+                                            <Label htmlFor={`category-${category.id}`} className="font-normal text-sm leading-tight">
+                                                {category.label}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
 
             {isLoading && plants.length === 0 ? (
@@ -153,14 +254,14 @@ export default function PlantCatalogPage() {
                 <div className="text-center py-12 text-destructive">
                     <h2 className="text-2xl font-semibold">{error}</h2>
                 </div>
-            ) : filteredPlants.length > 0 ? (
+            ) : processedPlants.length > 0 ? (
                 <>
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {filteredPlants.map((plant) => (
+                        {processedPlants.map((plant) => (
                             <PlantCard key={plant.id} plant={plant} />
                         ))}
                     </div>
-                    {hasMore && !isLoading && (
+                    {hasMore && !isLoading && searchTerm === '' && filters.categories.length === 0 && (
                         <div className="mt-8 text-center">
                             <Button onClick={() => fetchPlants(true)} disabled={isLoading}>
                                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : "Load More Plants"}
