@@ -4,13 +4,16 @@ import type { PlantListing } from '@/models';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-if (!stripeSecretKey || stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
-    throw new Error('CRITICAL STRIPE CONFIGURATION ERROR: Your STRIPE_SECRET_KEY is missing or is a placeholder. Please set it in your `.env.local` file and restart the server.');
-}
+const isStripeDisabled = !stripeSecretKey || stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_');
 
-const stripe = new Stripe(stripeSecretKey, {
-    apiVersion: '2024-06-20',
-});
+let stripe: Stripe | null = null;
+if (!isStripeDisabled) {
+    stripe = new Stripe(stripeSecretKey, {
+        apiVersion: '2024-06-20',
+    });
+} else {
+    console.warn("STRIPE DISABLED: Stripe secret key is missing or is a placeholder. Checkout will be disabled.");
+}
 
 interface CartItem extends PlantListing {
     quantity: number;
@@ -19,6 +22,10 @@ interface CartItem extends PlantListing {
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
+    }
+
+    if (isStripeDisabled || !stripe) {
+        return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
 
     try {

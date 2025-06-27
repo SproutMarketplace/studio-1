@@ -14,11 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
-if (!stripePublishableKey || stripePublishableKey.includes('_PUT_YOUR_STRIPE_PUBLISHABLE_KEY_HERE_')) {
-    console.error('Stripe publishable key is not set or is a placeholder. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in your `.env.local` file and restart the server. Checkout will be disabled.');
+const isStripeDisabled = !stripePublishableKey || stripePublishableKey.includes('_PUT_YOUR_STRIPE_PUBLISHABLE_KEY_HERE_');
+
+if (isStripeDisabled) {
+    console.warn("STRIPE DISABLED: Stripe publishable key is not set or is a placeholder. Checkout will be disabled.");
 }
 
-const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+const stripePromise = !isStripeDisabled ? loadStripe(stripePublishableKey!) : null;
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
     const { items, removeFromCart, totalPrice, itemCount } = useCart();
@@ -26,12 +28,12 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
     const { toast } = useToast();
 
     async function handleCheckout() {
-        if (!stripePromise) {
+        if (isStripeDisabled || !stripePromise) {
             console.error("Stripe is not configured correctly. Checkout is disabled.");
             toast({
                 variant: 'destructive',
-                title: 'Configuration Error',
-                description: 'Stripe is not configured correctly. Checkout is disabled.'
+                title: 'Checkout Disabled',
+                description: 'Payment processing is not available at this time. This may be because the application is in offline mode.'
             });
             return;
         }
@@ -125,7 +127,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                                 <Button
                                     className="w-full text-lg"
                                     onClick={handleCheckout}
-                                    disabled={isCheckingOut}
+                                    disabled={isCheckingOut || isStripeDisabled}
                                 >
                                     {isCheckingOut ? (
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -133,6 +135,9 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                                         "Proceed to Checkout"
                                     )}
                                 </Button>
+                                {isStripeDisabled && (
+                                    <p className="text-xs text-center text-muted-foreground">Checkout is disabled in mock mode.</p>
+                                )}
                             </div>
                         </SheetFooter>
                     </>

@@ -42,8 +42,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
+import { logoutUser } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,14 +72,15 @@ function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
     const { open, setOpen, isMobile, openMobile, setOpenMobile } = useSidebar();
-    const { user, loading } = useAuth();
+    const { user, loading, refreshUserProfile } = useAuth();
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('devBypassAuth');
-            }
+            await logoutUser();
+            // In mock mode, this will be a no-op but we still want to refresh the context
+            // to re-establish the mock user state if needed, or clear it if real.
+            await refreshUserProfile();
+            
             toast({
                 title: "Logged Out",
                 description: "You have been successfully logged out.",

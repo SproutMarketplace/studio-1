@@ -57,6 +57,14 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Offline Mode",
+            description: "Cannot log in while in offline mode. Please configure Firebase keys.",
+        });
+        return;
+    }
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
@@ -128,13 +136,6 @@ export default function LoginPage() {
       setIsGoogleLoading(false);
     }
   }
-
-  const handleBypass = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('devBypassAuth', 'true');
-    }
-    router.push("/catalog");
-  };
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -226,9 +227,6 @@ export default function LoginPage() {
             <Link href="/signup">Sign Up</Link>
           </Button>
         </p>
-        <Button variant="ghost" onClick={handleBypass} className="mt-4 text-muted-foreground">
-          Bypass Login (for development)
-        </Button>
       </CardFooter>
     </Card>
   );
