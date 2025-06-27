@@ -1,13 +1,14 @@
-
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import type { PlantListing } from '@/models';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey || stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
+    throw new Error('CRITICAL STRIPE CONFIGURATION ERROR: Your STRIPE_SECRET_KEY is missing or is a placeholder. Please set it in your `.env.local` file and restart the server.');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(stripeSecretKey, {
     apiVersion: '2024-06-20',
 });
 

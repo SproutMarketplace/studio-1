@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
@@ -15,18 +14,21 @@ const firebaseConfig = {
 };
 
 // Check for essential Firebase configuration
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authDomain) {
-  console.error(
-    "CRITICAL FIREBASE CONFIGURATION ERROR: \n" +
-    "One or more NEXT_PUBLIC_FIREBASE_ environment variables are missing in your .env file.\n" +
-    "Please ensure the following are set:\n" +
-    "- NEXT_PUBLIC_FIREBASE_API_KEY\n" +
-    "- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN\n" +
-    "- NEXT_PUBLIC_FIREBASE_PROJECT_ID\n" +
-    "Firebase will not initialize correctly without them."
+if (
+  !firebaseConfig.apiKey ||
+  !firebaseConfig.projectId ||
+  !firebaseConfig.authDomain ||
+  firebaseConfig.apiKey.includes('_PUT_YOUR_API_KEY_HERE_')
+) {
+  throw new Error(
+    "CRITICAL FIREBASE CONFIGURATION ERROR: \n\n" +
+    "Your Firebase environment variables are missing or still contain placeholder values in `.env.local`.\n\n" +
+    "Please follow these steps:\n" +
+    "1. Create a `.env.local` file in your project root if it doesn't exist.\n" +
+    "2. Copy the contents of the `.env` file into `.env.local`.\n" +
+    "3. Replace the placeholder values (e.g., `_PUT_YOUR_API_KEY_HERE_`) with your actual keys from your Firebase project settings.\n" +
+    "4. After saving the file, YOU MUST RESTART your development server (the `npm run dev` command).\n"
   );
-  // You might choose to throw an error here to halt execution if preferred,
-  // but a console error is often sufficient for development.
 }
 
 

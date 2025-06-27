@@ -12,7 +12,13 @@ import { Loader2, ShoppingCart, Trash2 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "@/hooks/use-toast";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+if (!stripePublishableKey || stripePublishableKey.includes('_PUT_YOUR_STRIPE_PUBLISHABLE_KEY_HERE_')) {
+    console.error('Stripe publishable key is not set or is a placeholder. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in your `.env.local` file and restart the server. Checkout will be disabled.');
+}
+
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
     const { items, removeFromCart, totalPrice, itemCount } = useCart();
@@ -20,8 +26,8 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
     const { toast } = useToast();
 
     async function handleCheckout() {
-        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-            console.error("Stripe publishable key is not set. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in your environment variables.");
+        if (!stripePromise) {
+            console.error("Stripe is not configured correctly. Checkout is disabled.");
             toast({
                 variant: 'destructive',
                 title: 'Configuration Error',
