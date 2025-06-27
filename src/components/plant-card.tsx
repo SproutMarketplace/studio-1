@@ -7,11 +7,12 @@ import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, Loader2 } from "lucide-react";
+import { Heart, MapPin, User, Loader2, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/cart-context";
 
 
 export interface PlantCardProps {
@@ -21,9 +22,13 @@ export interface PlantCardProps {
 export function PlantCard({ plant }: PlantCardProps) {
   const { toast } = useToast();
   const { user, profile, loading: authLoading, refreshUserProfile } = useAuth();
+  const { addToCart, items: cartItems } = useCart();
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
+  const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
+  const isInCart = cartItems.some(item => item.id === plant.id);
+
 
   const handleWishlistToggle = async () => {
     if (!user || !profile || !plant.id) {
@@ -156,7 +161,7 @@ export function PlantCard({ plant }: PlantCardProps) {
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-4 border-t">
+      <CardFooter className="p-4 border-t flex gap-2">
         <Button 
           variant="outline" 
           size="sm" 
@@ -169,8 +174,20 @@ export function PlantCard({ plant }: PlantCardProps) {
           ) : (
             <Heart className={cn("w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
           )}
-          {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+          {isInWishlist ? 'In Wishlist' : 'Wishlist'}
         </Button>
+        {!isTradeOnly && (
+          <Button
+              variant="outline"
+              size="sm"
+              className="w-full group/button hover:bg-primary/10 hover:text-primary"
+              onClick={() => addToCart(plant)}
+              disabled={!plant.isAvailable || isInCart}
+          >
+              <ShoppingCart className={cn("w-4 h-4 mr-2 transition-colors", isInCart && "text-primary")} />
+              {isInCart ? "In Cart" : "Add to Cart"}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

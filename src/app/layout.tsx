@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { AppLayout } from "@/components/app-layout";
+import { CartProvider } from "@/contexts/cart-context";
 
 export const metadata: Metadata = {
   title: "Sprout - Plant Marketplace",
@@ -22,7 +23,9 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
         <AuthProvider>
-          <AppLayout>{children}</AppLayout>
+          <CartProvider>
+            <AppLayout>{children}</AppLayout>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

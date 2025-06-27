@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
     Award,
     Heart,
@@ -19,6 +20,7 @@ import {
     LogIn as LogInIcon,
     X,
     Gem,
+    ShoppingCart,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -45,6 +47,8 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "@/contexts/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/contexts/cart-context";
+import { CartSheet } from "@/components/cart-sheet";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
@@ -261,9 +265,10 @@ function AppSidebar() {
     );
 }
 
-function PersistentHeader() {
+function PersistentHeader({ onCartClick }: { onCartClick: () => void }) {
     const { open, openMobile, isMobile } = useSidebar();
     const shouldShowHeaderElements = !(isMobile ? openMobile : open);
+    const { itemCount } = useCart();
 
     return (
         <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
@@ -279,6 +284,22 @@ function PersistentHeader() {
                     <Link href="/catalog" passHref aria-label="Sprout Home">
                         <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                     </Link>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Open cart"
+                            onClick={onCartClick}
+                            className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
+                            {itemCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                                    {itemCount}
+                                </span>
+                            )}
+                            <ShoppingCart />
+                        </Button>
+                    </div>
                 </>
             )}
             {!shouldShowHeaderElements && <div className="w-full h-full" />}
@@ -290,6 +311,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isRootRoute = pathname === "/";
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
 
     // The root page has its own full-screen layout (for redirection)
     if (isRootRoute) {
@@ -316,11 +339,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset className="flex flex-col min-h-screen">
-                <PersistentHeader />
+                <PersistentHeader onCartClick={() => setIsCartOpen(true)} />
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     <AuthGuard>{children}</AuthGuard>
                 </main>
             </SidebarInset>
+            <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />
             <Toaster />
         </SidebarProvider>
     );
