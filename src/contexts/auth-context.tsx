@@ -2,13 +2,12 @@
 "use client";
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
-import { auth, db, isFirebaseDisabled } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from "firebase/firestore"; 
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User } from "@/models";
-import { mockUser, mockFirebaseAuthUser } from "@/lib/mock-data";
 
 interface AuthContextType {
   user: FirebaseAuthUser | null;
@@ -40,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser | null) => {
-    if (firebaseUser && db) { // Added db check
+    if (firebaseUser) {
       const userDocRef = doc(db, "users", firebaseUser.uid);
       try {
         const docSnap = await getDoc(userDocRef);
@@ -79,19 +78,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (isFirebaseDisabled) {
-        // If firebase is disabled, run in mock mode
-        setUser(mockFirebaseAuthUser as FirebaseAuthUser);
-        setProfile(mockUser);
-        setLoading(false);
-        return;
-    }
-
-    if (!auth) {
-        setLoading(false);
-        return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       await fetchUserProfile(currentUser);
@@ -101,10 +87,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [fetchUserProfile]);
 
   const refreshUserProfile = useCallback(async () => {
-    if (isFirebaseDisabled) {
-        console.log("Mock Mode: Simulating refreshUserProfile.");
-        return;
-    }
     if (user) {
       setLoading(true);
       await fetchUserProfile(user);

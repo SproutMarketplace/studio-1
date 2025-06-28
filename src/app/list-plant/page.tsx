@@ -12,7 +12,6 @@ import type { Timestamp } from "firebase/firestore";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { addPlantListing, updatePlantListing, uploadPlantImage } from "@/lib/firestoreService";
-import { isFirebaseDisabled } from "@/lib/firebase";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,19 +119,6 @@ export default function ListPlantPage() {
     }
 
     setIsLoading(true);
-
-    // If in mock mode, simulate the process
-    if (isFirebaseDisabled) {
-        setTimeout(() => {
-            toast({
-                title: "Plant Listed! (Mock)",
-                description: `${data.name} has been added to the mock catalog.`,
-            });
-            router.push("/catalog");
-            setIsLoading(false);
-        }, 1000);
-        return;
-    }
 
     try {
       // Step 1: Create the plant listing document without image URLs

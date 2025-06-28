@@ -1,18 +1,15 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import type { PlantListing } from '@/models';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-const isStripeDisabled = !stripeSecretKey || stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_');
-
 let stripe: Stripe | null = null;
-if (!isStripeDisabled) {
+if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
     stripe = new Stripe(stripeSecretKey, {
         apiVersion: '2024-06-20',
     });
-} else {
-    console.warn("STRIPE DISABLED: Stripe secret key is missing or is a placeholder. Checkout will be disabled.");
 }
 
 interface CartItem extends PlantListing {
@@ -24,7 +21,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
     }
 
-    if (isStripeDisabled || !stripe) {
+    if (!stripe) {
+        const errorMessage = "Checkout is currently disabled. The server is missing a valid Stripe secret key. Please check your server's environment variables.";
+        console.error("Stripe Error:", errorMessage);
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
 

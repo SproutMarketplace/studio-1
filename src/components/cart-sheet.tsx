@@ -16,10 +16,6 @@ const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 const isStripeDisabled = !stripePublishableKey || stripePublishableKey.includes('_PUT_YOUR_STRIPE_PUBLISHABLE_KEY_HERE_');
 
-if (isStripeDisabled) {
-    console.warn("STRIPE DISABLED: Stripe publishable key is not set or is a placeholder. Checkout will be disabled.");
-}
-
 const stripePromise = !isStripeDisabled ? loadStripe(stripePublishableKey!) : null;
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
@@ -28,12 +24,11 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
     const { toast } = useToast();
 
     async function handleCheckout() {
-        if (isStripeDisabled || !stripePromise) {
-            console.error("Stripe is not configured correctly. Checkout is disabled.");
+        if (!stripePromise) {
             toast({
                 variant: 'destructive',
                 title: 'Checkout Disabled',
-                description: 'Payment processing is not available at this time. This may be because the application is in offline mode.'
+                description: 'Payment processing is not configured correctly. Please provide a valid Stripe key.'
             });
             return;
         }
@@ -136,7 +131,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                                     )}
                                 </Button>
                                 {isStripeDisabled && (
-                                    <p className="text-xs text-center text-muted-foreground">Checkout is disabled in mock mode.</p>
+                                    <p className="text-xs text-center text-muted-foreground">Checkout is disabled. Admin needs to configure Stripe keys.</p>
                                 )}
                             </div>
                         </SheetFooter>
