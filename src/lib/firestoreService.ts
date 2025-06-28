@@ -1,6 +1,6 @@
 
 // src/lib/firestoreService.ts
-import { db, auth, storage } from './firebase'; // Your Firebase instances
+import { db, auth, storage } from '@/lib/firebase'; // Your Firebase instances
 import {
     collection,
     doc,
