@@ -4,7 +4,7 @@
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from "firebase/firestore"; 
+import { doc, getDoc, type Timestamp } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User } from "@/models";
@@ -38,53 +38,68 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser) => {
-    if (!db) {
-      setProfile(null);
-      return;
-    }
-    const userDocRef = doc(db, "users", firebaseUser.uid);
-    try {
-      const docSnap = await getDoc(userDocRef);
-      if (docSnap.exists()) {
-        setProfile({ id: docSnap.id, ...docSnap.data() } as User);
-      } else {
+  // This callback is for manually refreshing the profile data.
+  const refreshUserProfile = useCallback(async () => {
+    if (auth?.currentUser && db) {
+      setLoading(true);
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error("Error refreshing user profile:", error);
         setProfile(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      setProfile(null);
     }
   }, []);
 
   useEffect(() => {
-    if (!isFirebaseEnabled || !auth) {
-        setLoading(false);
-        setUser(null);
-        setProfile(null);
-        return;
+    // This effect runs once on mount to set up the main authentication listener.
+    if (!isFirebaseEnabled || !auth || !db) {
+      setLoading(false);
+      return;
     }
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        await fetchUserProfile(currentUser);
-        setLoading(false);
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // This callback runs whenever the auth state changes (login, logout, initial load).
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        try {
+          const docSnap = await getDoc(userDocRef);
+          if (docSnap.exists()) {
+            setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+          } else {
+            // This is a valid state if a user just signed up and their profile doc
+            // hasn't been created yet. The signup flow will handle creation.
+            setProfile(null);
+            console.warn(`AuthContext: No profile document found for user ${firebaseUser.uid}`);
+          }
+        } catch (error) {
+          console.error("AuthContext: Error fetching user profile:", error);
+          setProfile(null);
+        } finally {
+          // IMPORTANT: Only set loading to false after all async operations are complete.
+          setLoading(false);
+        }
       } else {
+        // User is logged out.
         setUser(null);
         setProfile(null);
         setLoading(false);
       }
     });
-    return () => unsubscribe();
-  }, [fetchUserProfile]);
 
-  const refreshUserProfile = useCallback(async () => {
-    if (user && isFirebaseEnabled) {
-      setLoading(true);
-      await fetchUserProfile(user);
-      setLoading(false);
-    }
-  }, [user, fetchUserProfile]);
+    // Cleanup the listener when the component unmounts.
+    return () => unsubscribe();
+  }, []); // The empty dependency array is crucial to ensure this runs only once.
+
 
   const updateUserProfileInContext = (updatedProfileData: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);

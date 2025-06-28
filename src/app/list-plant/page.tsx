@@ -69,6 +69,7 @@ export default function ListPlantPage() {
   });
 
   useEffect(() => {
+    // Pre-fill location from profile once it's loaded
     if (profile?.location && !form.getValues('location')) {
       form.setValue('location', profile.location);
     }
@@ -109,8 +110,9 @@ export default function ListPlantPage() {
   };
 
   async function onSubmit(data: ListPlantFormValues) {
-    if (!user || !profile || !profile.username) {
-      toast({ variant: "destructive", title: "Authentication Error", description: "Your profile is still loading. Please wait a moment and try again." });
+    // This check is the final safeguard. The button's disabled state should prevent this.
+    if (!user || !profile) {
+      toast({ variant: "destructive", title: "Authentication Error", description: "Your profile is not loaded. Please wait a moment and try again." });
       return;
     }
     if (imageFiles.length === 0) {
@@ -121,22 +123,26 @@ export default function ListPlantPage() {
     setIsLoading(true);
 
     try {
+      // Add the initial listing data (without image URLs)
       const plantId = await addPlantListing({
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: profile.username,
+        ownerUsername: profile.username, // Now guaranteed to be available
         ownerAvatarUrl: profile.avatarUrl || "",
         isAvailable: true,
         imageUrls: [], 
       });
 
+      // Upload images and get their URLs
       const imageUrls = await Promise.all(
         imageFiles.map((file, index) => uploadPlantImage(plantId, file, index))
       );
 
+      // Update the listing with the final image URLs
       await updatePlantListing(plantId, { imageUrls });
       
+      // Redirect to the new plant's page with a success flag
       router.push(`/plant/${plantId}?new_listing=true`);
 
     } catch (error) {
@@ -150,6 +156,7 @@ export default function ListPlantPage() {
     }
   }
 
+  // The button is disabled until authentication is complete AND the user profile is loaded.
   const isButtonDisabled = isLoading || authLoading || !profile;
 
   return (
