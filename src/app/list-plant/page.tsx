@@ -103,8 +103,8 @@ export default function ListPlantPage() {
   };
 
   async function onSubmit(data: ListPlantFormValues) {
-    if (!user || !profile) {
-      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to list a plant." });
+    if (!user || !profile || !profile.username) {
+      toast({ variant: "destructive", title: "Authentication Error", description: "Your profile is still loading. Please wait a moment and try again." });
       return;
     }
     if (imageFiles.length === 0) {
@@ -119,8 +119,8 @@ export default function ListPlantPage() {
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: user.displayName || profile.username,
-        ownerAvatarUrl: user.photoURL || profile.avatarUrl || "",
+        ownerUsername: profile.username,
+        ownerAvatarUrl: profile.avatarUrl || "",
         isAvailable: true,
         imageUrls: [], 
       });
@@ -304,3 +304,4 @@ export default function ListPlantPage() {
     </div>
   );
 }
+
