@@ -54,19 +54,9 @@ export default function PlantCatalogPage() {
     const { clearCart } = useCart();
 
     useEffect(() => {
-        const listingSuccess = searchParams.get('listing_success');
-        const plantName = searchParams.get('plantName');
         const checkoutSuccess = searchParams.get('checkout_success');
         const checkoutCanceled = searchParams.get('canceled');
         let hasParams = false;
-
-        if (listingSuccess === 'true' && plantName) {
-            hasParams = true;
-            toast({
-                title: "Plant Listed!",
-                description: `${decodeURIComponent(plantName)} is now available on the catalog.`,
-            });
-        }
         
         if (checkoutSuccess === 'true') {
             hasParams = true;

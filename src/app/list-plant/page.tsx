@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Loader2, PlusSquare, UploadCloud, X } from "lucide-react";
+import { Loader2, PlusSquare, UploadCloud, X, CheckCircle, Leaf } from "lucide-react";
 
 // Schema for form validation
 const listPlantSchema = z.object({
@@ -49,12 +49,14 @@ const TAG_OPTIONS = [
 const MAX_IMAGES = 5;
 
 export default function ListPlantPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [newPlantId, setNewPlantId] = useState<string | null>(null);
+  const [newPlantName, setNewPlantName] = useState<string>("");
 
   const form = useForm<ListPlantFormValues>({
     resolver: zodResolver(listPlantSchema),
@@ -86,7 +88,6 @@ export default function ListPlantPage() {
       const newPreviews = newFiles.map(file => URL.createObjectURL(file));
       setImagePreviews(prev => [...prev, ...newPreviews]);
       
-      // Reset the file input value to allow selecting the same file again
       event.target.value = "";
     }
   };
@@ -96,13 +97,28 @@ export default function ListPlantPage() {
     setImagePreviews(prev => {
       const newPreviews = [...prev];
       const removedPreview = newPreviews.splice(index, 1);
-      // Revoke the object URL to prevent memory leaks
       if (removedPreview[0]) {
          URL.revokeObjectURL(removedPreview[0]);
       }
       return newPreviews;
     });
   };
+  
+  const resetForm = () => {
+      form.reset({
+          name: "",
+          description: "",
+          price: undefined,
+          tradeOnly: false,
+          location: profile?.location || "",
+          tags: [],
+      });
+      setImageFiles([]);
+      setImagePreviews([]);
+      setIsSuccess(false);
+      setNewPlantId(null);
+      setNewPlantName("");
+  }
 
   async function onSubmit(data: ListPlantFormValues) {
     if (!user || !profile) {
@@ -117,27 +133,29 @@ export default function ListPlantPage() {
     setIsLoading(true);
 
     try {
-      // Step 1: Create the plant listing document without image URLs
-      const newPlantId = await addPlantListing({
+      const plantId = await addPlantListing({
         ...data,
         price: data.price,
         ownerId: user.uid,
         ownerUsername: user.displayName || profile.username || "Anonymous",
         ownerAvatarUrl: user.photoURL || profile.avatarUrl || "",
         isAvailable: true,
-        imageUrls: [], // Initially empty
+        imageUrls: [], 
       });
 
-      // Step 2: Upload images to storage
       const imageUrls = await Promise.all(
-        imageFiles.map((file, index) => uploadPlantImage(newPlantId, file, index))
+        imageFiles.map((file, index) => uploadPlantImage(plantId, file, index))
       );
 
-      // Step 3: Update the plant document with the image URLs
-      await updatePlantListing(newPlantId, { imageUrls });
-
-      // Redirect with success param instead of showing toast here
-      router.push(`/catalog?listing_success=true&plantName=${encodeURIComponent(data.name)}`);
+      await updatePlantListing(plantId, { imageUrls });
+      
+      setNewPlantId(plantId);
+      setNewPlantName(data.name);
+      setIsSuccess(true);
+      toast({
+          title: "Plant Listed!",
+          description: `${data.name} is now available on the catalog.`,
+      });
 
     } catch (error) {
       console.error("Failed to list plant:", error);
@@ -149,6 +167,37 @@ export default function ListPlantPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+  
+  if (isSuccess && newPlantId) {
+      return (
+        <div className="container mx-auto max-w-2xl py-8">
+            <Card className="shadow-lg text-center">
+                <CardHeader>
+                    <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-700">
+                        <CheckCircle className="w-10 h-10" />
+                    </div>
+                    <CardTitle className="text-3xl font-bold mt-4">Success!</CardTitle>
+                    <CardDescription className="text-lg">Your plant, {newPlantName}, has been listed.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {imagePreviews.length > 0 && (
+                        <div className="relative aspect-square max-w-xs mx-auto rounded-lg overflow-hidden">
+                           <Image src={imagePreviews[0]} alt={newPlantName} layout="fill" objectFit="cover" />
+                        </div>
+                    )}
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                        <Button asChild size="lg">
+                            <Link href={`/plant/${newPlantId}`}><Leaf className="mr-2 h-5 w-5"/>View My Listing</Link>
+                        </Button>
+                        <Button onClick={resetForm} variant="outline" size="lg">
+                             <PlusSquare className="mr-2 h-5 w-5"/>List Another Plant
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      );
   }
 
   return (
@@ -168,7 +217,6 @@ export default function ListPlantPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Plant Name */}
               <FormField
                 control={form.control}
                 name="name"
@@ -183,7 +231,6 @@ export default function ListPlantPage() {
                 )}
               />
               
-              {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
@@ -198,7 +245,6 @@ export default function ListPlantPage() {
                 )}
               />
 
-              {/* Image Uploader */}
               <FormItem>
                 <FormLabel className="text-lg">Plant Images</FormLabel>
                 <div className="p-4 border-2 border-dashed rounded-lg border-border bg-muted/50">
@@ -233,7 +279,6 @@ export default function ListPlantPage() {
               </FormItem>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Price */}
                 <FormField
                   control={form.control}
                   name="price"
@@ -251,7 +296,6 @@ export default function ListPlantPage() {
                   )}
                 />
 
-                {/* Trade Only */}
                 <FormField
                   control={form.control}
                   name="tradeOnly"
@@ -273,7 +317,6 @@ export default function ListPlantPage() {
                 />
               </div>
 
-              {/* Location */}
               <FormField
                 control={form.control}
                 name="location"
@@ -289,7 +332,6 @@ export default function ListPlantPage() {
                 )}
               />
 
-              {/* Tags */}
               <FormField
                 control={form.control}
                 name="tags"
