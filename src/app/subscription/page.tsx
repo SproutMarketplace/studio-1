@@ -48,7 +48,7 @@ export default function SubscriptionPage() {
   };
 
   let isPro = false;
-  if (profile?.subscription?.status === 'pro') {
+  if (profile && profile.subscription && profile.subscription.status === 'pro') {
     const expiry = profile.subscription.expiryDate;
     if (!expiry || (expiry as Timestamp).toDate() > new Date()) {
       isPro = true;
