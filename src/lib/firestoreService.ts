@@ -61,10 +61,6 @@ export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): 
     await setDoc(userRef, { 
         ...user, 
         joinedDate: serverTimestamp(),
-        subscription: {
-            status: 'free',
-            expiryDate: null,
-        }
     });
 };
 
@@ -72,20 +68,6 @@ export const updateUserData = async (userId: string, data: Partial<User>): Promi
     if (!db) return;
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, data);
-};
-
-export const updateUserSubscription = async (userId: string): Promise<void> => {
-    if (!db) return;
-    const userRef = doc(db, 'users', userId);
-    const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + 1);
-
-    await updateDoc(userRef, {
-        subscription: {
-            status: 'pro',
-            expiryDate: Timestamp.fromDate(expiryDate),
-        }
-    });
 };
 
 export const uploadProfileImage = async (userId: string, file: File): Promise<string> => {

@@ -13,9 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Gem } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
-import { Badge } from "@/components/ui/badge";
 
 export default function ProfilePage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -83,14 +82,6 @@ export default function ProfilePage() {
       </div>
     );
   }
-  
-  let isPro = false;
-  if (profile && profile.subscription && profile.subscription.status === 'pro') {
-    const expiry = profile.subscription.expiryDate;
-    if (!expiry || (expiry as Timestamp).toDate() > new Date()) {
-      isPro = true;
-    }
-  }
 
   const joinedDate = profile.joinedDate ? format((profile.joinedDate as Timestamp).toDate(), 'MMMM yyyy') : 'N/A';
 
@@ -107,11 +98,6 @@ export default function ProfilePage() {
           <div className="text-center sm:text-left">
              <div className="flex items-center gap-3 justify-center sm:justify-start">
               <h1 className="text-3xl font-bold text-primary">{profile.username}</h1>
-              {isPro && (
-                <Badge className="bg-primary hover:bg-primary/90 text-sm">
-                  <Gem className="mr-2 h-4 w-4" /> Pro
-                </Badge>
-              )}
             </div>
             <p className="text-muted-foreground">{profile.email}</p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 justify-center sm:justify-start">

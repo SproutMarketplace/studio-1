@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Timestamp } from "firebase/firestore";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
@@ -68,14 +67,6 @@ export default function ListPlantPage() {
       tags: [],
     },
   });
-
-  let isPro = false;
-  if (profile && profile.subscription && profile.subscription.status === 'pro') {
-    const expiry = profile.subscription.expiryDate;
-    if (!expiry || (expiry as Timestamp).toDate() > new Date()) {
-      isPro = true;
-    }
-  }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -253,10 +244,7 @@ export default function ListPlantPage() {
                         <Input type="number" placeholder="e.g., 25.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value ?? ''}/>
                       </FormControl>
                       <FormDescription>
-                        {isPro
-                          ? "You're a Pro member! No platform fees will be applied."
-                          : "A 5% platform fee applies to sales. Upgrade to Pro to list for free."
-                        }
+                        Leave blank or 0 if you are only trading.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

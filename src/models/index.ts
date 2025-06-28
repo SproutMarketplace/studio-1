@@ -1,3 +1,4 @@
+
 import type { Timestamp, GeoPoint } from "firebase/firestore";
 
 // Replaces the old UserProfile interface
@@ -16,10 +17,6 @@ export interface User {
     favoritePlants: string[]; // Array of PlantListing IDs for wishlist
     followers: string[]; // Array of UserIDs
     following: string[]; // Array of UserIDs
-    subscription?: {
-        status: 'free' | 'pro';
-        expiryDate: Timestamp | null;
-    };
 }
 
 // Replaces the old Plant interface

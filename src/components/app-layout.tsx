@@ -19,7 +19,6 @@ import {
     LogOut,
     LogIn as LogInIcon,
     X,
-    Gem,
     ShoppingCart,
 } from "lucide-react";
 
@@ -65,7 +64,6 @@ const mainNavItems: NavItem[] = [
     { href: "/wishlist", icon: Heart, label: "Wishlist", tooltip: "Your Saved Plants" },
     { href: "/messages", icon: MessageCircle, label: "Messages", tooltip: "Your Conversations" },
     { href: "/rewards", icon: Award, label: "Rewards", tooltip: "Your Points & Badges" },
-    { href: "/subscription", icon: Gem, label: "Sprout Pro", tooltip: "Subscription" },
 ];
 
 function AppSidebar() {
