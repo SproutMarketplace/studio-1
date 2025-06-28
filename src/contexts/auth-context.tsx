@@ -59,26 +59,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (!isFirebaseEnabled || !auth || !db) {
-      setLoading(false); // End loading if Firebase is not configured.
+    if (!isFirebaseEnabled || !auth) {
+      setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        try {
-            const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-                setProfile({ id: docSnap.id, ...docSnap.data() } as User);
-            } else {
+        // Add a specific check for `db` here to satisfy TypeScript
+        if (db) {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            try {
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+                } else {
+                    setProfile(null);
+                }
+            } catch (error) {
+                console.error("AuthContext: Error fetching user profile:", error);
                 setProfile(null);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("AuthContext: Error fetching user profile:", error);
+        } else {
+            // If db is not available, we cannot fetch a profile.
             setProfile(null);
-        } finally {
             setLoading(false);
         }
       } else {
