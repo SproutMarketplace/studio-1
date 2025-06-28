@@ -110,9 +110,8 @@ export default function ListPlantPage() {
   };
 
   async function onSubmit(data: ListPlantFormValues) {
-    // This check is the final safeguard. The button's disabled state should prevent this.
-    if (!user || !profile) {
-      toast({ variant: "destructive", title: "Authentication Error", description: "Your profile is not loaded. Please wait a moment and try again." });
+    if (!user) {
+      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to list a plant." });
       return;
     }
     if (imageFiles.length === 0) {
@@ -128,8 +127,8 @@ export default function ListPlantPage() {
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: profile.username, // Now guaranteed to be available
-        ownerAvatarUrl: profile.avatarUrl || "",
+        ownerUsername: profile?.username || user.displayName || "Anonymous",
+        ownerAvatarUrl: profile?.avatarUrl || user.photoURL || "",
         isAvailable: true,
         imageUrls: [], 
       });
@@ -156,8 +155,7 @@ export default function ListPlantPage() {
     }
   }
 
-  // The button is disabled until authentication is complete AND the user profile is loaded.
-  const isButtonDisabled = isLoading || authLoading || !profile;
+  const isButtonDisabled = isLoading || authLoading;
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
@@ -310,9 +308,9 @@ export default function ListPlantPage() {
               />
 
               <Button type="submit" className="w-full text-lg py-6" disabled={isButtonDisabled}>
-                {authLoading || !profile ? (
+                {authLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading Profile...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading...
                   </>
                 ) : isLoading ? (
                   <>
