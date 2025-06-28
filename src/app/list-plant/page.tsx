@@ -2,10 +2,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Link from "next/link";
 import Image from "next/image";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Loader2, PlusSquare, UploadCloud, X, CheckCircle, Leaf } from "lucide-react";
+import { Loader2, PlusSquare, UploadCloud, X } from "lucide-react";
 
 // Schema for form validation
 const listPlantSchema = z.object({
@@ -51,12 +51,10 @@ const MAX_IMAGES = 5;
 export default function ListPlantPage() {
   const { toast } = useToast();
   const { user, profile } = useAuth();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [newPlantId, setNewPlantId] = useState<string | null>(null);
-  const [newPlantName, setNewPlantName] = useState<string>("");
 
   const form = useForm<ListPlantFormValues>({
     resolver: zodResolver(listPlantSchema),
@@ -103,22 +101,6 @@ export default function ListPlantPage() {
       return newPreviews;
     });
   };
-  
-  const resetForm = () => {
-      form.reset({
-          name: "",
-          description: "",
-          price: undefined,
-          tradeOnly: false,
-          location: profile?.location || "",
-          tags: [],
-      });
-      setImageFiles([]);
-      setImagePreviews([]);
-      setIsSuccess(false);
-      setNewPlantId(null);
-      setNewPlantName("");
-  }
 
   async function onSubmit(data: ListPlantFormValues) {
     if (!user || !profile) {
@@ -137,7 +119,7 @@ export default function ListPlantPage() {
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: user.displayName || profile.username || "Anonymous",
+        ownerUsername: user.displayName || profile.username,
         ownerAvatarUrl: user.photoURL || profile.avatarUrl || "",
         isAvailable: true,
         imageUrls: [], 
@@ -149,13 +131,7 @@ export default function ListPlantPage() {
 
       await updatePlantListing(plantId, { imageUrls });
       
-      setNewPlantId(plantId);
-      setNewPlantName(data.name);
-      setIsSuccess(true);
-      toast({
-          title: "Plant Listed!",
-          description: `${data.name} is now available on the catalog.`,
-      });
+      router.push(`/plant/${plantId}?new_listing=true`);
 
     } catch (error) {
       console.error("Failed to list plant:", error);
@@ -164,40 +140,8 @@ export default function ListPlantPage() {
         title: "Listing Failed",
         description: "An unexpected error occurred. Please try again.",
       });
-    } finally {
       setIsLoading(false);
     }
-  }
-  
-  if (isSuccess && newPlantId) {
-      return (
-        <div className="container mx-auto max-w-2xl py-8">
-            <Card className="shadow-lg text-center">
-                <CardHeader>
-                    <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-700">
-                        <CheckCircle className="w-10 h-10" />
-                    </div>
-                    <CardTitle className="text-3xl font-bold mt-4">Success!</CardTitle>
-                    <CardDescription className="text-lg">Your plant, {newPlantName}, has been listed.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {imagePreviews.length > 0 && (
-                        <div className="relative aspect-square max-w-xs mx-auto rounded-lg overflow-hidden">
-                           <Image src={imagePreviews[0]} alt={newPlantName} layout="fill" objectFit="cover" />
-                        </div>
-                    )}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                        <Button asChild size="lg">
-                            <Link href={`/plant/${newPlantId}`}><Leaf className="mr-2 h-5 w-5"/>View My Listing</Link>
-                        </Button>
-                        <Button onClick={resetForm} variant="outline" size="lg">
-                             <PlusSquare className="mr-2 h-5 w-5"/>List Another Plant
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-      );
   }
 
   return (

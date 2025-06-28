@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getPlantListing } from "@/lib/firestoreService";
@@ -25,6 +25,8 @@ import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calend
 
 export default function PlantDetailPage() {
     const params = useParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const plantId = params.plantId as string;
     const { toast } = useToast();
 
@@ -58,7 +60,17 @@ export default function PlantDetailPage() {
             };
             fetchPlant();
         }
-    }, [plantId]);
+        
+        const isNewListing = searchParams.get('new_listing');
+        if (isNewListing) {
+            toast({
+                title: "Success! Your plant has been listed.",
+                description: "It's now live for the community to see."
+            });
+            router.replace(`/plant/${plantId}`, { scroll: false });
+        }
+
+    }, [plantId, searchParams, router, toast]);
 
     const handleWishlistToggle = async () => {
         if (!user || !profile || !plant?.id) {
