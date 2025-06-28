@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; 
-import { createUserWithEmailAndPassword } from "firebase/auth"; 
+import { useAuth } from "@/contexts/auth-context";
+import { registerUser } from "@/lib/firestoreService";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -38,6 +37,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refreshUserProfile } = useAuth();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -52,7 +52,8 @@ export default function SignupPage() {
   async function onSubmit(data: SignupFormValues) {
     form.clearErrors();
     try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await registerUser(data.email, data.password, data.name);
+      await refreshUserProfile();
       toast({
         title: "Account Created!",
         description: "Welcome to Sprout! Redirecting to the catalog...",

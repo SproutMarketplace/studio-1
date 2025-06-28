@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth, signInWithGooglePopup } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/auth-context";
 
 const GoogleLogo = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -45,6 +45,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refreshUserProfile } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -67,6 +68,7 @@ export default function LoginPage() {
     }
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
+      await refreshUserProfile();
       toast({
         title: "Login Successful!",
         description: "Welcome back! Redirecting to the catalog...",
@@ -104,6 +106,7 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       await signInWithGooglePopup();
+      await refreshUserProfile();
       toast({
         title: "Google Sign-In Successful!",
         description: "Welcome! Redirecting to the catalog...",

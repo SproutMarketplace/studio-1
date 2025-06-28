@@ -37,17 +37,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(prevItems => {
             const existingItem = prevItems.find(item => item.id === plant.id);
             if (existingItem) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Already in Cart',
-                    description: `${plant.name} is already in your cart.`,
-                });
+                // Use setTimeout to avoid state update conflicts during render
+                setTimeout(() => {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Already in Cart',
+                        description: `${plant.name} is already in your cart.`,
+                    });
+                }, 0);
                 return prevItems;
             }
-            toast({
-                title: 'Added to Cart',
-                description: `Added ${plant.name} to your cart.`,
-            });
+             // Use setTimeout to avoid state update conflicts during render
+            setTimeout(() => {
+                toast({
+                    title: 'Added to Cart',
+                    description: `Added ${plant.name} to your cart.`,
+                });
+            }, 0);
             return [...prevItems, { ...plant, quantity: 1 }];
         });
     };

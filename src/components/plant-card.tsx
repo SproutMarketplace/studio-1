@@ -2,12 +2,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, Loader2, ShoppingCart } from "lucide-react";
+import { Heart, MapPin, User, Loader2, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
@@ -24,13 +25,15 @@ export function PlantCard({ plant }: PlantCardProps) {
   const { user, profile, loading: authLoading, refreshUserProfile } = useAuth();
   const { addToCart, items: cartItems } = useCart();
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
   const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
   const isInCart = cartItems.some(item => item.id === plant.id);
 
-
-  const handleWishlistToggle = async () => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    e.preventDefault();
     if (!user || !profile || !plant.id) {
       toast({
         variant: "destructive",
@@ -67,7 +70,24 @@ export function PlantCard({ plant }: PlantCardProps) {
       setIsWishlistLoading(false);
     }
   };
+  
+  const handleAddToCart = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      addToCart(plant);
+  }
 
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex(prev => (prev - 1 + plant.imageUrls.length) % plant.imageUrls.length);
+  }
+  
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImageIndex(prev => (prev + 1) % plant.imageUrls.length);
+  }
 
   const getTagColor = (tag: string) => {
     switch (tag.toLowerCase()) {
@@ -81,34 +101,48 @@ export function PlantCard({ plant }: PlantCardProps) {
   };
   
   const displayImageUrl = plant.imageUrls && plant.imageUrls.length > 0 
-    ? plant.imageUrls[0] 
+    ? plant.imageUrls[currentImageIndex] 
     : "https://placehold.co/600x400.png";
 
   const displayImageHint = plant.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
   return (
     <Card className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-all hover:shadow-xl group">
-      <CardHeader className="p-0">
-        <div className="relative w-full h-48 md:h-56">
-          <Image
-            src={displayImageUrl}
-            alt={plant.name}
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint={displayImageHint}
-            className="transition-transform duration-300 group-hover:scale-105"
-          />
-           {!plant.isAvailable && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <span className="text-white text-xl font-bold uppercase tracking-wider">Sold</span>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 flex-grow">
+        <CardHeader className="p-0">
+          <div className="relative w-full h-48 md:h-56 group/image">
+            <Link href={`/plant/${plant.id!}`} passHref>
+              <Image
+                src={displayImageUrl}
+                alt={plant.name}
+                layout="fill"
+                objectFit="cover"
+                data-ai-hint={displayImageHint}
+                className="transition-transform duration-300 group-hover:scale-105"
+              />
+            </Link>
+            {!plant.isAvailable && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <span className="text-white text-xl font-bold uppercase tracking-wider">Sold</span>
+              </div>
+            )}
+            {plant.imageUrls && plant.imageUrls.length > 1 && (
+              <>
+                <Button size="icon" variant="ghost" onClick={handlePrevImage} className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 text-white opacity-0 group-hover/image:opacity-100 transition-opacity hover:bg-black/50 hover:text-white">
+                    <ChevronLeft className="h-5 w-5"/>
+                </Button>
+                <Button size="icon" variant="ghost" onClick={handleNextImage} className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 text-white opacity-0 group-hover/image:opacity-100 transition-opacity hover:bg-black/50 hover:text-white">
+                    <ChevronRight className="h-5 w-5"/>
+                </Button>
+              </>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-            {plant.name}
+            <Link href={`/plant/${plant.id!}`} className="hover:underline">
+                {plant.name}
+            </Link>
           </CardTitle>
           {plant.price && !plant.tradeOnly && (
             <Badge variant="default" className="text-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
@@ -181,7 +215,7 @@ export function PlantCard({ plant }: PlantCardProps) {
               variant="outline"
               size="sm"
               className="w-full group/button hover:bg-primary/10 hover:text-primary"
-              onClick={() => addToCart(plant)}
+              onClick={handleAddToCart}
               disabled={!plant.isAvailable || isInCart}
           >
               <ShoppingCart className={cn("w-4 h-4 mr-2 transition-colors", isInCart && "text-primary")} />

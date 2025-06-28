@@ -28,7 +28,7 @@ import {
     DocumentData,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from 'firebase/auth';
 import { mockPlantListings, mockUser, mockForums, mockPosts, mockChats, mockMessages } from './mock-data';
 
 // Import your models for type safety
@@ -545,22 +545,27 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const registerUser = async (email: string, password: string, username: string) => {
-    if (isFirebaseDisabled || !auth) throw new Error("Firebase not configured.");
+    if (isFirebaseDisabled || !auth || !db) throw new Error("Firebase not configured.");
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const newUser = userCredential.user;
-    if (newUser) {
-        await createUserProfile({
-            userId: newUser.uid,
-            username: username,
-            email: newUser.email || '',
-            plantsListed: 0,
-            plantsTraded: 0,
-            rewardPoints: 0,
-            favoritePlants: [],
-            followers: [],
-            following: [],
-        });
-    }
+
+    // Also update the user's profile in Firebase Auth
+    await updateProfile(newUser, { displayName: username });
+
+    // Create the user profile document in Firestore
+    await createUserProfile({
+        userId: newUser.uid,
+        username: username,
+        email: newUser.email || '',
+        plantsListed: 0,
+        plantsTraded: 0,
+        rewardPoints: 0,
+        favoritePlants: [],
+        followers: [],
+        following: [],
+    });
+
     return newUser;
 };
 
