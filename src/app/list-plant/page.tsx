@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,7 +50,7 @@ const MAX_IMAGES = 5;
 
 export default function ListPlantPage() {
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -63,10 +63,16 @@ export default function ListPlantPage() {
       description: "",
       price: undefined,
       tradeOnly: false,
-      location: profile?.location || "",
+      location: "",
       tags: [],
     },
   });
+
+  useEffect(() => {
+    if (profile?.location && !form.getValues('location')) {
+      form.setValue('location', profile.location);
+    }
+  }, [profile, form]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -294,8 +300,18 @@ export default function ListPlantPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
-                {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Listing Plant...</> : "List My Plant"}
+              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || authLoading}>
+                {authLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading Profile...
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Listing Plant...
+                  </>
+                ) : (
+                  "List My Plant"
+                )}
               </Button>
             </form>
           </Form>
@@ -304,4 +320,3 @@ export default function ListPlantPage() {
     </div>
   );
 }
-
