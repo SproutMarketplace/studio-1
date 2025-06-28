@@ -126,8 +126,8 @@ export default function ListPlantPage() {
         ...data,
         price: data.price,
         ownerId: user.uid,
-        ownerUsername: profile.username || "Anonymous",
-        ownerAvatarUrl: profile.avatarUrl || "",
+        ownerUsername: user.displayName || profile.username || "Anonymous",
+        ownerAvatarUrl: user.photoURL || profile.avatarUrl || "",
         isAvailable: true,
         imageUrls: [], // Initially empty
       });

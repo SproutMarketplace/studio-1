@@ -58,8 +58,10 @@ export default function PlantCatalogPage() {
         const plantName = searchParams.get('plantName');
         const checkoutSuccess = searchParams.get('checkout_success');
         const checkoutCanceled = searchParams.get('canceled');
+        let hasParams = false;
 
         if (listingSuccess === 'true' && plantName) {
+            hasParams = true;
             toast({
                 title: "Plant Listed!",
                 description: `${decodeURIComponent(plantName)} is now available on the catalog.`,
@@ -67,6 +69,7 @@ export default function PlantCatalogPage() {
         }
         
         if (checkoutSuccess === 'true') {
+            hasParams = true;
             toast({
                 title: "Payment Successful!",
                 description: "Thank you for your purchase. Your order is being processed.",
@@ -75,6 +78,7 @@ export default function PlantCatalogPage() {
         }
 
         if (checkoutCanceled === 'true') {
+            hasParams = true;
             toast({
                 variant: "destructive",
                 title: "Payment Canceled",
@@ -82,19 +86,37 @@ export default function PlantCatalogPage() {
             });
         }
         
-        if (listingSuccess || checkoutSuccess || checkoutCanceled) {
+        const fetchInitialPlants = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
+                    undefined,
+                    PLANTS_PER_PAGE
+                );
+
+                setPlants(fetchedPlants);
+                setLastVisible(newLastVisible);
+                setHasMore(fetchedPlants.length === PLANTS_PER_PAGE);
+
+            } catch (err) {
+                console.error("Error fetching plants:", err);
+                setError("Failed to load plants. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchInitialPlants();
+        
+        if (hasParams) {
             router.replace('/catalog', {scroll: false});
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
-    const fetchPlants = async (loadMore = false) => {
-        if (!loadMore) {
-            setIsLoading(true);
-            setPlants([]);
-            setLastVisible(null);
-            setHasMore(true);
-        } else if (!hasMore || isLoading) {
+    const loadMorePlants = async () => {
+        if (!hasMore || isLoading) {
             return;
         }
 
@@ -103,11 +125,11 @@ export default function PlantCatalogPage() {
 
         try {
             const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
-                loadMore ? lastVisible || undefined : undefined,
+                lastVisible || undefined,
                 PLANTS_PER_PAGE
             );
 
-            setPlants(prevPlants => loadMore ? [...prevPlants, ...fetchedPlants] : fetchedPlants);
+            setPlants(prevPlants => [...prevPlants, ...fetchedPlants]);
             setLastVisible(newLastVisible);
             setHasMore(fetchedPlants.length === PLANTS_PER_PAGE);
 
@@ -118,11 +140,6 @@ export default function PlantCatalogPage() {
             setIsLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchPlants();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Initial fetch
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value.toLowerCase());
@@ -305,9 +322,9 @@ export default function PlantCatalogPage() {
                             <PlantCard key={plant.id} plant={plant} />
                         ))}
                     </div>
-                    {hasMore && !isLoading && searchTerm === '' && filters.categories.length === 0 && (
+                    {hasMore && !searchTerm && filters.categories.length === 0 && (
                         <div className="mt-8 text-center">
-                            <Button onClick={() => fetchPlants(true)} disabled={isLoading}>
+                            <Button onClick={loadMorePlants} disabled={isLoading}>
                                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : "Load More Plants"}
                             </Button>
                         </div>
