@@ -21,7 +21,7 @@ let storage: FirebaseStorage | null = null;
 let googleProvider: GoogleAuthProvider | null = null;
 
 // Check if Firebase is configured
-const isFirebaseEnabled =
+export const isFirebaseEnabled =
   firebaseConfig.apiKey &&
   firebaseConfig.projectId &&
   firebaseConfig.authDomain &&
@@ -78,4 +78,4 @@ export async function signInWithGooglePopup(): Promise<UserCredential> {
 }
 
 // Export the initialized Firebase services (which may be null)
-export { app, auth, db, storage, isFirebaseEnabled };
+export { app, auth, db, storage };
