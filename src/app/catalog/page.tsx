@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { PlantCard } from "@/components/plant-card";
 import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/cart-context";
+
 
 const PLANTS_PER_PAGE = 8;
 const CATEGORY_OPTIONS = [
@@ -43,6 +47,46 @@ export default function PlantCatalogPage() {
         sortBy: 'newest',
         categories: [],
     });
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { toast } = useToast();
+    const { clearCart } = useCart();
+
+    useEffect(() => {
+        const listingSuccess = searchParams.get('listing_success');
+        const plantName = searchParams.get('plantName');
+        const checkoutSuccess = searchParams.get('checkout_success');
+        const checkoutCanceled = searchParams.get('canceled');
+
+        if (listingSuccess === 'true' && plantName) {
+            toast({
+                title: "Plant Listed!",
+                description: `${decodeURIComponent(plantName)} is now available on the catalog.`,
+            });
+        }
+        
+        if (checkoutSuccess === 'true') {
+            toast({
+                title: "Payment Successful!",
+                description: "Thank you for your purchase. Your order is being processed.",
+            });
+            clearCart();
+        }
+
+        if (checkoutCanceled === 'true') {
+            toast({
+                variant: "destructive",
+                title: "Payment Canceled",
+                description: "Your order was not completed. Your cart has been saved.",
+            });
+        }
+        
+        if (listingSuccess || checkoutSuccess || checkoutCanceled) {
+            router.replace('/catalog', {scroll: false});
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     const fetchPlants = async (loadMore = false) => {
         if (!loadMore) {

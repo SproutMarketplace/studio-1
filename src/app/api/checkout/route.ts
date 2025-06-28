@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
             payment_method_types: ['card'],
             line_items,
             mode: 'payment',
-            success_url: `${req.headers.get('origin')}/catalog?success=true`,
+            success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
             cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
         });
 

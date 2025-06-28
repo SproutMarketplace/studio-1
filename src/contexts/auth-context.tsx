@@ -2,7 +2,7 @@
 "use client";
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, type Timestamp } from "firebase/firestore"; 
 import type { ReactNode } from "react";
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser | null) => {
-    if (firebaseUser) {
+    if (firebaseUser && db) {
       const userDocRef = doc(db, "users", firebaseUser.uid);
       try {
         const docSnap = await getDoc(userDocRef);
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             },
           };
           await setDoc(userDocRef, newProfile);
-          setProfile({ id: firebaseUser.uid, ...newProfile });
+          setProfile({ id: firebaseUser.uid, ...newProfile } as User);
         }
       } catch (error) {
         console.error("Error fetching/creating user profile:", error);
@@ -78,6 +78,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
+    if (!isFirebaseEnabled || !auth) {
+        setLoading(false);
+        setUser(null);
+        setProfile(null);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       await fetchUserProfile(currentUser);
@@ -87,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [fetchUserProfile]);
 
   const refreshUserProfile = useCallback(async () => {
-    if (user) {
+    if (user && isFirebaseEnabled) {
       setLoading(true);
       await fetchUserProfile(user);
       setLoading(false);

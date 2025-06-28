@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +22,7 @@ import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { registerUser } from "@/lib/firestoreService";
+import { auth } from "@/lib/firebase";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,6 +53,14 @@ export default function SignupPage() {
 
   async function onSubmit(data: SignupFormValues) {
     form.clearErrors();
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Offline Mode",
+            description: "Cannot sign up while in offline mode. Please configure Firebase keys.",
+        });
+        return;
+    }
     try {
       await registerUser(data.email, data.password, data.name);
       await refreshUserProfile();

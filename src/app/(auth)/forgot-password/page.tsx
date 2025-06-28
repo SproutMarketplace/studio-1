@@ -40,6 +40,16 @@ export default function ForgotPasswordPage() {
 
   async function onSubmit(data: ForgotPasswordFormValues) {
     form.clearErrors();
+
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Offline Mode",
+            description: "This feature is disabled in offline mode. Please configure Firebase keys.",
+        });
+        return;
+    }
+
     try {
       await sendPasswordResetEmail(auth, data.email);
       toast({

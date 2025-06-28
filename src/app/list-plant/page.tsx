@@ -140,12 +140,8 @@ export default function ListPlantPage() {
       // Step 3: Update the plant document with the image URLs
       await updatePlantListing(newPlantId, { imageUrls });
 
-      toast({
-        title: "Plant Listed!",
-        description: `${data.name} is now available on the catalog.`,
-      });
-
-      router.push("/catalog"); // Redirect after successful listing
+      // Redirect with success param instead of showing toast here
+      router.push(`/catalog?listing_success=true&plantName=${encodeURIComponent(data.name)}`);
 
     } catch (error) {
       console.error("Failed to list plant:", error);

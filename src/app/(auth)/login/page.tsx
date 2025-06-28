@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -104,6 +105,15 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Offline Mode",
+            description: "Cannot log in while in offline mode. Please configure Firebase keys.",
+        });
+        setIsGoogleLoading(false);
+        return;
+    }
     try {
       await signInWithGooglePopup();
       await refreshUserProfile();

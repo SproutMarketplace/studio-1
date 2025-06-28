@@ -1,7 +1,6 @@
 
 // src/lib/firestoreService.ts
-import { db, auth } from './firebase'; // Your Firebase instances
-import { storage } from './firebase'; // For file uploads
+import { db, auth, storage } from './firebase'; // Your Firebase instances
 import {
     collection,
     doc,
@@ -47,6 +46,7 @@ export const getTimestamp = () => serverTimestamp() as Timestamp;
 
 // --- User Functions (Profile Page: /profile) ---
 export const getUserProfile = async (userId: string): Promise<User | null> => {
+    if (!db) return null;
     const docRef = doc(db, 'users', userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -56,6 +56,7 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
 };
 
 export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', user.userId); // Use userId as doc ID
     await setDoc(userRef, { 
         ...user, 
@@ -68,11 +69,13 @@ export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): 
 };
 
 export const updateUserData = async (userId: string, data: Partial<User>): Promise<void> => {
+    if (!db) return;
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, data);
 };
 
 export const updateUserSubscription = async (userId: string): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', userId);
     const expiryDate = new Date();
     expiryDate.setMonth(expiryDate.getMonth() + 1);
@@ -86,6 +89,7 @@ export const updateUserSubscription = async (userId: string): Promise<void> => {
 };
 
 export const uploadProfileImage = async (userId: string, file: File): Promise<string> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
     const imageRef = ref(storage, `profile_images/${userId}/${file.name}`);
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
@@ -93,11 +97,13 @@ export const uploadProfileImage = async (userId: string, file: File): Promise<st
 
 // --- Plant Functions (List Plant Page: /list-plant, General Listings) ---
 export const addPlantListing = async (plant: Omit<PlantListing, 'id' | 'listedDate'>): Promise<string> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
     const docRef = await addDoc(collection(db, 'plants'), { ...plant, listedDate: serverTimestamp() });
     return docRef.id;
 };
 
 export const getPlantListing = async (plantId: string): Promise<PlantListing | null> => {
+    if (!db) return null;
     const docRef = doc(db, 'plants', plantId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -110,6 +116,7 @@ export const getPlantListing = async (plantId: string): Promise<PlantListing | n
 // Collection: 'plants'
 // Fields: 1. isAvailable (Ascending), 2. listedDate (Descending)
 export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limitNum: number = 10): Promise<{ plants: PlantListing[], lastVisible: DocumentSnapshot | null }> => {
+    if (!db) return { plants: [], lastVisible: null };
     let q = query(
         collection(db, 'plants'),
         where('isAvailable', '==', true),
@@ -134,6 +141,7 @@ export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limi
 // Collection: 'plants'
 // Fields: 1. ownerId (Ascending), 2. listedDate (Descending)
 export const getUserPlantListings = async (ownerId: string): Promise<PlantListing[]> => {
+    if (!db) return [];
     const q = query(collection(db, 'plants'), where('ownerId', '==', ownerId), orderBy('listedDate', 'desc'));
     const querySnapshot = await getDocs(q);
     const plants: PlantListing[] = [];
@@ -144,22 +152,26 @@ export const getUserPlantListings = async (ownerId: string): Promise<PlantListin
 };
 
 export const updatePlantListing = async (plantId: string, data: Partial<PlantListing>): Promise<void> => {
+    if (!db) return;
     const docRef = doc(db, 'plants', plantId);
     await updateDoc(docRef, data);
 };
 
 export const deletePlantListing = async (plantId: string): Promise<void> => {
+    if (!db) return;
     const docRef = doc(db, 'plants', plantId);
     await deleteDoc(docRef);
 };
 
 export const uploadPlantImage = async (plantId: string, file: File, index: number): Promise<string> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
     const imageRef = ref(storage, `plant_images/${plantId}/${index}_${file.name}`);
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
 };
 
 export const deletePlantImage = async (imageUrl: string): Promise<void> => {
+    if (!storage) return;
     const imageRef = ref(storage, imageUrl);
     await deleteObject(imageRef);
 }
@@ -171,6 +183,7 @@ const getChatDocumentId = (userId1: string, userId2: string): string => {
 };
 
 export const createOrGetChat = async (userId1: string, userId2: string): Promise<string> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
     const chatId = getChatDocumentId(userId1, userId2);
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
@@ -199,6 +212,7 @@ export const createOrGetChat = async (userId1: string, userId2: string): Promise
 };
 
 export const sendMessage = async (chatId: string, senderId: string, receiverId: string, text: string): Promise<void> => {
+    if (!db) return;
     const chatDocRef = doc(db, 'chats', chatId);
     const messagesCollectionRef = collection(chatDocRef, 'messages');
 
@@ -217,6 +231,7 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
 };
 
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
+    if (!db) return () => {};
     const messagesCollectionRef = collection(db, 'chats', chatId, 'messages');
     const q = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
     return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
@@ -229,6 +244,7 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
 };
 
 export const getChatDocument = async (chatId: string): Promise<Chat | null> => {
+    if (!db) return null;
     const docRef = doc(db, 'chats', chatId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -238,6 +254,7 @@ export const getChatDocument = async (chatId: string): Promise<Chat | null> => {
 }
 
 export const getOtherParticipantProfile = async (chatId: string, currentUserId: string): Promise<User | null> => {
+    if (!db) return null;
     const chat = await getChatDocument(chatId);
     if (!chat) return null;
     const otherUserId = chat.participants.find(p => p !== currentUserId);
@@ -249,6 +266,7 @@ export const getOtherParticipantProfile = async (chatId: string, currentUserId: 
 // Collection: 'chats'
 // Fields: 1. participants (Array-contains), 2. lastMessageTimestamp (Descending)
 export const getUserChats = async (userId: string): Promise<Chat[]> => {
+    if (!db) return [];
     const q = query(collection(db, 'chats'), where('participants', 'array-contains', userId), orderBy('lastMessageTimestamp', 'desc'));
     const querySnapshot = await getDocs(q);
     const chats: Chat[] = [];
@@ -261,6 +279,7 @@ export const getUserChats = async (userId: string): Promise<Chat[]> => {
 
 // --- Forum Functions (Forums Pages: /forums, /forums/[communityId]) ---
 export const createForum = async (forumData: Omit<Forum, 'id' | 'createdAt' | 'memberCount'>): Promise<string> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
     const docRef = await addDoc(collection(db, 'forums'), {
         ...forumData,
         createdAt: serverTimestamp(),
@@ -270,6 +289,7 @@ export const createForum = async (forumData: Omit<Forum, 'id' | 'createdAt' | 'm
 };
 
 export const getForums = async (): Promise<Forum[]> => {
+    if (!db) return [];
     const q = query(collection(db, 'forums'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     const forums: Forum[] = [];
@@ -280,6 +300,7 @@ export const getForums = async (): Promise<Forum[]> => {
 };
 
 export const getForumById = async (forumId: string): Promise<Forum | null> => {
+    if (!db) return null;
     const docRef = doc(db, 'forums', forumId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -289,6 +310,7 @@ export const getForumById = async (forumId: string): Promise<Forum | null> => {
 };
 
 export const addForumPost = async (forumId: string, post: Omit<Post, 'id' | 'createdAt' | 'upvotes' | 'downvotes' | 'commentCount'>): Promise<string> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
     const docRef = await addDoc(collection(db, 'forums', forumId, 'posts'), {
         ...post,
         createdAt: serverTimestamp(),
@@ -300,6 +322,7 @@ export const addForumPost = async (forumId: string, post: Omit<Post, 'id' | 'cre
 };
 
 export const getPostsForForum = async (forumId: string): Promise<Post[]> => {
+    if (!db) return [];
     const q = query(collection(db, 'forums', forumId, 'posts'), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     const posts: Post[] = [];
@@ -310,6 +333,7 @@ export const getPostsForForum = async (forumId: string): Promise<Post[]> => {
 };
 
 export const getPostById = async (forumId: string, postId: string): Promise<Post | null> => {
+    if (!db) return null;
     const docRef = doc(db, 'forums', forumId, 'posts', postId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -319,6 +343,7 @@ export const getPostById = async (forumId: string, postId: string): Promise<Post
 };
 
 export const addCommentToPost = async (forumId: string, postId: string, comment: Omit<Comment, 'id' | 'createdAt'>): Promise<string> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
     const commentsCollectionRef = collection(db, 'forums', forumId, 'posts', postId, 'comments');
     const docRef = await addDoc(commentsCollectionRef, { ...comment, createdAt: serverTimestamp() });
 
@@ -329,6 +354,7 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
 };
 
 export const getCommentsForPost = async (forumId: string, postId: string): Promise<Comment[]> => {
+    if (!db) return [];
     const q = query(collection(db, 'forums', forumId, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
     const querySnapshot = await getDocs(q);
     const comments: Comment[] = [];
@@ -339,6 +365,7 @@ export const getCommentsForPost = async (forumId: string, postId: string): Promi
 };
 
 export const togglePostVote = async (forumId: string, postId: string, userId: string, voteType: 'upvote' | 'downvote'): Promise<void> => {
+    if (!db) return;
     const postRef = doc(db, 'forums', forumId, 'posts', postId);
     const postSnap = await getDoc(postRef);
 
@@ -373,6 +400,7 @@ export const togglePostVote = async (forumId: string, postId: string, userId: st
 
 // --- Wishlist Functions (Wishlist Page: /wishlist) ---
 export const addPlantToWishlist = async (userId: string, plantId: string): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         favoritePlants: arrayUnion(plantId),
@@ -380,6 +408,7 @@ export const addPlantToWishlist = async (userId: string, plantId: string): Promi
 };
 
 export const removePlantFromWishlist = async (userId: string, plantId: string): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         favoritePlants: arrayRemove(plantId),
@@ -387,6 +416,7 @@ export const removePlantFromWishlist = async (userId: string, plantId: string): 
 };
 
 export const getWishlistPlants = async (userId: string): Promise<PlantListing[]> => {
+    if (!db) return [];
     const user = await getUserProfile(userId);
     if (!user || !user.favoritePlants || user.favoritePlants.length === 0) {
         return [];
@@ -401,11 +431,13 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
 
 // --- Auth Functions ---
 export const loginUser = async (email: string, password: string) => {
+    if (!auth) throw new Error("Firebase not configured. App is in offline mode.");
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
 };
 
 export const registerUser = async (email: string, password: string, username: string) => {
+    if (!auth) throw new Error("Firebase not configured. App is in offline mode.");
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const newUser = userCredential.user;
 
@@ -429,15 +461,18 @@ export const registerUser = async (email: string, password: string, username: st
 };
 
 export const resetPassword = async (email: string) => {
+    if (!auth) throw new Error("Firebase not configured. App is in offline mode.");
     await sendPasswordResetEmail(auth, email);
 };
 
 export const logoutUser = async () => {
+    if (!auth) return;
     await signOut(auth);
 };
 
 // --- Reward Functions (Integrated with User/Transaction logic) ---
 export const awardRewardPoints = async (userId: string, points: number, description: string): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         rewardPoints: increment(points),
@@ -453,6 +488,7 @@ export const awardRewardPoints = async (userId: string, points: number, descript
 };
 
 export const redeemRewardPoints = async (userId: string, points: number, description: string): Promise<void> => {
+    if (!db) return;
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         rewardPoints: increment(-points),
@@ -471,6 +507,7 @@ export const redeemRewardPoints = async (userId: string, points: number, descrip
 // Collection: 'rewardsTransactions'
 // Fields: 1. userId (Ascending), 2. timestamp (Descending)
 export const getRewardTransactions = async (userId: string): Promise<RewardTransaction[]> => {
+    if (!db) return [];
     const q = query(
         collection(db, 'rewardsTransactions'),
         where('userId', '==', userId),
