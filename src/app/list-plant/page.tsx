@@ -150,6 +150,8 @@ export default function ListPlantPage() {
     }
   }
 
+  const isButtonDisabled = isLoading || authLoading || !profile;
+
   return (
     <div className="container mx-auto max-w-2xl py-8">
       <Card className="shadow-lg">
@@ -300,8 +302,8 @@ export default function ListPlantPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || authLoading}>
-                {authLoading ? (
+              <Button type="submit" className="w-full text-lg py-6" disabled={isButtonDisabled}>
+                {authLoading || !profile ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading Profile...
                   </>

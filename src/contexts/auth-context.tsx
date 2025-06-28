@@ -46,30 +46,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (docSnap.exists()) {
           setProfile({ id: docSnap.id, ...docSnap.data() } as User);
         } else {
-          // This profile is created for users signing up with a social provider (e.g., Google)
-          // for the first time. Email/password signup profile creation is handled in firestoreService.
-          const newProfile: Omit<User, 'id'> = {
-            userId: firebaseUser.uid,
-            email: firebaseUser.email!,
-            username: firebaseUser.displayName || "New User",
-            avatarUrl: firebaseUser.photoURL || "",
-            joinedDate: serverTimestamp() as Timestamp,
-            plantsListed: 0,
-            plantsTraded: 0,
-            rewardPoints: 0,
-            favoritePlants: [],
-            followers: [],
-            following: [],
-            subscription: {
-                status: 'free',
-                expiryDate: null,
-            },
-          };
-          await setDoc(userDocRef, newProfile);
-          setProfile({ id: firebaseUser.uid, ...newProfile } as User);
+          // If the doc doesn't exist, it means it's either being created
+          // by the signup/social-login flow, or there's an issue.
+          // Setting to null is the correct state for now. Other flows will handle creation.
+          setProfile(null);
         }
       } catch (error) {
-        console.error("Error fetching/creating user profile:", error);
+        console.error("Error fetching user profile:", error);
         setProfile(null); 
       }
     } else {

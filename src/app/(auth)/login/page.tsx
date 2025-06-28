@@ -21,10 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { auth, signInWithGooglePopup } from "@/lib/firebase"; 
+import { auth, signInWithGooglePopup, db } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import type { User } from "@/models";
 
 const GoogleLogo = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +107,7 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
-    if (!auth) {
+    if (!auth || !db) {
         toast({
             variant: "destructive",
             title: "Offline Mode",
@@ -115,7 +117,29 @@ export default function LoginPage() {
         return;
     }
     try {
-      await signInWithGooglePopup();
+      const userCredential = await signInWithGooglePopup();
+      const user = userCredential.user;
+
+      // Check if user profile exists, create if not
+      const userDocRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        const newProfile: Omit<User, 'id' | 'joinedDate'> = {
+            userId: user.uid,
+            email: user.email!,
+            username: user.displayName || "New User",
+            avatarUrl: user.photoURL || "",
+            plantsListed: 0,
+            plantsTraded: 0,
+            rewardPoints: 0,
+            favoritePlants: [],
+            followers: [],
+            following: [],
+        };
+        await setDoc(userDocRef, { ...newProfile, joinedDate: serverTimestamp() });
+      }
+
       await refreshUserProfile();
       toast({
         title: "Google Sign-In Successful!",
