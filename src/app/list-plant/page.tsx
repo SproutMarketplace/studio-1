@@ -69,8 +69,13 @@ export default function ListPlantPage() {
     },
   });
 
-  const isPro = profile?.subscription?.status === 'pro' && 
-              (!profile.subscription.expiryDate || (profile.subscription.expiryDate as Timestamp).toDate() > new Date());
+  let isPro = false;
+  if (profile?.subscription?.status === 'pro') {
+    const expiry = profile.subscription.expiryDate;
+    if (!expiry || (expiry as Timestamp).toDate() > new Date()) {
+      isPro = true;
+    }
+  }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
