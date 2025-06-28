@@ -38,25 +38,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser | null) => {
-    if (firebaseUser && db) {
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      try {
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          setProfile({ id: docSnap.id, ...docSnap.data() } as User);
-        } else {
-          // If the doc doesn't exist, it means it's either being created
-          // by the signup/social-login flow, or there's an issue.
-          // Setting to null is the correct state for now. Other flows will handle creation.
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        setProfile(null); 
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseAuthUser) => {
+    if (!db) {
+      setProfile(null);
+      return;
+    }
+    const userDocRef = doc(db, "users", firebaseUser.uid);
+    try {
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+      } else {
+        setProfile(null);
       }
-    } else {
-      setProfile(null); 
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setProfile(null);
     }
   }, []);
 
@@ -68,9 +65,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
     }
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      await fetchUserProfile(currentUser);
-      setLoading(false);
+      if (currentUser) {
+        setUser(currentUser);
+        await fetchUserProfile(currentUser);
+        setLoading(false);
+      } else {
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
