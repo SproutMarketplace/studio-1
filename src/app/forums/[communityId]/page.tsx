@@ -127,11 +127,21 @@ export default function CommunityPage() {
     };
 
     const handleCreatePostSubmit = async (data: PostFormValues) => {
-        if (!user || !profile) {
+        if (!user) {
             toast({ 
                 variant: "destructive", 
                 title: "Authentication Error", 
-                description: "Your profile is still loading or you are not logged in. Please wait a moment and try again." 
+                description: "You must be logged in to create a post." 
+            });
+            return;
+        }
+
+        const username = profile?.username || user?.displayName;
+        if (!username) {
+             toast({ 
+                variant: "destructive", 
+                title: "Profile Error", 
+                description: "Your user profile is still loading. Please wait a moment and try again." 
             });
             return;
         }
@@ -146,8 +156,8 @@ export default function CommunityPage() {
                 title: data.title,
                 content: data.content,
                 authorId: user.uid,
-                authorUsername: profile.username,
-                authorAvatarUrl: profile.avatarUrl || "",
+                authorUsername: username,
+                authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
                 imageUrls: [], // Start with empty array
             });
 
@@ -168,8 +178,8 @@ export default function CommunityPage() {
                 title: data.title,
                 content: data.content,
                 authorId: user.uid,
-                authorUsername: profile.username,
-                authorAvatarUrl: profile.avatarUrl || "",
+                authorUsername: username,
+                authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
                 createdAt: new Date() as unknown as Timestamp, // Visually correct, server has true value
                 upvotes: [],
                 downvotes: [],
@@ -243,6 +253,9 @@ export default function CommunityPage() {
             </div>
         );
     }
+    
+    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || (!profile?.username && !user?.displayName);
+
 
     return (
         <div className="container mx-auto py-8">
@@ -333,8 +346,8 @@ export default function CommunityPage() {
                                     <DialogClose asChild>
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
-                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile}>
-                                        {authLoading ? (
+                                    <Button type="submit" disabled={isPostButtonDisabled}>
+                                        {authLoading || (!profile?.username && !user?.displayName) ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                 <span>Loading Profile...</span>
@@ -399,3 +412,4 @@ export default function CommunityPage() {
         </div>
     );
 }
+
