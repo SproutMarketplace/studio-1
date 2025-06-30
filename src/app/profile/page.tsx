@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserPlantListings, getWishlistPlants } from "@/lib/firestoreService";
+import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData } from "@/lib/firestoreService";
 import type { PlantListing } from "@/models";
 import { format } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
@@ -13,15 +13,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, updateUserProfileInContext } = useAuth();
   const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
   const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user?.uid) {
@@ -57,6 +62,50 @@ export default function ProfilePage() {
     }
   }, [user?.uid, profile?.favoritePlants]);
 
+  const handleAvatarClick = () => {
+    if (user?.uid === profile?.userId && !isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !profile) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        variant: "destructive",
+        title: "Image too large",
+        description: "Please upload an image smaller than 2MB.",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const newAvatarUrl = await uploadProfileImage(user.uid, file);
+      await updateUserData(user.uid, { avatarUrl: newAvatarUrl });
+      updateUserProfileInContext({ avatarUrl: newAvatarUrl });
+
+      toast({
+        title: "Profile picture updated!",
+        description: "Your new picture is now live.",
+      });
+    } catch (error) {
+      console.error("Failed to upload profile picture:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: "There was an error updating your profile picture.",
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -84,17 +133,46 @@ export default function ProfilePage() {
   }
 
   const joinedDate = profile.joinedDate ? format((profile.joinedDate as Timestamp).toDate(), 'MMMM yyyy') : 'N/A';
+  const isOwner = user?.uid === profile.userId;
 
   return (
     <div className="container mx-auto py-8 space-y-8">
       <Card className="shadow-lg">
         <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
-          <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-primary/20">
-            <AvatarImage src={profile.avatarUrl} alt={profile.username} />
-            <AvatarFallback className="bg-muted text-muted-foreground">
-              <UserIcon className="h-12 w-12" />
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative group">
+            <Avatar
+              className={cn("h-24 w-24 sm:h-32 sm:w-32 border-4 border-primary/20", isOwner && "cursor-pointer")}
+              onClick={handleAvatarClick}
+            >
+              <AvatarImage src={profile.avatarUrl} alt={profile.username} />
+              <AvatarFallback className="bg-muted text-muted-foreground">
+                <UserIcon className="h-12 w-12" />
+              </AvatarFallback>
+            </Avatar>
+            {isOwner && (
+              <div
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={handleAvatarClick}
+              >
+                {isUploading ? (
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                ) : (
+                  <div className="text-center">
+                    <Camera className="w-8 h-8 mx-auto" />
+                    <span className="text-xs font-semibold">Change</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/png, image/jpeg, image/gif"
+              disabled={isUploading}
+            />
+          </div>
           <div className="text-center sm:text-left">
              <div className="flex items-center gap-3 justify-center sm:justify-start">
               <h1 className="text-3xl font-bold text-primary">{profile.username}</h1>
