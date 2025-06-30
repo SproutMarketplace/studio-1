@@ -6,6 +6,16 @@ export default function SellerDashboardPage() {
     return (
         <div>
             <h1 className="text-3xl font-bold text-primary mb-6">Dashboard</h1>
+
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle>Welcome to your Seller Dashboard!</CardTitle>
+                    <CardDescription>
+                        This is your central hub for managing your plant listings. All features are currently in development. Check back soon for updates on orders, stats, and more!
+                    </CardDescription>
+                </CardHeader>
+            </Card>
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -50,14 +60,6 @@ export default function SellerDashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-             <Card className="mt-6">
-                <CardHeader>
-                    <CardTitle>Welcome to your Seller Dashboard!</CardTitle>
-                    <CardDescription>
-                        This is your central hub for managing your plant listings. All features are currently in development. Check back soon for updates on orders, stats, and more!
-                    </CardDescription>
-                </CardHeader>
-            </Card>
         </div>
     )
 }
