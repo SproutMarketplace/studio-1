@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -92,7 +92,7 @@ export default function CommunityPage() {
         });
     };
 
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const files = Array.from(event.target.files);
             const remainingSlots = MAX_IMAGES - imageFiles.length;
@@ -127,7 +127,7 @@ export default function CommunityPage() {
     };
 
     const handleCreatePostSubmit = async (data: PostFormValues) => {
-        if (!user || !profile) {
+        if (!user || !profile?.username) {
             toast({ 
                 variant: "destructive", 
                 title: "Authentication Error", 
@@ -333,11 +333,11 @@ export default function CommunityPage() {
                                     <DialogClose asChild>
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
-                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile}>
-                                        {form.formState.isSubmitting || authLoading ? (
+                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile?.username}>
+                                        {form.formState.isSubmitting || authLoading || !profile ? (
                                             <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                                                {authLoading ? 'Loading Profile...' : 'Posting...'}
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <span>{form.formState.isSubmitting ? 'Posting...' : 'Loading Profile...'}</span>
                                             </>
                                         ) : "Create Post"}
                                     </Button>
