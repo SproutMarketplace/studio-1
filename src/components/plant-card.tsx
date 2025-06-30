@@ -26,6 +26,7 @@ export function PlantCard({ plant }: PlantCardProps) {
   const { addToCart, items: cartItems } = useCart();
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
   const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
@@ -81,12 +82,14 @@ export function PlantCard({ plant }: PlantCardProps) {
     e.stopPropagation();
     e.preventDefault();
     setCurrentImageIndex(prev => (prev - 1 + plant.imageUrls.length) % plant.imageUrls.length);
+    setImageError(false); // Reset error on image change
   }
   
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setCurrentImageIndex(prev => (prev + 1) % plant.imageUrls.length);
+    setImageError(false); // Reset error on image change
   }
 
   const getTagColor = (tag: string) => {
@@ -100,9 +103,10 @@ export function PlantCard({ plant }: PlantCardProps) {
     }
   };
   
-  const displayImageUrl = plant.imageUrls && plant.imageUrls.length > 0 
+  const placeholderImageUrl = "https://placehold.co/600x400.png";
+  const displayImageUrl = plant.imageUrls && plant.imageUrls.length > 0 && !imageError
     ? plant.imageUrls[currentImageIndex] 
-    : "https://placehold.co/600x400.png";
+    : placeholderImageUrl;
 
   const displayImageHint = plant.name.toLowerCase().split(" ").slice(0,2).join(" ");
 
@@ -118,6 +122,7 @@ export function PlantCard({ plant }: PlantCardProps) {
                 objectFit="cover"
                 data-ai-hint={displayImageHint}
                 className="transition-transform duration-300 group-hover:scale-105"
+                onError={() => setImageError(true)}
               />
             </Link>
             {!plant.isAvailable && (
