@@ -309,6 +309,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isRootRoute = pathname === "/";
+    const isSellerRoute = pathname.startsWith('/seller');
     const [isCartOpen, setIsCartOpen] = useState(false);
 
 
@@ -330,6 +331,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Toaster />
             </>
         );
+    }
+
+    // Seller dashboard has its own layout defined in (seller)/layout.tsx
+    if (isSellerRoute) {
+        return (
+            <>
+                <AuthGuard>{children}</AuthGuard>
+                <Toaster />
+            </>
+        )
     }
 
     // Main application pages get the full sidebar layout

@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -189,10 +189,11 @@ export default function ProfilePage() {
       </Card>
       
       <Tabs defaultValue="listings" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
           <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>
           <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>
+          <TabsTrigger value="seller-dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Seller Tools</TabsTrigger>
         </TabsList>
         <TabsContent value="listings" className="mt-6">
           <Card>
@@ -253,6 +254,26 @@ export default function ProfilePage() {
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <EditProfileForm />
+        </TabsContent>
+        <TabsContent value="seller-dashboard" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Seller Dashboard</CardTitle>
+              <CardDescription>
+                Access tools and insights to grow your plant business.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Manage your orders, view sales statistics, and track your finances all in one place.
+              </p>
+              <Button asChild>
+                <Link href="/seller/dashboard">
+                  Go to Seller Dashboard
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

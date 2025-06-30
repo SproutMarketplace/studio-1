@@ -1,0 +1,88 @@
+
+'use client';
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import {
+    LayoutDashboard,
+    Package,
+    BarChart3,
+    Megaphone,
+    CircleDollarSign,
+    ArrowLeft,
+} from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+
+interface NavItem {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+}
+
+const sellerNavItems: NavItem[] = [
+    { href: "/seller/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/seller/orders", icon: Package, label: "Orders" },
+    { href: "/seller/stats", icon: BarChart3, label: "Stats" },
+    { href: "/seller/marketing", icon: Megaphone, label: "Marketing" },
+    { href: "/seller/finances", icon: CircleDollarSign, label: "Finances" },
+];
+
+function SellerSidebar() {
+    const pathname = usePathname();
+
+    return (
+        <aside className="hidden md:flex flex-col w-64 bg-background border-r">
+            <div className="p-4 border-b">
+                <Link href="/catalog">
+                    <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} />
+                </Link>
+                <p className="text-sm text-muted-foreground mt-1">Seller Dashboard</p>
+            </div>
+            <nav className="flex-1 px-2 py-4 space-y-1">
+                {sellerNavItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            "flex items-center px-3 py-2 text-sm font-medium rounded-md",
+                            pathname === item.href
+                                ? "bg-primary/10 text-primary"
+                                : "text-muted-foreground hover:bg-muted"
+                        )}
+                    >
+                        <item.icon className="mr-3 h-5 w-5" />
+                        {item.label}
+                    </Link>
+                ))}
+            </nav>
+            <div className="p-4 border-t">
+                 <Button variant="outline" className="w-full" asChild>
+                    <Link href="/profile">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Profile
+                    </Link>
+                </Button>
+            </div>
+        </aside>
+    );
+}
+
+
+export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
+    return (
+        <div className="flex h-screen bg-muted/40">
+            <SellerSidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto">
+                    <div className="container mx-auto px-6 py-8">
+                        {children}
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+}
