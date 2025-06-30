@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getPlantListing } from "@/lib/firestoreService";
+import { deletePlantListing, getPlantListing } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
@@ -16,12 +16,23 @@ import { formatDistanceToNow } from 'date-fns';
 import type { Timestamp } from "firebase/firestore";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon } from "lucide-react";
+import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function PlantDetailPage() {
     const params = useParams();
@@ -38,6 +49,7 @@ export default function PlantDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (plantId) {
@@ -96,6 +108,27 @@ export default function PlantDetailPage() {
         }
     };
 
+    async function handleDelete() {
+        if (!isOwner || !plant) return;
+        setIsDeleting(true);
+        try {
+            await deletePlantListing(plant);
+            toast({
+                title: "Listing Deleted",
+                description: `${plant.name} has been successfully deleted.`,
+            });
+            router.push("/profile");
+        } catch (error) {
+            console.error("Failed to delete plant:", error);
+            toast({
+                variant: "destructive",
+                title: "Deletion Failed",
+                description: error instanceof Error ? error.message : "An unexpected error occurred.",
+            });
+            setIsDeleting(false);
+        }
+    }
+
     const nextImage = () => {
         if (plant && plant.imageUrls.length > 1) {
             setCurrentImageIndex((prevIndex) => (prevIndex + 1) % plant.imageUrls.length);
@@ -115,6 +148,7 @@ export default function PlantDetailPage() {
     const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
     const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
     const isInCart = cartItems.some(item => item.id === plant.id);
+    const isOwner = user?.uid === plant.ownerId;
 
     return (
         <div className="container mx-auto max-w-4xl py-8">
@@ -197,6 +231,46 @@ export default function PlantDetailPage() {
                             </div>
                         </div>
                     </Card>
+
+                    {isOwner && (
+                        <div className="mt-4 pt-4 border-t">
+                            <h3 className="text-base font-semibold text-foreground mb-2">Owner Actions</h3>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full sm:w-auto">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Listing
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete your
+                                            plant listing and remove all its images from our servers.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleDelete}
+                                            disabled={isDeleting}
+                                            className={buttonVariants({ variant: "destructive" })}
+                                        >
+                                            {isDeleting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Deleting...
+                                                </>
+                                            ) : (
+                                                "Yes, delete it"
+                                            )}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    )}
 
                     <div className="flex flex-col sm:flex-row gap-2 pt-2">
                          <Button 

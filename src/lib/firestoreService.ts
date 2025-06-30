@@ -81,6 +81,13 @@ export const uploadProfileImage = async (userId: string, file: File): Promise<st
 export const addPlantListing = async (plant: Omit<PlantListing, 'id' | 'listedDate'>): Promise<string> => {
     if (!db) throw new Error("Firebase Firestore is not configured.");
     const docRef = await addDoc(collection(db, 'plants'), { ...plant, listedDate: serverTimestamp() });
+    
+    // Increment the user's plantsListed count
+    const userRef = doc(db, 'users', plant.ownerId);
+    await updateDoc(userRef, {
+        plantsListed: increment(1)
+    });
+
     return docRef.id;
 };
 
@@ -139,10 +146,35 @@ export const updatePlantListing = async (plantId: string, data: Partial<PlantLis
     await updateDoc(docRef, data);
 };
 
-export const deletePlantListing = async (plantId: string): Promise<void> => {
-    if (!db) return;
-    const docRef = doc(db, 'plants', plantId);
+export const deletePlantListing = async (plant: PlantListing): Promise<void> => {
+    if (!db || !storage || !plant.id || !plant.ownerId) {
+        throw new Error("Deletion failed: invalid plant data or Firebase service not available.");
+    }
+
+    // 1. Delete images from Storage
+    if (plant.imageUrls && plant.imageUrls.length > 0) {
+        const deletePromises = plant.imageUrls.map(url => {
+            const imageRef = ref(storage, url);
+            return deleteObject(imageRef).catch(error => {
+                // Log error but don't block deletion of the document if an image fails to delete
+                console.error(`Failed to delete image ${url}:`, error);
+            });
+        });
+        await Promise.all(deletePromises);
+    }
+    
+    // 2. Delete document from Firestore
+    const docRef = doc(db, 'plants', plant.id);
     await deleteDoc(docRef);
+    
+    // 3. Decrement user's plantsListed count
+    const userRef = doc(db, 'users', plant.ownerId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      await updateDoc(userRef, {
+          plantsListed: increment(-1)
+      });
+    }
 };
 
 export const uploadPlantImage = async (plantId: string, file: File, index: number): Promise<string> => {
@@ -151,12 +183,6 @@ export const uploadPlantImage = async (plantId: string, file: File, index: numbe
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
 };
-
-export const deletePlantImage = async (imageUrl: string): Promise<void> => {
-    if (!storage) return;
-    const imageRef = ref(storage, imageUrl);
-    await deleteObject(imageRef);
-}
 
 
 // --- Messaging Functions (Messages Page: /messages) ---
