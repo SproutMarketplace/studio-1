@@ -18,8 +18,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { Loader2, PlusSquare, UploadCloud, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, PlusSquare, UploadCloud, X, XCircle } from "lucide-react";
 
 // Schema for form validation
 const listPlantSchema = z.object({
@@ -28,23 +28,10 @@ const listPlantSchema = z.object({
   price: z.coerce.number().min(0).optional(),
   tradeOnly: z.boolean().default(false),
   location: z.string().optional(),
-  tags: z.array(z.string()).optional().default([]),
+  tags: z.array(z.string()).max(5, { message: "You can add a maximum of 5 tags." }).optional().default([]),
 });
 
 type ListPlantFormValues = z.infer<typeof listPlantSchema>;
-
-// Predefined tags for users to select from
-const TAG_OPTIONS = [
-  { value: "rare", label: "Rare" },
-  { value: "beginner-friendly", label: "Beginner Friendly" },
-  { value: "pet-friendly", label: "Pet Friendly" },
-  { value: "low-light", label: "Low Light" },
-  { value: "bright-light", label: "Bright Light" },
-  { value: "cacti", label: "Cacti" },
-  { value: "succulent", label: "Succulent" },
-  { value: "foliage", label: "Foliage" },
-  { value: "flowering", label: "Flowering" },
-];
 
 const MAX_IMAGES = 5;
 
@@ -55,6 +42,7 @@ export default function ListPlantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   const form = useForm<ListPlantFormValues>({
     resolver: zodResolver(listPlantSchema),
@@ -154,6 +142,31 @@ export default function ListPlantPage() {
       setIsLoading(false);
     }
   }
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      const currentTags = form.getValues('tags') || [];
+
+      if (newTag && currentTags.length < 5 && !currentTags.includes(newTag)) {
+        form.setValue('tags', [...currentTags, newTag]);
+        setTagInput("");
+      } else if (currentTags.length >= 5) {
+        toast({
+            variant: "destructive",
+            title: "Tag limit reached",
+            description: "You can only add up to 5 tags.",
+        });
+      }
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const currentTags = form.getValues('tags') || [];
+    form.setValue('tags', currentTags.filter(tag => tag !== tagToRemove));
+  };
+
 
   const isButtonDisabled = isLoading || authLoading;
 
@@ -295,13 +308,38 @@ export default function ListPlantPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-lg">Tags (Optional)</FormLabel>
-                     <MultiSelect
-                      options={TAG_OPTIONS}
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select tags..."
-                    />
-                    <FormDescription>Tags help others discover your plant.</FormDescription>
+                    <FormControl>
+                      <div>
+                        { (field.value && field.value.length > 0) &&
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {field.value.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => removeTag(tag)}
+                                  className="ml-1 outline-none ring-offset-background rounded-full focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                  aria-label={`Remove ${tag}`}
+                                >
+                                  <XCircle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        }
+                        <Input
+                          type="text"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={handleTagKeyDown}
+                          placeholder={field.value.length < 5 ? "Type a tag and press Enter..." : "Tag limit reached"}
+                          disabled={field.value.length >= 5}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Add up to 5 custom tags. Tags help others discover your plant.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
