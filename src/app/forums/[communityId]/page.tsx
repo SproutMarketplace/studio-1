@@ -127,7 +127,7 @@ export default function CommunityPage() {
     };
 
     const handleCreatePostSubmit = async (data: PostFormValues) => {
-        if (!user || !profile?.username) {
+        if (!user || !profile) {
             toast({ 
                 variant: "destructive", 
                 title: "Authentication Error", 
@@ -333,11 +333,16 @@ export default function CommunityPage() {
                                     <DialogClose asChild>
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
-                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile?.username}>
-                                        {form.formState.isSubmitting || authLoading || !profile ? (
+                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile}>
+                                        {authLoading ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                <span>{form.formState.isSubmitting ? 'Posting...' : 'Loading Profile...'}</span>
+                                                <span>Loading Profile...</span>
+                                            </>
+                                        ) : form.formState.isSubmitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <span>Posting...</span>
                                             </>
                                         ) : "Create Post"}
                                     </Button>

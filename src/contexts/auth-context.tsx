@@ -67,7 +67,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        // Add a specific check for `db` here to satisfy TypeScript
         if (db) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             try {
@@ -84,7 +83,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setLoading(false);
             }
         } else {
-            // If db is not available, we cannot fetch a profile.
             setProfile(null);
             setLoading(false);
         }
