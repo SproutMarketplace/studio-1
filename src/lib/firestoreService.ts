@@ -47,7 +47,7 @@ export const getTimestamp = () => serverTimestamp() as Timestamp;
 // --- User Functions (Profile Page: /profile) ---
 export const getUserProfile = async (userId: string): Promise<User | null> => {
     if (!db) return null;
-    const docRef = doc(db, 'users', userId);
+    const userDocRef = doc(db, 'users', userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() } as User;
@@ -153,27 +153,30 @@ export const deletePlantListing = async (plant: PlantListing): Promise<void> => 
 
     // 1. Delete images from Storage
     if (plant.imageUrls && plant.imageUrls.length > 0) {
-        const deletePromises = plant.imageUrls.map(url => {
+        const deletePromises = [];
+        for (const url of plant.imageUrls) {
             const imageRef = ref(storage, url);
-            return deleteObject(imageRef).catch(error => {
-                // Log error but don't block deletion of the document if an image fails to delete
-                console.error(`Failed to delete image ${url}:`, error);
-            });
-        });
+            deletePromises.push(
+                deleteObject(imageRef).catch(error => {
+                    // Log error but don't block deletion if an image fails to delete
+                    console.error(`Failed to delete image ${url}:`, error);
+                })
+            );
+        }
         await Promise.all(deletePromises);
     }
-    
+
     // 2. Delete document from Firestore
     const docRef = doc(db, 'plants', plant.id);
     await deleteDoc(docRef);
-    
+
     // 3. Decrement user's plantsListed count
     const userRef = doc(db, 'users', plant.ownerId);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
-      await updateDoc(userRef, {
-          plantsListed: increment(-1)
-      });
+        await updateDoc(userRef, {
+            plantsListed: increment(-1)
+        });
     }
 };
 
