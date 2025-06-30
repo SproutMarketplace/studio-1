@@ -141,7 +141,7 @@ export default function CommunityPage() {
              toast({ 
                 variant: "destructive", 
                 title: "Profile Error", 
-                description: "Your user profile is still loading. Please wait a moment and try again." 
+                description: "Your username could not be found. Please try again." 
             });
             return;
         }
@@ -254,7 +254,7 @@ export default function CommunityPage() {
         );
     }
     
-    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || (!profile?.username && !user?.displayName);
+    const isPostButtonDisabled = form.formState.isSubmitting || authLoading;
 
 
     return (
@@ -347,7 +347,7 @@ export default function CommunityPage() {
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
                                     <Button type="submit" disabled={isPostButtonDisabled}>
-                                        {authLoading || (!profile?.username && !user?.displayName) ? (
+                                        {authLoading ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                 <span>Loading Profile...</span>
@@ -412,4 +412,3 @@ export default function CommunityPage() {
         </div>
     );
 }
-
