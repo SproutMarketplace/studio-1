@@ -34,7 +34,7 @@ export default function CommunityPage() {
     const params = useParams();
     const { toast } = useToast();
     const communityId = params.communityId as string;
-    const { user, profile } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
 
     const [community, setCommunity] = useState<Forum | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
@@ -127,8 +127,12 @@ export default function CommunityPage() {
     };
 
     const handleCreatePostSubmit = async (data: PostFormValues) => {
-        if (!user || !profile || !communityId) {
-            toast({ variant: "destructive", title: "Not Logged In", description: "You must be logged in to create a post." });
+        if (!user || !profile) {
+            toast({ 
+                variant: "destructive", 
+                title: "Authentication Error", 
+                description: "Your profile is still loading or you are not logged in. Please wait a moment and try again." 
+            });
             return;
         }
         
@@ -260,9 +264,9 @@ export default function CommunityPage() {
             <div className="mb-6 flex justify-end">
                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="text-base" disabled={!user}>
+                        <Button className="text-base" disabled={!user || authLoading}>
                             <PlusCircle className="mr-2 h-5 w-5" />
-                            Create Post
+                            {authLoading ? "Loading..." : "Create Post"}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
@@ -329,7 +333,7 @@ export default function CommunityPage() {
                                     <DialogClose asChild>
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
-                                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading}>
                                         {form.formState.isSubmitting ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
