@@ -333,10 +333,11 @@ export default function CommunityPage() {
                                     <DialogClose asChild>
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
-                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading}>
-                                        {form.formState.isSubmitting ? (
+                                    <Button type="submit" disabled={form.formState.isSubmitting || authLoading || !profile}>
+                                        {form.formState.isSubmitting || authLoading ? (
                                             <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                                                {authLoading ? 'Loading Profile...' : 'Posting...'}
                                             </>
                                         ) : "Create Post"}
                                     </Button>
