@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,18 +8,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { PlusCircle, UserPlus, MessagesSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { getForumById, getPostsForForum } from "@/lib/firestoreService";
+import { getForumById, getPostsForForum, addForumPost } from "@/lib/firestoreService";
 import type { Forum, Post } from "@/models";
+import { useAuth } from "@/contexts/auth-context";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import type { Timestamp } from "firebase/firestore";
+
+const postSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters.").max(100, "Title cannot exceed 100 characters."),
+  content: z.string().min(10, "Post content must be at least 10 characters long."),
+});
+
+type PostFormValues = z.infer<typeof postSchema>;
 
 export default function CommunityPage() {
     const params = useParams();
     const { toast } = useToast();
     const communityId = params.communityId as string;
+    const { user, profile } = useAuth();
 
     const [community, setCommunity] = useState<Forum | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const form = useForm<PostFormValues>({
+        resolver: zodResolver(postSchema),
+        defaultValues: { title: "", content: "" },
+    });
 
     useEffect(() => {
         if (!communityId) return;
@@ -62,12 +86,52 @@ export default function CommunityPage() {
         });
     };
 
-    const handleCreatePost = () => {
-        toast({
-            title: "Create Post (Coming Soon)",
-            description: "Functionality to create new posts will be added soon!",
-        });
-    }
+    const handleCreatePostSubmit = async (data: PostFormValues) => {
+        if (!user || !profile || !communityId) {
+            toast({ variant: "destructive", title: "Not Logged In", description: "You must be logged in to create a post." });
+            return;
+        }
+
+        try {
+            const newPostData = {
+                forumId: communityId,
+                title: data.title,
+                content: data.content,
+                authorId: user.uid,
+                authorUsername: profile.username,
+                authorAvatarUrl: profile.avatarUrl || "",
+            };
+            
+            const postId = await addForumPost(communityId, newPostData);
+
+            // Optimistically update the UI
+            const newPostForState: Post = {
+                id: postId,
+                ...newPostData,
+                createdAt: new Date() as unknown as Timestamp, // Visually correct, server has true value
+                upvotes: [],
+                downvotes: [],
+                commentCount: 0,
+            };
+            
+            setPosts(prevPosts => [newPostForState, ...prevPosts]);
+
+            toast({
+                title: "Post Created!",
+                description: "Your post is now live in the community.",
+            });
+            form.reset();
+            setIsDialogOpen(false);
+        } catch (error) {
+            console.error("Error creating post:", error);
+            toast({
+                variant: "destructive",
+                title: "Failed to create post",
+                description: "There was an error submitting your post. Please try again.",
+            });
+        }
+    };
+
 
     if (isLoading) {
          return (
@@ -131,10 +195,62 @@ export default function CommunityPage() {
             </Card>
 
             <div className="mb-6 flex justify-end">
-                <Button onClick={handleCreatePost} className="text-base">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create Post
-                </Button>
+                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="text-base" disabled={!user}>
+                            <PlusCircle className="mr-2 h-5 w-5" />
+                            Create Post
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[480px]">
+                        <DialogHeader>
+                            <DialogTitle>Create a new post in {community.name}</DialogTitle>
+                            <DialogDescription>
+                                Share your thoughts, questions, or plants with the community.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(handleCreatePostSubmit)} className="space-y-4 py-2">
+                                <FormField
+                                    control={form.control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Post Title</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g., Is my Monstera healthy?" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="content"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Content</FormLabel>
+                                            <FormControl>
+                                                <Textarea rows={5} placeholder="Add more details here..." {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <DialogFooter>
+                                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                                        {form.formState.isSubmitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...
+                                            </>
+                                        ) : "Create Post"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {posts.length > 0 ? (
