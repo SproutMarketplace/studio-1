@@ -59,6 +59,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
+    // If Firebase is not initialized (e.g., missing env keys),
+    // auth will be null. In this case, we stop loading and proceed
+    // in a logged-out state instead of crashing.
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
