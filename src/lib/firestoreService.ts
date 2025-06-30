@@ -48,7 +48,7 @@ export const getTimestamp = () => serverTimestamp() as Timestamp;
 export const getUserProfile = async (userId: string): Promise<User | null> => {
     if (!db) return null;
     const userDocRef = doc(db, 'users', userId);
-    const docSnap = await getDoc(docRef);
+    const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() } as User;
     }
@@ -153,17 +153,15 @@ export const deletePlantListing = async (plant: PlantListing): Promise<void> => 
 
     // 1. Delete images from Storage
     if (plant.imageUrls && plant.imageUrls.length > 0) {
-        const deletePromises = [];
         for (const url of plant.imageUrls) {
-            const imageRef = ref(storage, url);
-            deletePromises.push(
-                deleteObject(imageRef).catch(error => {
-                    // Log error but don't block deletion if an image fails to delete
-                    console.error(`Failed to delete image ${url}:`, error);
-                })
-            );
+            try {
+                const imageRef = ref(storage, url);
+                await deleteObject(imageRef);
+            } catch (error) {
+                 // Log error but don't block deletion of the document if an image fails to delete
+                 console.error(`Failed to delete image ${url}:`, error);
+            }
         }
-        await Promise.all(deletePromises);
     }
 
     // 2. Delete document from Firestore
