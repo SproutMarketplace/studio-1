@@ -17,6 +17,7 @@ import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera } fr
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { EditProfileForm } from "@/components/edit-profile-form";
 
 export default function ProfilePage() {
   const { user, profile, loading: authLoading, updateUserProfileInContext } = useAuth();
@@ -191,7 +192,7 @@ export default function ProfilePage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
           <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>
-          <TabsTrigger value="settings" disabled><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>
         </TabsList>
         <TabsContent value="listings" className="mt-6">
           <Card>
@@ -250,8 +251,8 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="settings">
-          <Card><CardContent className="p-6 text-center text-muted-foreground">Profile editing is coming soon!</CardContent></Card>
+        <TabsContent value="settings" className="mt-6">
+          <EditProfileForm />
         </TabsContent>
       </Tabs>
     </div>

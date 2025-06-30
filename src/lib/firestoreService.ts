@@ -65,7 +65,24 @@ export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): 
 };
 
 export const updateUserData = async (userId: string, data: Partial<User>): Promise<void> => {
-    if (!db) return;
+    if (!auth || !db) return;
+    const user = auth.currentUser;
+    if (!user || user.uid !== userId) return; // Ensure the current user is the one being updated
+
+    // Update Firebase Auth profile if relevant fields are present
+    const authUpdateData: { displayName?: string; photoURL?: string } = {};
+    if (data.username) {
+        authUpdateData.displayName = data.username;
+    }
+    if (data.avatarUrl) {
+        authUpdateData.photoURL = data.avatarUrl;
+    }
+
+    if (Object.keys(authUpdateData).length > 0) {
+        await updateProfile(user, authUpdateData);
+    }
+    
+    // Update Firestore document
     const docRef = doc(db, 'users', userId);
     await updateDoc(docRef, data);
 };
