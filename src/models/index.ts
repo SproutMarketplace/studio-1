@@ -77,6 +77,7 @@ export interface Post {
     upvotes: string[]; // Array of userIDs
     downvotes: string[]; // Array of userIDs
     commentCount: number; // Denormalized
+    imageUrls?: string[];
 }
 
 // Replaces the old ForumComment interface

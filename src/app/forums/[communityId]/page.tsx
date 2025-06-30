@@ -5,16 +5,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, UserPlus, MessagesSquare, Loader2 } from "lucide-react";
+import { PlusCircle, UserPlus, MessagesSquare, Loader2, UploadCloud, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import { getForumById, getPostsForForum, addForumPost } from "@/lib/firestoreService";
+import { getForumById, getPostsForForum, addForumPost, updateForumPost, uploadPostImage } from "@/lib/firestoreService";
 import type { Forum, Post } from "@/models";
 import { useAuth } from "@/contexts/auth-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,8 @@ const postSchema = z.object({
 
 type PostFormValues = z.infer<typeof postSchema>;
 
+const MAX_IMAGES = 3;
+
 export default function CommunityPage() {
     const params = useParams();
     const { toast } = useToast();
@@ -38,6 +41,9 @@ export default function CommunityPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     const form = useForm<PostFormValues>({
         resolver: zodResolver(postSchema),
@@ -86,32 +92,85 @@ export default function CommunityPage() {
         });
     };
 
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) {
+            const files = Array.from(event.target.files);
+            const remainingSlots = MAX_IMAGES - imageFiles.length;
+            if (files.length > remainingSlots) {
+                toast({
+                    variant: "destructive",
+                    title: "Too many images",
+                    description: `You can only upload a maximum of ${MAX_IMAGES} images.`,
+                });
+            }
+            const newFiles = files.slice(0, remainingSlots);
+
+            setImageFiles(prev => [...prev, ...newFiles]);
+
+            const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => [...prev, ...newPreviews]);
+
+            event.target.value = "";
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => {
+            const newPreviews = [...prev];
+            const removedPreview = newPreviews.splice(index, 1);
+            if (removedPreview[0]) {
+                URL.revokeObjectURL(removedPreview[0]);
+            }
+            return newPreviews;
+        });
+    };
+
     const handleCreatePostSubmit = async (data: PostFormValues) => {
         if (!user || !profile || !communityId) {
             toast({ variant: "destructive", title: "Not Logged In", description: "You must be logged in to create a post." });
             return;
         }
+        
+        form.clearErrors();
+        let postId = "";
 
         try {
-            const newPostData = {
+            // 1. Create the post document to get an ID
+            postId = await addForumPost(communityId, {
                 forumId: communityId,
                 title: data.title,
                 content: data.content,
                 authorId: user.uid,
                 authorUsername: profile.username,
                 authorAvatarUrl: profile.avatarUrl || "",
-            };
-            
-            const postId = await addForumPost(communityId, newPostData);
+                imageUrls: [], // Start with empty array
+            });
 
-            // Optimistically update the UI
+            // 2. Upload images if they exist
+            let imageUrls: string[] = [];
+            if (imageFiles.length > 0) {
+                imageUrls = await Promise.all(
+                    imageFiles.map((file, index) => uploadPostImage(communityId, postId, file, index))
+                );
+                // 3. Update the post document with the image URLs
+                await updateForumPost(communityId, postId, { imageUrls });
+            }
+
+            // 4. Optimistically update the UI
             const newPostForState: Post = {
                 id: postId,
-                ...newPostData,
+                forumId: communityId,
+                title: data.title,
+                content: data.content,
+                authorId: user.uid,
+                authorUsername: profile.username,
+                authorAvatarUrl: profile.avatarUrl || "",
                 createdAt: new Date() as unknown as Timestamp, // Visually correct, server has true value
                 upvotes: [],
                 downvotes: [],
                 commentCount: 0,
+                imageUrls: imageUrls,
             };
             
             setPosts(prevPosts => [newPostForState, ...prevPosts]);
@@ -120,7 +179,11 @@ export default function CommunityPage() {
                 title: "Post Created!",
                 description: "Your post is now live in the community.",
             });
+
+            // 5. Reset form and close dialog
             form.reset();
+            setImageFiles([]);
+            setImagePreviews([]);
             setIsDialogOpen(false);
         } catch (error) {
             console.error("Error creating post:", error);
@@ -202,7 +265,7 @@ export default function CommunityPage() {
                             Create Post
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[480px]">
+                    <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                             <DialogTitle>Create a new post in {community.name}</DialogTitle>
                             <DialogDescription>
@@ -237,8 +300,35 @@ export default function CommunityPage() {
                                         </FormItem>
                                     )}
                                 />
+                                <FormItem>
+                                    <FormLabel>Images (Optional)</FormLabel>
+                                    <div className="p-4 border-2 border-dashed rounded-lg border-border bg-muted/50">
+                                        {imagePreviews.length > 0 && (
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-4">
+                                                {imagePreviews.map((src, index) => (
+                                                    <div key={index} className="relative aspect-square">
+                                                        <Image src={src} alt={`Preview ${index}`} layout="fill" objectFit="cover" className="rounded-md" />
+                                                        <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full z-10" onClick={() => removeImage(index)}>
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {imageFiles.length < MAX_IMAGES && (
+                                            <label htmlFor="image-upload" className="w-full flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/80">
+                                                <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
+                                                <p className="text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span></p>
+                                                <p className="text-xs text-muted-foreground">Up to {MAX_IMAGES} images</p>
+                                                <Input id="image-upload" type="file" className="hidden" multiple accept="image/*" onChange={handleImageChange} disabled={imageFiles.length >= MAX_IMAGES} />
+                                            </label>
+                                        )}
+                                    </div>
+                                </FormItem>
                                 <DialogFooter>
-                                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                                    <DialogClose asChild>
+                                        <Button type="button" variant="ghost">Cancel</Button>
+                                    </DialogClose>
                                     <Button type="submit" disabled={form.formState.isSubmitting}>
                                         {form.formState.isSubmitting ? (
                                             <>
@@ -266,7 +356,18 @@ export default function CommunityPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm line-clamp-2">{post.content}</p>
+                                <p className="text-sm line-clamp-3">{post.content}</p>
+                                {post.imageUrls && post.imageUrls.length > 0 && (
+                                    <div className="mt-4">
+                                        <Image
+                                            src={post.imageUrls[0]}
+                                            alt={`Image for post: ${post.title}`}
+                                            width={500}
+                                            height={300}
+                                            className="rounded-lg object-cover"
+                                        />
+                                    </div>
+                                )}
                             </CardContent>
                             <CardFooter>
                                 <Button variant="outline" size="sm" className="hover:bg-muted hover:text-muted-foreground" disabled>View Post (soon)</Button>

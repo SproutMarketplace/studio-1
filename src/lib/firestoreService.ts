@@ -303,6 +303,19 @@ export const addForumPost = async (forumId: string, post: Omit<Post, 'id' | 'cre
     return docRef.id;
 };
 
+export const updateForumPost = async (forumId: string, postId: string, data: Partial<Post>): Promise<void> => {
+    if (!db) return;
+    const postRef = doc(db, 'forums', forumId, 'posts', postId);
+    await updateDoc(postRef, data);
+};
+
+export const uploadPostImage = async (forumId: string, postId: string, file: File, index: number): Promise<string> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
+    const imageRef = ref(storage, `post_images/${forumId}/${postId}/${index}_${file.name}`);
+    const snapshot = await uploadBytes(imageRef, file);
+    return await getDownloadURL(snapshot.ref);
+};
+
 export const getPostsForForum = async (forumId: string): Promise<Post[]> => {
     if (!db) return [];
     const q = query(collection(db, 'forums', forumId, 'posts'), orderBy('createdAt', 'desc'));
