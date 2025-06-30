@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Image from "next/image";
 
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Users, PlusCircle, Loader2 } from "lucide-react";
+import { Search, Users, PlusCircle, Loader2, UploadCloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getForums, createForum, getForumById } from "@/lib/firestoreService";
+import { getForums, createForum, getForumById, uploadForumBanner, updateForum } from "@/lib/firestoreService";
 import type { Forum } from "@/models";
 
 
@@ -32,6 +33,8 @@ export default function ForumsListPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [bannerFile, setBannerFile] = useState<File | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     
     const { toast } = useToast();
     const { user } = useAuth();
@@ -63,9 +66,30 @@ export default function ForumsListPage() {
         fetchForums();
     }, [toast]);
 
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          if (file.size > 4 * 1024 * 1024) { // 4MB limit
+            toast({
+              variant: "destructive",
+              title: "Image too large",
+              description: "Please upload an image smaller than 4MB.",
+            });
+            return;
+          }
+          setBannerFile(file);
+          setBannerPreview(URL.createObjectURL(file));
+        }
+      };
+
     const handleCreateCommunity = async (data: ForumFormValues) => {
         if (!user) {
             toast({ variant: "destructive", title: "Not Logged In", description: "You must be logged in to create a community." });
+            return;
+        }
+
+        if (!bannerFile) {
+            toast({ variant: "destructive", title: "Banner Required", description: "Please upload a banner image for your community." });
             return;
         }
 
@@ -75,6 +99,10 @@ export default function ForumsListPage() {
                 description: data.description,
                 creatorId: user.uid,
             });
+
+            const bannerUrl = await uploadForumBanner(newForumId, bannerFile);
+            await updateForum(newForumId, { bannerUrl });
+
             const newForum = await getForumById(newForumId);
             if (newForum) {
                 setForums(prev => [newForum, ...prev]);
@@ -84,6 +112,8 @@ export default function ForumsListPage() {
                 description: `The "${data.name}" community is now live.`,
             });
             form.reset();
+            setBannerFile(null);
+            setBannerPreview(null);
             setIsDialogOpen(false);
         } catch (error) {
             console.error("Error creating community:", error);
@@ -122,7 +152,7 @@ export default function ForumsListPage() {
                             Create Community
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>Create a New Community</DialogTitle>
                             <DialogDescription>
@@ -157,6 +187,38 @@ export default function ForumsListPage() {
                                         </FormItem>
                                     )}
                                 />
+                                 <FormItem>
+                                    <FormLabel>Community Banner</FormLabel>
+                                    <FormControl>
+                                        <label
+                                        htmlFor="banner-upload"
+                                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer border-border hover:border-primary bg-muted/50 hover:bg-muted"
+                                        >
+                                        {bannerPreview ? (
+                                            <div className="relative w-full h-full">
+                                            <Image src={bannerPreview} alt="Banner preview" layout="fill" objectFit="cover" className="rounded-md" />
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                            <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
+                                            <p className="text-sm text-muted-foreground">
+                                                <span className="font-semibold">Click to upload</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 4MB</p>
+                                            </div>
+                                        )}
+                                        <Input
+                                            id="banner-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            aria-label="Upload banner image"
+                                        />
+                                        </label>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                                 <DialogFooter>
                                     <Button type="submit" disabled={form.formState.isSubmitting}>
                                         {form.formState.isSubmitting ? (
@@ -183,17 +245,28 @@ export default function ForumsListPage() {
             ) : forums.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {forums.map(forum => (
-                        <Card key={forum.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow">
-                            <CardHeader>
-                                <CardTitle className="text-xl group-hover:text-primary">
+                        <Card key={forum.id} className="flex flex-col shadow-lg hover:shadow-xl transition-shadow group">
+                            <CardHeader className="p-0">
+                                <Link href={`/forums/${forum.id}`} className="block aspect-[16/9] relative w-full overflow-hidden">
+                                    <Image
+                                        src={forum.bannerUrl || "https://placehold.co/600x338.png"}
+                                        alt={`${forum.name} banner`}
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="group-hover:scale-105 transition-transform duration-300"
+                                        data-ai-hint="community banner"
+                                    />
+                                </Link>
+                            </CardHeader>
+                            <CardContent className="p-4 flex-grow">
+                                <CardTitle className="text-xl group-hover:text-primary transition-colors">
                                     <Link href={`/forums/${forum.id}`} className="hover:underline">
                                         {forum.name}
                                     </Link>
                                 </CardTitle>
-                                <CardDescription>{forum.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow" />
-                            <CardFooter className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+                                <CardDescription className="line-clamp-2 mt-1">{forum.description}</CardDescription>
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center text-sm text-muted-foreground border-t p-4">
                                 <div className="flex items-center">
                                     <Users className="mr-2 h-4 w-4" />
                                     <span>{forum.memberCount || 0} members</span>

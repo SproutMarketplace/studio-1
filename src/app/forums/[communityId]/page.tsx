@@ -127,7 +127,7 @@ export default function CommunityPage() {
     };
 
     const handleCreatePostSubmit = async (data: PostFormValues) => {
-        if (!user) {
+        if (!user || !profile) {
             toast({ 
                 variant: "destructive", 
                 title: "Authentication Error", 
@@ -151,15 +151,17 @@ export default function CommunityPage() {
 
         try {
             // 1. Create the post document to get an ID
-            postId = await addForumPost(communityId, {
+            const newPost = {
                 forumId: communityId,
                 title: data.title,
                 content: data.content,
                 authorId: user.uid,
                 authorUsername: username,
-                authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
+                authorAvatarUrl: profile.avatarUrl || user.photoURL || "",
                 imageUrls: [], // Start with empty array
-            });
+            };
+            postId = await addForumPost(newPost);
+
 
             // 2. Upload images if they exist
             let imageUrls: string[] = [];
@@ -174,17 +176,12 @@ export default function CommunityPage() {
             // 4. Optimistically update the UI
             const newPostForState: Post = {
                 id: postId,
-                forumId: communityId,
-                title: data.title,
-                content: data.content,
-                authorId: user.uid,
-                authorUsername: username,
-                authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
+                ...newPost,
+                imageUrls,
                 createdAt: new Date() as unknown as Timestamp, // Visually correct, server has true value
                 upvotes: [],
                 downvotes: [],
                 commentCount: 0,
-                imageUrls: imageUrls,
             };
             
             setPosts(prevPosts => [newPostForState, ...prevPosts]);
@@ -254,12 +251,23 @@ export default function CommunityPage() {
         );
     }
     
-    const isPostButtonDisabled = form.formState.isSubmitting || authLoading;
+    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || !profile;
 
 
     return (
         <div className="container mx-auto py-8">
-            <Card className="w-full shadow-xl mb-6">
+            <Card className="w-full shadow-xl mb-6 overflow-hidden">
+                {community.bannerUrl && (
+                    <div className="relative w-full h-48 md:h-64 bg-muted">
+                        <Image
+                            src={community.bannerUrl}
+                            alt={`${community.name} banner`}
+                            layout="fill"
+                            objectFit="cover"
+                            priority
+                        />
+                    </div>
+                )}
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
@@ -347,7 +355,7 @@ export default function CommunityPage() {
                                         <Button type="button" variant="ghost">Cancel</Button>
                                     </DialogClose>
                                     <Button type="submit" disabled={isPostButtonDisabled}>
-                                        {authLoading ? (
+                                        {authLoading || !profile ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                 <span>Loading Profile...</span>

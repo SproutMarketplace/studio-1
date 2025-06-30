@@ -59,6 +59,7 @@ export interface Forum {
     id?: string; // Document ID
     name: string;
     description: string;
+    bannerUrl?: string;
     createdAt: Timestamp;
     memberCount?: number; // Denormalized
     creatorId?: string; // UserID of creator

@@ -182,8 +182,8 @@ export const deletePlantListing = async (plant: PlantListing): Promise<void> => 
     }
 
     // 2. Delete document from Firestore
-    const docRef = doc(db, 'plants', plant.id);
-    await deleteDoc(docRef);
+    const userDocRef = doc(db, 'plants', plant.id);
+    await deleteDoc(userDocRef);
 
     // 3. Decrement user's plantsListed count
     const userRef = doc(db, 'users', plant.ownerId);
@@ -335,9 +335,22 @@ export const getForumById = async (forumId: string): Promise<Forum | null> => {
     return null;
 };
 
-export const addForumPost = async (forumId: string, post: Omit<Post, 'id' | 'createdAt' | 'upvotes' | 'downvotes' | 'commentCount'>): Promise<string> => {
+export const updateForum = async (forumId: string, data: Partial<Forum>): Promise<void> => {
+    if (!db) return;
+    const forumRef = doc(db, 'forums', forumId);
+    await updateDoc(forumRef, data);
+};
+
+export const uploadForumBanner = async (forumId: string, file: File): Promise<string> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
+    const imageRef = ref(storage, `forum_banners/${forumId}/${file.name}`);
+    const snapshot = await uploadBytes(imageRef, file);
+    return await getDownloadURL(snapshot.ref);
+};
+
+export const addForumPost = async (post: Omit<Post, 'id' | 'createdAt' | 'upvotes' | 'downvotes' | 'commentCount'>): Promise<string> => {
     if (!db) throw new Error("Firebase Firestore is not configured.");
-    const docRef = await addDoc(collection(db, 'forums', forumId, 'posts'), {
+    const docRef = await addDoc(collection(db, 'forums', post.forumId, 'posts'), {
         ...post,
         createdAt: serverTimestamp(),
         upvotes: [],
