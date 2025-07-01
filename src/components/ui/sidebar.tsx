@@ -242,10 +242,8 @@ const Sidebar = React.forwardRef<
                     className={cn(
                         "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
                         side === "left"
-                            ? "left-0 group-data-[collapsible=offcanvas]:-left-[--sidebar-width]"
-                            : "right-0 group-data-[collapsible=offcanvas]:-right-[--sidebar-width]",
-                        // This handles the open state for offcanvas
-                        open && (side === "left" ? "left-0" : "right-0"),
+                            ? "left-0 group-data-[state=collapsed]:group-data-[collapsible=offcanvas]:-left-[--sidebar-width]"
+                            : "right-0 group-data-[state=collapsed]:group-data-[collapsible=offcanvas]:-right-[--sidebar-width]",
                         // Adjust the padding for floating and inset variants.
                         variant === "floating" || variant === "inset"
                             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
@@ -646,10 +644,7 @@ const SidebarMenuBadge = React.forwardRef<
         ref={ref}
         data-sidebar="menu-badge"
         className={cn(
-            "absolute right-2 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold text-destructive-foreground select-none pointer-events-none",
-            "peer-data-[size=sm]/menu-button:top-1",
-            "peer-data-[size=default]/menu-button:top-1.5",
-            "peer-data-[size=lg]/menu-button:top-2.5",
+            "absolute right-3 top-1/2 flex h-5 min-w-[1.25rem] -translate-y-1/2 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold text-destructive-foreground",
             className
         )}
         {...props}
