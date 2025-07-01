@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { deletePlantListing, getPlantListing } from "@/lib/firestoreService";
+import { deletePlantListing, getPlantListing, createOrGetChat } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil } from "lucide-react";
+import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil, MessageSquare } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +50,7 @@ export default function PlantDetailPage() {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isWishlistLoading, setIsWishlistLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isMessaging, setIsMessaging] = useState(false);
 
     useEffect(() => {
         if (plantId) {
@@ -83,6 +84,24 @@ export default function PlantDetailPage() {
         }
 
     }, [plantId, searchParams, router, toast]);
+
+    const handleMessageSeller = async () => {
+        if (!user) {
+            toast({ variant: "destructive", title: "Please log in", description: "You need to be logged in to send a message." });
+            return;
+        }
+        if (!plant || isOwner) return;
+
+        setIsMessaging(true);
+        try {
+            const chatId = await createOrGetChat(user.uid, plant.ownerId);
+            router.push(`/messages/${chatId}`);
+        } catch (error) {
+            console.error("Failed to start chat:", error);
+            toast({ variant: "destructive", title: "Something went wrong", description: "Could not start a conversation." });
+            setIsMessaging(false);
+        }
+    };
 
     const handleWishlistToggle = async () => {
         if (!user || !profile || !plant?.id) {
@@ -280,33 +299,49 @@ export default function PlantDetailPage() {
                         </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                         <Button 
-                            variant="outline" 
-                            size="lg" 
-                            className="w-full group/button" 
-                            onClick={handleWishlistToggle}
-                            disabled={!plant.isAvailable || authLoading || isWishlistLoading}
-                        >
-                            {isWishlistLoading ? (
-                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            ) : (
-                                <Heart className={cn("w-5 h-5 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
+                    {!isOwner && (
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                             <Button 
+                                variant="outline" 
+                                size="lg" 
+                                className="w-full group/button" 
+                                onClick={handleWishlistToggle}
+                                disabled={!plant.isAvailable || authLoading || isWishlistLoading}
+                            >
+                                {isWishlistLoading ? (
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                ) : (
+                                    <Heart className={cn("w-5 h-5 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
+                                )}
+                                {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
+                            </Button>
+                            {!isTradeOnly && (
+                                <Button
+                                    size="lg"
+                                    className="w-full"
+                                    onClick={() => addToCart(plant)}
+                                    disabled={!plant.isAvailable || isInCart}
+                                >
+                                    <ShoppingCart className="w-5 h-5 mr-2" />
+                                    {isInCart ? "In Cart" : "Add to Cart"}
+                                </Button>
                             )}
-                            {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-                        </Button>
-                        {!isTradeOnly && (
                             <Button
                                 size="lg"
                                 className="w-full"
-                                onClick={() => addToCart(plant)}
-                                disabled={!plant.isAvailable || isInCart}
+                                variant={isTradeOnly ? "default" : "secondary"}
+                                onClick={handleMessageSeller}
+                                disabled={!plant.isAvailable || authLoading || isMessaging}
                             >
-                                <ShoppingCart className="w-5 h-5 mr-2" />
-                                {isInCart ? "In Cart" : "Add to Cart"}
+                                {isMessaging ? (
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                ) : (
+                                    <MessageSquare className="w-5 h-5 mr-2" />
+                                )}
+                                Message Seller
                             </Button>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </Card>
         </div>

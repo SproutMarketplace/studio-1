@@ -66,7 +66,9 @@ export default function MessagesPage() {
     
     const getOtherParticipant = (chat: Chat) => {
         const otherUserId = chat.participants.find(p => p !== user.uid);
-        if (!otherUserId || !chat.participantDetails) return { username: 'Unknown User', avatarUrl: '' };
+        if (!otherUserId || !chat.participantDetails) {
+            return { username: 'Unknown User', avatarUrl: '' };
+        }
         return chat.participantDetails[otherUserId] || { username: 'Unknown User', avatarUrl: '' };
     };
 
@@ -87,6 +89,8 @@ export default function MessagesPage() {
                         <ul className="divide-y divide-border">
                             {chats.map(chat => {
                                 const otherParticipant = getOtherParticipant(chat);
+                                const lastMessageTimestamp = chat.lastMessageTimestamp as Timestamp | null;
+
                                 return (
                                     <li key={chat.id}>
                                         <Link href={`/messages/${chat.id}`} className="block hover:bg-muted/50 transition-colors">
@@ -100,9 +104,11 @@ export default function MessagesPage() {
                                                         <p className="text-base font-semibold text-foreground truncate">
                                                             {otherParticipant.username}
                                                         </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {formatDistanceToNow((chat.lastMessageTimestamp as Timestamp).toDate(), { addSuffix: true })}
-                                                        </p>
+                                                        {lastMessageTimestamp && (
+                                                            <p className="text-xs text-muted-foreground shrink-0 ml-2">
+                                                                {formatDistanceToNow(lastMessageTimestamp.toDate(), { addSuffix: true })}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     <p className="text-sm text-muted-foreground truncate">
                                                         {chat.lastMessage}

@@ -4,14 +4,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, Loader2, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MapPin, User, Loader2, ShoppingCart, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
+import { addPlantToWishlist, removePlantFromWishlist, createOrGetChat } from "@/lib/firestoreService";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/contexts/cart-context";
 
@@ -24,13 +25,36 @@ export function PlantCard({ plant }: PlantCardProps) {
   const { toast } = useToast();
   const { user, profile, loading: authLoading, refreshUserProfile } = useAuth();
   const { addToCart, items: cartItems } = useCart();
+  const router = useRouter();
+  
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [isMessaging, setIsMessaging] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
 
+  const isOwner = user?.uid === plant.ownerId;
   const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
-  const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
   const isInCart = cartItems.some(item => item.id === plant.id);
+
+  const handleMessageSeller = async (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    e.preventDefault();
+    if (!user) {
+        toast({ variant: "destructive", title: "Please log in", description: "You need to be logged in to send a message." });
+        return;
+    }
+    if (!plant || isOwner) return;
+
+    setIsMessaging(true);
+    try {
+        const chatId = await createOrGetChat(user.uid, plant.ownerId);
+        router.push(`/messages/${chatId}`);
+    } catch (error) {
+        console.error("Failed to start chat:", error);
+        toast({ variant: "destructive", title: "Something went wrong", description: "Could not start a conversation." });
+        setIsMessaging(false);
+    }
+  };
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.stopPropagation(); 
@@ -201,31 +225,50 @@ export function PlantCard({ plant }: PlantCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 border-t flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full group/button hover:bg-muted hover:text-muted-foreground" 
-          onClick={handleWishlistToggle}
-          disabled={!plant.isAvailable || authLoading || isWishlistLoading}
-        >
-          {isWishlistLoading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Heart className={cn("w-4 h-4 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
-          )}
-          {isInWishlist ? 'In Wishlist' : 'Wishlist'}
-        </Button>
-        {!isTradeOnly && (
-          <Button
-              variant="outline"
-              size="sm"
-              className="w-full group/button hover:bg-primary/10 hover:text-primary"
-              onClick={handleAddToCart}
-              disabled={!plant.isAvailable || isInCart}
-          >
-              <ShoppingCart className={cn("w-4 h-4 mr-2 transition-colors", isInCart && "text-primary")} />
-              {isInCart ? "In Cart" : "Add to Cart"}
-          </Button>
+         {!isOwner && plant.isAvailable && (
+          <>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="group/button hover:bg-muted hover:text-muted-foreground" 
+              onClick={handleWishlistToggle}
+              disabled={authLoading || isWishlistLoading}
+            >
+              {isWishlistLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Heart className={cn("w-4 h-4 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
+              )}
+            </Button>
+
+            {plant.tradeOnly ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full group/button hover:bg-primary/10 hover:text-primary"
+                onClick={handleMessageSeller}
+                disabled={authLoading || isMessaging}
+              >
+                {isMessaging ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                )}
+                Message Seller
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full group/button hover:bg-primary/10 hover:text-primary"
+                onClick={handleAddToCart}
+                disabled={isInCart}
+              >
+                <ShoppingCart className={cn("w-4 h-4 mr-2 transition-colors", isInCart && "text-primary")} />
+                {isInCart ? "In Cart" : "Add to Cart"}
+              </Button>
+            )}
+          </>
         )}
       </CardFooter>
     </Card>
