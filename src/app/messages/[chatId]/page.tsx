@@ -71,11 +71,11 @@ export default function ChatPage() {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !user || !otherUser) return;
+        if (!newMessage.trim() || !user || !otherUser || !otherUser.id) return;
 
         setIsSending(true);
         try {
-            await sendMessage(chatId, user.uid, otherUser.userId, newMessage.trim());
+            await sendMessage(chatId, user.uid, otherUser.id, newMessage.trim());
             setNewMessage("");
         } catch (error) {
             console.error("Failed to send message", error);
