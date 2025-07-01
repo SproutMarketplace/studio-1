@@ -36,6 +36,28 @@ export interface PlantListing {
     tags?: string[];
 }
 
+export interface OrderItem {
+    plantId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrls: string[];
+    sellerId: string;
+}
+
+export interface Order {
+    id?: string; // Document ID
+    userId: string; // Buyer's ID
+    sellerIds: string[]; // Array of all seller IDs in the order
+    items: OrderItem[];
+    totalAmount: number;
+    status: 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    createdAt: Timestamp;
+    stripeSessionId: string;
+    buyerUsername?: string; // Denormalized
+}
+
+
 // New interfaces from here
 export interface Chat {
     id?: string; // Document ID (e.g., 'userId1_userId2')

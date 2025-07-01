@@ -25,6 +25,7 @@ import {
     setDoc,
     QuerySnapshot,
     DocumentData,
+    writeBatch,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from 'firebase/auth';
@@ -39,6 +40,8 @@ import {
     Post,
     Comment,
     RewardTransaction,
+    Order,
+    OrderItem,
 } from '@/models';
 
 // --- General Utility Functions ---
@@ -478,6 +481,60 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
     const plants = await Promise.all(plantPromises);
 
     return plants.filter(plant => plant !== null) as PlantListing[];
+};
+
+
+// --- Order Functions ---
+
+// Called by the Stripe webhook
+export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'sellerIds'>): Promise<void> => {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    const batch = writeBatch(db);
+
+    // 1. Create the main order document
+    const orderRef = doc(collection(db, 'orders'));
+    const buyerProfile = await getUserProfile(orderData.userId);
+    const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
+
+    batch.set(orderRef, {
+        ...orderData,
+        status: 'processing',
+        createdAt: serverTimestamp(),
+        sellerIds: sellerIds,
+        buyerUsername: buyerProfile?.username || 'Unknown Buyer'
+    });
+
+    // 2. Update each plant listing to mark it as sold
+    for (const item of orderData.items) {
+        const plantRef = doc(db, 'plants', item.plantId);
+        batch.update(plantRef, { isAvailable: false });
+
+        // 3. Update seller's stats
+        const sellerRef = doc(db, 'users', item.sellerId);
+        // We can increment here, but for simplicity we rely on the dashboard to calculate stats for now.
+        // This can be added later if performance becomes an issue.
+    }
+
+    await batch.commit();
+};
+
+// REQUIRED FIRESTORE INDEX:
+// Collection: 'orders'
+// Fields: 1. sellerIds (Array-contains), 2. createdAt (Descending)
+export const getOrdersForSeller = async (sellerId: string): Promise<Order[]> => {
+    if (!db) return [];
+    const q = query(
+        collection(db, 'orders'),
+        where('sellerIds', 'array-contains', sellerId),
+        orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    const orders: Order[] = [];
+    querySnapshot.forEach((doc: DocumentSnapshot) => {
+        orders.push({ id: doc.id, ...doc.data() } as Order);
+    });
+    return orders;
 };
 
 

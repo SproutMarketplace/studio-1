@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, ShoppingCart, Trash2 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
@@ -20,10 +21,20 @@ const stripePromise = !isStripeDisabled ? loadStripe(stripePublishableKey!) : nu
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
     const { items, removeFromCart, totalPrice, itemCount } = useCart();
+    const { user } = useAuth();
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const { toast } = useToast();
 
     async function handleCheckout() {
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'Not Logged In',
+                description: 'You must be logged in to proceed to checkout.'
+            });
+            return;
+        }
+
         if (!stripePromise) {
             toast({
                 variant: 'destructive',
@@ -40,7 +51,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ items }),
+                body: JSON.stringify({ items, userId: user.uid }),
             });
 
             if (!response.ok) {

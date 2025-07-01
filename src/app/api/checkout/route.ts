@@ -28,12 +28,16 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { items }: { items: CartItem[] } = await req.json();
+        const { items, userId }: { items: CartItem[], userId: string } = await req.json();
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'No items in cart' }, { status: 400 });
         }
         
+        if (!userId) {
+            return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+        }
+
         const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
             .filter(item => item.price && item.price > 0)
             .map((item) => {
@@ -61,6 +65,17 @@ export async function POST(req: NextRequest) {
             mode: 'payment',
             success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
             cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
+            metadata: {
+                userId,
+                cartItems: JSON.stringify(items.map(item => ({
+                    plantId: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    imageUrls: item.imageUrls,
+                    sellerId: item.ownerId
+                }))),
+            }
         });
 
         return NextResponse.json({ sessionId: session.id });
