@@ -184,9 +184,9 @@ function AppSidebar() {
                         </Button>
                     </>
                 ) : (
-                    <Button variant="ghost" size="icon" onClick={() => setOpen(true)} className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Open sidebar panel">
+                    <Link href="/catalog" passHref aria-label="Sprout Home">
                         <SproutIcon className="text-primary size-8" aria-hidden="true" />
-                    </Button>
+                    </Link>
                 )}
             </SidebarHeader>
 
@@ -207,7 +207,9 @@ function AppSidebar() {
                                 </SidebarMenuButton>
                             </Link>
                             {item.href === "/messages" && profile && profile.unreadMessageCount > 0 && (
-                                <SidebarMenuBadge>{profile.unreadMessageCount}</SidebarMenuBadge>
+                                <SidebarMenuBadge>
+                                    {open || isMobile ? profile.unreadMessageCount : ""}
+                                </SidebarMenuBadge>
                             )}
                         </SidebarMenuItem>
                     ))}
