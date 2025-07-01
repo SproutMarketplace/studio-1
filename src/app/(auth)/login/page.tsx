@@ -25,8 +25,8 @@ import { auth, signInWithGooglePopup, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import type { User } from "@/models";
+import { doc, getDoc } from "firebase/firestore";
+import { logoutUser } from "@/lib/firestoreService";
 
 const GoogleLogo = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -120,40 +120,36 @@ export default function LoginPage() {
       const userCredential = await signInWithGooglePopup();
       const user = userCredential.user;
 
-      // Check if user profile exists, create if not
+      // Check if user has a profile document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
       if (!docSnap.exists()) {
-        const newProfile: Omit<User, 'id' | 'joinedDate'> = {
-            userId: user.uid,
-            email: user.email!,
-            username: user.displayName || "New User",
-            avatarUrl: user.photoURL || "",
-            plantsListed: 0,
-            plantsTraded: 0,
-            rewardPoints: 0,
-            favoritePlants: [],
-            followers: [],
-            following: [],
-        };
-        await setDoc(userDocRef, { ...newProfile, joinedDate: serverTimestamp() });
+        // This Google account is not associated with an existing user profile in our app.
+        // We must sign them out and instruct them to sign up first.
+        await logoutUser();
+        toast({
+          variant: "destructive",
+          title: "No Account Found",
+          description: "No account exists with this Google account. Please sign up first.",
+        });
+      } else {
+        // User profile exists, this is a valid login.
+        await refreshUserProfile();
+        toast({
+          title: "Google Sign-In Successful!",
+          description: "Welcome! Redirecting to the catalog...",
+        });
+        router.push("/catalog");
       }
-
-      await refreshUserProfile();
-      toast({
-        title: "Google Sign-In Successful!",
-        description: "Welcome! Redirecting to the catalog...",
-      });
-      router.push("/catalog");
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
       let errorMessage = "An unexpected error occurred with Google Sign-In. Please try again.";
-      if (error.code) {
+       if (error.code) {
         switch (error.code) {
           case "auth/popup-closed-by-user":
-            errorMessage = "Sign-in popup closed. Please try again if you wish to sign in with Google.";
-            break;
+            // This is a normal user action, so we don't show an error toast.
+            return;
           case "auth/account-exists-with-different-credential":
             errorMessage = "An account already exists with this email address using a different sign-in method. Try signing in with your original method.";
             break;
