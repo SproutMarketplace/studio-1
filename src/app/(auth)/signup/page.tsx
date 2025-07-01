@@ -26,6 +26,7 @@ import { auth, db, signInWithGooglePopup } from "@/lib/firebase";
 import { Separator } from "@/components/ui/separator";
 import { doc, getDoc } from "firebase/firestore";
 import type { User as FirebaseAuthUser } from "firebase/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 const GoogleLogo = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -51,6 +52,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refreshUserProfile } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<SignupFormValues>({
@@ -75,12 +77,12 @@ export default function SignupPage() {
     }
     try {
       await registerUser(data.email, data.password, data.name);
-      await logoutUser(); // Sign out after registration
+      await refreshUserProfile();
       toast({
-        title: "Account Created!",
-        description: "Please sign in with your new credentials.",
+        title: "Welcome to Sprout!",
+        description: "Your account has been created successfully.",
       });
-      router.push("/login");
+      router.push("/catalog");
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";
@@ -133,6 +135,7 @@ export default function SignupPage() {
                 title: "Account Already Exists",
                 description: "An account with this Google account already exists. Please sign in instead.",
             });
+            router.push('/login');
         } else {
             // Create a new profile for the Google user
             await createUserProfile({
@@ -147,12 +150,12 @@ export default function SignupPage() {
                 followers: [],
                 following: [],
             });
-            await logoutUser();
+            await refreshUserProfile();
             toast({
-                title: "Account Created!",
-                description: "Please sign in with your new Google account.",
+                title: "Welcome to Sprout!",
+                description: "Your account has been created successfully.",
             });
-            router.push("/login");
+            router.push("/catalog");
         }
     } catch (error: any) {
         console.error("Google Sign-Up error:", error);
