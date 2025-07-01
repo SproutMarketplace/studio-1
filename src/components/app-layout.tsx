@@ -206,7 +206,7 @@ function AppSidebar() {
                                     {(open || isMobile) && <span>{item.label}</span>}
                                 </SidebarMenuButton>
                             </Link>
-                            {item.href === "/messages" && profile?.unreadMessageCount && profile.unreadMessageCount > 0 && (
+                            {item.href === "/messages" && profile && profile.unreadMessageCount > 0 && (
                                 <SidebarMenuBadge>{profile.unreadMessageCount}</SidebarMenuBadge>
                             )}
                         </SidebarMenuItem>
@@ -362,3 +362,5 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </SidebarProvider>
     );
 }
+
+    
