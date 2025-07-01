@@ -639,22 +639,19 @@ SidebarMenuAction.displayName = "SidebarMenuAction"
 const SidebarMenuBadge = React.forwardRef<
     HTMLDivElement,
     React.ComponentProps<"div">
->(({ className, children, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
     <div
         ref={ref}
         data-sidebar="menu-badge"
         className={cn(
-            "absolute flex items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground select-none pointer-events-none",
-            // Expanded state: show full count
-            "right-2 top-1.5 h-5 min-w-5 px-1.5",
-            // Collapsed state: show as a small dot
-            "group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:right-1 group-data-[collapsible=icon]:top-1",
+            "absolute right-2 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold text-destructive-foreground select-none pointer-events-none",
+            "peer-data-[size=sm]/menu-button:top-1",
+            "peer-data-[size=default]/menu-button:top-1.5",
+            "peer-data-[size=lg]/menu-button:top-2.5",
             className
         )}
         {...props}
-    >
-        <span className="group-data-[collapsible=icon]:hidden">{children}</span>
-    </div>
+    />
 ))
 SidebarMenuBadge.displayName = "SidebarMenuBadge"
 

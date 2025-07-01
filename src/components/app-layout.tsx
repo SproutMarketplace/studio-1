@@ -187,17 +187,22 @@ function AppSidebar() {
     );
 }
 
-function PersistentHeader({ onCartClick }: { onCartClick: () => void }) {
+function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => void; unreadCount: number }) {
     const { itemCount } = useCart();
 
     return (
         <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <SidebarTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Toggle Menu" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                        <PanelLeft />
-                    </Button>
-                </SidebarTrigger>
+                <div className="relative">
+                    <SidebarTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Toggle Menu" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                            <PanelLeft />
+                        </Button>
+                    </SidebarTrigger>
+                     {unreadCount > 0 && (
+                        <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />
+                    )}
+                </div>
             </div>
             <Link href="/catalog" passHref aria-label="Sprout Home">
                 <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
@@ -228,6 +233,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const isRootRoute = pathname === "/";
     const isSellerRoute = pathname.startsWith('/seller');
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const { profile } = useAuth();
 
 
     // The root page has its own full-screen layout (for redirection)
@@ -265,7 +271,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset className="flex flex-col min-h-screen">
-                <PersistentHeader onCartClick={() => setIsCartOpen(true)} />
+                <PersistentHeader 
+                    onCartClick={() => setIsCartOpen(true)} 
+                    unreadCount={profile?.unreadMessageCount || 0}
+                />
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     <AuthGuard>{children}</AuthGuard>
                 </main>
