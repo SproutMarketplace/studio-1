@@ -185,8 +185,8 @@ export const deletePlantListing = async (plant: PlantListing): Promise<void> => 
     }
 
     // 2. Delete document from Firestore
-    const userDocRef = doc(db, 'plants', plant.id);
-    await deleteDoc(userDocRef);
+    const plantDocRef = doc(db, 'plants', plant.id);
+    await deleteDoc(plantDocRef);
 
     // 3. Decrement user's plantsListed count
     const userRef = doc(db, 'users', plant.ownerId);
