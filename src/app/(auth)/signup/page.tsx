@@ -146,6 +146,7 @@ export default function SignupPage() {
                 plantsListed: 0,
                 plantsTraded: 0,
                 rewardPoints: 0,
+                unreadMessageCount: 0,
                 favoritePlants: [],
                 followers: [],
                 following: [],

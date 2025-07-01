@@ -14,7 +14,7 @@ export interface User {
     plantsListed: number;
     plantsTraded: number;
     rewardPoints: number;
-    unreadMessageCount?: number;
+    unreadMessageCount: number;
     favoritePlants: string[]; // Array of PlantListing IDs for wishlist
     followers: string[]; // Array of UserIDs
     following: string[]; // Array of UserIDs
