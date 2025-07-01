@@ -177,7 +177,7 @@ const Sidebar = React.forwardRef<
         },
         ref
     ) => {
-        const { isMobile, state, openMobile, setOpenMobile, open } = useSidebar()
+        const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
         if (collapsible === "none") {
             return (
@@ -639,16 +639,22 @@ SidebarMenuAction.displayName = "SidebarMenuAction"
 const SidebarMenuBadge = React.forwardRef<
     HTMLDivElement,
     React.ComponentProps<"div">
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
     <div
         ref={ref}
         data-sidebar="menu-badge"
         className={cn(
-            "absolute right-3 top-1/2 flex h-5 min-w-[1.25rem] -translate-y-1/2 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold text-destructive-foreground",
+            "absolute flex items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground select-none pointer-events-none",
+            // Expanded state: show full count
+            "right-2 top-1.5 h-5 min-w-5 px-1.5",
+            // Collapsed state: show as a small dot
+            "group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:right-1 group-data-[collapsible=icon]:top-1",
             className
         )}
         {...props}
-    />
+    >
+        <span className="group-data-[collapsible=icon]:hidden">{children}</span>
+    </div>
 ))
 SidebarMenuBadge.displayName = "SidebarMenuBadge"
 
