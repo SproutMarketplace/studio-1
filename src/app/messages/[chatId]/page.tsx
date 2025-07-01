@@ -121,9 +121,11 @@ export default function ChatPage() {
                                 <div className={cn("max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-3 py-2 shadow-sm", 
                                     message.senderId === user?.uid ? "bg-primary text-primary-foreground" : "bg-muted")}>
                                     <p className="text-sm break-words">{message.text}</p>
-                                    <p className={cn("text-xs mt-1", message.senderId === user?.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-right")}>
-                                        {format((message.timestamp as Timestamp).toDate(), 'p')}
-                                    </p>
+                                    {message.timestamp && (
+                                        <p className={cn("text-xs mt-1", message.senderId === user?.uid ? "text-primary-foreground/70 text-right" : "text-muted-foreground text-right")}>
+                                            {format((message.timestamp as Timestamp).toDate(), 'p')}
+                                        </p>
+                                    )}
                                 </div>
                              </div>
                         ))}
