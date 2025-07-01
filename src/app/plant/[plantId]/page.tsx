@@ -252,7 +252,7 @@ export default function PlantDetailPage() {
                     </Card>
 
                     {isOwner && (
-                         <div className="mt-4 pt-4 border-t">
+                         <div className="mt-auto pt-4 border-t">
                             <h3 className="text-base font-semibold text-foreground mb-2">Owner Actions</h3>
                             <div className="flex flex-wrap gap-2">
                                 <Button asChild variant="outline" className="w-full sm:w-auto">
@@ -300,21 +300,7 @@ export default function PlantDetailPage() {
                     )}
 
                     {!isOwner && (
-                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                             <Button 
-                                variant="outline" 
-                                size="lg" 
-                                className="w-full group/button" 
-                                onClick={handleWishlistToggle}
-                                disabled={!plant.isAvailable || authLoading || isWishlistLoading}
-                            >
-                                {isWishlistLoading ? (
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                ) : (
-                                    <Heart className={cn("w-5 h-5 mr-2 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
-                                )}
-                                {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-                            </Button>
+                        <div className="flex flex-col gap-2 pt-4 mt-auto">
                             {!isTradeOnly && (
                                 <Button
                                     size="lg"
@@ -326,20 +312,36 @@ export default function PlantDetailPage() {
                                     {isInCart ? "In Cart" : "Add to Cart"}
                                 </Button>
                             )}
-                            <Button
-                                size="lg"
-                                className="w-full"
-                                variant={isTradeOnly ? "default" : "secondary"}
-                                onClick={handleMessageSeller}
-                                disabled={!plant.isAvailable || authLoading || isMessaging}
-                            >
-                                {isMessaging ? (
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                ) : (
-                                    <MessageSquare className="w-5 h-5 mr-2" />
-                                )}
-                                Message Seller
-                            </Button>
+                            <div className="flex w-full items-center gap-2">
+                                <Button
+                                    size="lg"
+                                    className="w-full"
+                                    variant={isTradeOnly ? "default" : "secondary"}
+                                    onClick={handleMessageSeller}
+                                    disabled={!plant.isAvailable || authLoading || isMessaging}
+                                >
+                                    {isMessaging ? (
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    ) : (
+                                        <MessageSquare className="w-5 h-5 mr-2" />
+                                    )}
+                                    Message Seller
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    size="lg" 
+                                    className="px-3 group/button"
+                                    onClick={handleWishlistToggle}
+                                    disabled={!plant.isAvailable || authLoading || isWishlistLoading}
+                                    aria-label={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                                >
+                                    {isWishlistLoading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <Heart className={cn("w-5 h-5 transition-colors group-hover/button:fill-destructive group-hover/button:text-destructive", isInWishlist && "fill-destructive text-destructive")} />
+                                    )}
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -381,12 +383,18 @@ function PlantDetailSkeleton() {
                              <Skeleton className="h-5 w-24" />
                         </div>
                     </div>
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex-grow" />
+                    <div className="flex flex-col gap-2 pt-2">
                         <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
+                        <div className="flex gap-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-14" />
+                        </div>
                     </div>
                 </div>
             </Card>
         </div>
     )
 }
+
+    
