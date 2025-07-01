@@ -260,6 +260,7 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
     const chatDocRef = doc(db, 'chats', chatId);
     const messagesCollectionRef = collection(chatDocRef, 'messages');
 
+    // Add the new message
     await addDoc(messagesCollectionRef, {
         senderId,
         receiverId,
@@ -268,9 +269,16 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
         read: false,
     });
 
+    // Update the last message on the chat document
     await updateDoc(chatDocRef, {
         lastMessage: text,
         lastMessageTimestamp: serverTimestamp(),
+    });
+
+    // Increment the unread count for the receiver
+    const receiverUserRef = doc(db, 'users', receiverId);
+    await updateDoc(receiverUserRef, {
+        unreadMessageCount: increment(1)
     });
 };
 
@@ -285,6 +293,36 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
         });
         callback(messages);
     });
+};
+
+export const markChatAsRead = async (chatId: string, currentUserId: string): Promise<void> => {
+    if (!db) return;
+
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const q = query(messagesRef, where('receiverId', '==', currentUserId), where('read', '==', false));
+    
+    const unreadMessagesSnapshot = await getDocs(q);
+    
+    if (unreadMessagesSnapshot.empty) {
+        return; // No unread messages to process
+    }
+    
+    const batch = writeBatch(db);
+    let unreadCount = 0;
+
+    unreadMessagesSnapshot.forEach(messageDoc => {
+        batch.update(messageDoc.ref, { read: true });
+        unreadCount++;
+    });
+
+    if (unreadCount > 0) {
+        const userRef = doc(db, 'users', currentUserId);
+        batch.update(userRef, {
+            unreadMessageCount: increment(-unreadCount)
+        });
+    
+        await batch.commit();
+    }
 };
 
 export const getChatDocument = async (chatId: string): Promise<Chat | null> => {
@@ -576,6 +614,7 @@ export const registerUser = async (email: string, password: string, username: st
         plantsListed: 0,
         plantsTraded: 0,
         rewardPoints: 0,
+        unreadMessageCount: 0,
         favoritePlants: [],
         followers: [],
         following: [],

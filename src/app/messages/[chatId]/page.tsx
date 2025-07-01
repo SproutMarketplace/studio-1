@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { subscribeToMessages, sendMessage, getChatDocument, getOtherParticipantProfile } from "@/lib/firestoreService";
+import { subscribeToMessages, sendMessage, getChatDocument, getOtherParticipantProfile, markChatAsRead } from "@/lib/firestoreService";
 import type { Message, User } from "@/models";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
@@ -34,6 +34,9 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (user && chatId) {
+            // Mark messages as read for this chat
+            markChatAsRead(chatId, user.uid);
+
             const fetchChatInfo = async () => {
                 try {
                     // Also check if current user is part of the chat

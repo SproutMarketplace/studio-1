@@ -37,6 +37,7 @@ import {
     SidebarFooter,
     SidebarSeparator,
     SidebarMenuSkeleton,
+    SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
@@ -70,7 +71,7 @@ function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
     const { open, setOpen, isMobile, openMobile, setOpenMobile } = useSidebar();
-    const { user, loading, refreshUserProfile } = useAuth();
+    const { user, profile, loading, refreshUserProfile } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -205,6 +206,9 @@ function AppSidebar() {
                                     {(open || isMobile) && <span>{item.label}</span>}
                                 </SidebarMenuButton>
                             </Link>
+                            {item.href === "/messages" && profile?.unreadMessageCount && profile.unreadMessageCount > 0 && (
+                                <SidebarMenuBadge>{profile.unreadMessageCount}</SidebarMenuBadge>
+                            )}
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>

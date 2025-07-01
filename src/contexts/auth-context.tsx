@@ -4,7 +4,7 @@
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, type Timestamp } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, type Timestamp } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User } from "@/models";
@@ -38,57 +38,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (uid: string) => {
-    if (!db) {
-        setProfile(null);
-        return;
-    }
-    const userDocRef = doc(db, "users", uid);
-    try {
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-            setProfile({ id: docSnap.id, ...docSnap.data() } as User);
-        } else {
-            console.warn(`No profile document found for user ${uid}`);
-            setProfile(null);
-        }
-    } catch (error) {
-        console.error("AuthContext: Error fetching user profile:", error);
-        setProfile(null);
-    }
-  }, []);
-
   useEffect(() => {
-    // If Firebase is not initialized (e.g., missing env keys),
-    // auth will be null. In this case, we stop loading and proceed
-    // in a logged-out state instead of crashing.
     if (!auth) {
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+    let profileUnsubscribe: () => void = () => {};
+
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // Clean up previous profile listener
+      profileUnsubscribe();
+
+      if (firebaseUser && db) {
         setUser(firebaseUser);
-        await fetchUserProfile(firebaseUser.uid);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+
+        profileUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+            } else {
+                console.warn(`No profile document found for user ${firebaseUser.uid}`);
+                setProfile(null);
+            }
+            setLoading(false); // Set loading to false after first profile fetch/update
+        }, (error) => {
+            console.error("AuthContext: Error listening to user profile:", error);
+            setProfile(null);
+            setLoading(false);
+        });
+
       } else {
         setUser(null);
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [fetchUserProfile]);
-
+    return () => {
+        authUnsubscribe();
+        profileUnsubscribe();
+    };
+  }, []);
 
   const refreshUserProfile = useCallback(async () => {
-    if (auth?.currentUser) {
+    if (auth?.currentUser && db) {
         setLoading(true);
-        await fetchUserProfile(auth.currentUser.uid);
-        setLoading(false);
+        const userDocRef = doc(db, "users", auth.currentUser.uid);
+        try {
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+            }
+        } catch (error) {
+            console.error("Error manually refreshing profile:", error);
+        } finally {
+            setLoading(false);
+        }
     }
-  }, [fetchUserProfile]);
+  }, []);
 
   const updateUserProfileInContext = (updatedProfileData: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
