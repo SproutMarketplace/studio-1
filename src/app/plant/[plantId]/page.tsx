@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2 } from "lucide-react";
+import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -233,42 +233,50 @@ export default function PlantDetailPage() {
                     </Card>
 
                     {isOwner && (
-                        <div className="mt-4 pt-4 border-t">
+                         <div className="mt-4 pt-4 border-t">
                             <h3 className="text-base font-semibold text-foreground mb-2">Owner Actions</h3>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full sm:w-auto">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete Listing
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete your
-                                            plant listing and remove all its images from our servers.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={handleDelete}
-                                            disabled={isDeleting}
-                                            className={buttonVariants({ variant: "destructive" })}
-                                        >
-                                            {isDeleting ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Deleting...
-                                                </>
-                                            ) : (
-                                                "Yes, delete it"
-                                            )}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex flex-wrap gap-2">
+                                <Button asChild variant="outline" className="w-full sm:w-auto">
+                                    <Link href={`/plant/${plant.id}/edit`}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit Listing
+                                    </Link>
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full sm:w-auto">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Listing
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete your
+                                                plant listing and remove all its images from our servers.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={handleDelete}
+                                                disabled={isDeleting}
+                                                className={buttonVariants({ variant: "destructive" })}
+                                            >
+                                                {isDeleting ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Deleting...
+                                                    </>
+                                                ) : (
+                                                    "Yes, delete it"
+                                                )}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                     )}
 

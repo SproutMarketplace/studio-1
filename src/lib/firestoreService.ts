@@ -162,8 +162,8 @@ export const getUserPlantListings = async (ownerId: string): Promise<PlantListin
 
 export const updatePlantListing = async (plantId: string, data: Partial<PlantListing>): Promise<void> => {
     if (!db) return;
-    const docRef = doc(db, 'plants', plantId);
-    await updateDoc(docRef, data);
+    const plantDocRef = doc(db, 'plants', plantId);
+    await updateDoc(plantDocRef, data);
 };
 
 export const deletePlantListing = async (plant: PlantListing): Promise<void> => {
@@ -203,6 +203,21 @@ export const uploadPlantImage = async (plantId: string, file: File, index: numbe
     const imageRef = ref(storage, `plant_images/${plantId}/${index}_${file.name}`);
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
+};
+
+export const deletePlantImageByUrl = async (imageUrl: string): Promise<void> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
+    try {
+        const imageRef = ref(storage, imageUrl);
+        await deleteObject(imageRef);
+    } catch (error: any) {
+        if (error.code === 'storage/object-not-found') {
+            console.warn(`Image not found, could not delete: ${imageUrl}`);
+            return; // Don't throw an error if it's already gone
+        }
+        console.error(`Failed to delete image ${imageUrl}:`, error);
+        throw error; // Re-throw other errors
+    }
 };
 
 
