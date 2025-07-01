@@ -170,14 +170,14 @@ const Sidebar = React.forwardRef<
         {
             side = "left",
             variant = "sidebar",
-            collapsible = "icon",
+            collapsible = "offcanvas",
             className,
             children,
             ...props
         },
         ref
     ) => {
-        const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+        const { isMobile, state, openMobile, setOpenMobile, open } = useSidebar()
 
         if (collapsible === "none") {
             return (
@@ -242,8 +242,10 @@ const Sidebar = React.forwardRef<
                     className={cn(
                         "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
                         side === "left"
-                            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-                            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+                            ? "left-0 group-data-[collapsible=offcanvas]:-left-[--sidebar-width]"
+                            : "right-0 group-data-[collapsible=offcanvas]:-right-[--sidebar-width]",
+                        // This handles the open state for offcanvas
+                        open && (side === "left" ? "left-0" : "right-0"),
                         // Adjust the padding for floating and inset variants.
                         variant === "floating" || variant === "inset"
                             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
@@ -648,7 +650,6 @@ const SidebarMenuBadge = React.forwardRef<
             "peer-data-[size=sm]/menu-button:top-1",
             "peer-data-[size=default]/menu-button:top-1.5",
             "peer-data-[size=lg]/menu-button:top-2.5",
-            "group-data-[collapsible=icon]:right-1 group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:w-2 group-data-[collapsible=icon]:p-0",
             className
         )}
         {...props}
