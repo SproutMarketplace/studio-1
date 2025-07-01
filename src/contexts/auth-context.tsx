@@ -6,7 +6,7 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, onSnapshot, type Timestamp } from "firebase/firestore";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import type { User } from "@/models";
 
 interface AuthContextType {
@@ -98,11 +98,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  const updateUserProfileInContext = (updatedProfileData: Partial<User>) => {
+  const updateUserProfileInContext = useCallback((updatedProfileData: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
-  };
-
-  const value = { user, profile, loading, refreshUserProfile, updateUserProfileInContext };
+  }, []);
+  
+  const value = useMemo(() => ({
+    user,
+    profile,
+    loading,
+    refreshUserProfile,
+    updateUserProfileInContext,
+  }), [user, profile, loading, refreshUserProfile, updateUserProfileInContext]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
