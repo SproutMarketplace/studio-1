@@ -13,35 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Award, Sprout as SproutIcon, Leaf, Trees, Flower2, Gift, PlusSquare } from "lucide-react";
+import { Loader2, Award, Leaf, Gift, PlusSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const TIERS = [
-  { name: 'Sproutling', minPoints: 0, Icon: SproutIcon },
-  { name: 'Seedling', minPoints: 100, Icon: Leaf },
-  { name: 'Grower', minPoints: 250, Icon: Trees },
-  { name: 'Cultivator', minPoints: 500, Icon: Flower2 },
-  { name: 'Botanist', minPoints: 1000, Icon: Award },
-];
-
-const getTierInfo = (points: number) => {
-  let currentTier = TIERS[0];
-  let nextTier = TIERS[1];
-
-  for (let i = TIERS.length - 1; i >= 0; i--) {
-    if (points >= TIERS[i].minPoints) {
-      currentTier = TIERS[i];
-      nextTier = TIERS[i + 1] || null; // null if it's the highest tier
-      break;
-    }
-  }
-
-  const pointsInCurrentTier = points - currentTier.minPoints;
-  const pointsForNextTier = nextTier ? nextTier.minPoints - currentTier.minPoints : 0;
-  const progress = nextTier ? Math.round((pointsInCurrentTier / pointsForNextTier) * 100) : 100;
-
-  return { currentTier, nextTier, progress, pointsForNextTier };
-};
 
 export default function RewardsPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -86,7 +59,11 @@ export default function RewardsPage() {
   }
 
   const points = profile?.rewardPoints || 0;
-  const { currentTier, nextTier, progress } = getTierInfo(points);
+  const currentLevel = Math.floor(points / 100);
+  const pointsForCurrentLevel = currentLevel * 100;
+  const pointsForNextLevel = (currentLevel + 1) * 100;
+  const progress = pointsForNextLevel > pointsForCurrentLevel ? ((points - pointsForCurrentLevel) / (pointsForNextLevel - pointsForCurrentLevel)) * 100 : 100;
+
 
   return (
     <div className="container mx-auto py-8">
@@ -106,8 +83,8 @@ export default function RewardsPage() {
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-2xl">Your Progress</CardTitle>
                         <div className="flex items-center gap-2 text-lg font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
-                            <currentTier.Icon className="w-5 h-5" />
-                            <span>{currentTier.name}</span>
+                            <Award className="w-5 h-5" />
+                            <span>Level {currentLevel}</span>
                         </div>
                     </div>
                 </CardHeader>
@@ -118,12 +95,8 @@ export default function RewardsPage() {
                     </div>
                     <Progress value={progress} className="h-4" />
                     <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                        <span>{currentTier.minPoints} pts</span>
-                         {nextTier ? (
-                            <span>Next level at {nextTier.minPoints} pts</span>
-                        ) : (
-                            <span>You've reached the highest level!</span>
-                        )}
+                        <span>{pointsForCurrentLevel} pts</span>
+                        <span>Next level at {pointsForNextLevel} pts</span>
                     </div>
                 </CardContent>
             </Card>

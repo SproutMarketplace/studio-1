@@ -108,6 +108,9 @@ export const addPlantListing = async (plant: Omit<PlantListing, 'id' | 'listedDa
         plantsListed: increment(1)
     });
 
+    // Give 10 points for listing a plant
+    await awardRewardPoints(plant.ownerId, 10, "Listed a new plant");
+
     return docRef.id;
 };
 
