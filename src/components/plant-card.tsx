@@ -121,7 +121,7 @@ export function PlantCard({ plant }: PlantCardProps) {
       case "for sale":
         return "bg-primary text-primary-foreground hover:bg-primary/90";
       case "for trade":
-        return "bg-[#664121] text-white hover:bg-[#52341A]"; 
+        return "bg-secondary text-secondary-foreground hover:bg-secondary/80"; 
       default:
         return "bg-muted text-muted-foreground hover:bg-muted/80"; 
     }
@@ -174,12 +174,12 @@ export function PlantCard({ plant }: PlantCardProps) {
             </Link>
           </CardTitle>
           {plant.price && !plant.tradeOnly && (
-            <Badge variant="default" className="text-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Badge variant="default" className="text-lg shrink-0">
               ${plant.price.toFixed(2)}
             </Badge>
           )}
            {!plant.price && !plant.tradeOnly && (
-            <Badge variant="default" className="text-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Badge variant="default" className="text-lg shrink-0">
               Free
             </Badge>
           )}
@@ -187,18 +187,18 @@ export function PlantCard({ plant }: PlantCardProps) {
         
         <div className="mb-2 flex flex-wrap gap-1">
           {plant.tradeOnly ? (
-             <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>
+             <Badge variant="secondary">For Trade</Badge>
           ) : (
             <>
-              <Badge className={`${getTagColor("For Sale")}`}>For Sale</Badge>
+              <Badge>For Sale</Badge>
               {plant.price === undefined || plant.price === null ? null : (
-                 <Badge className={`${getTagColor("For Trade")}`}>For Trade</Badge>
+                 <Badge variant="secondary">For Trade</Badge>
               )}
             </>
           )}
 
           {plant.tags?.slice(0, 2).map(tag => (
-            <Badge key={tag} className={`${getTagColor(tag)}`}>
+            <Badge key={tag} variant="outline">
               {tag}
             </Badge>
           ))}
@@ -230,7 +230,7 @@ export function PlantCard({ plant }: PlantCardProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              className="group/button hover:bg-muted hover:text-muted-foreground" 
+              className="group/button" 
               onClick={handleWishlistToggle}
               disabled={authLoading || isWishlistLoading}
             >
@@ -245,7 +245,7 @@ export function PlantCard({ plant }: PlantCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full group/button hover:bg-primary/10 hover:text-primary"
+                className="w-full group/button"
                 onClick={handleMessageSeller}
                 disabled={authLoading || isMessaging}
               >
@@ -260,7 +260,7 @@ export function PlantCard({ plant }: PlantCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full group/button hover:bg-primary/10 hover:text-primary"
+                className="w-full group/button"
                 onClick={handleAddToCart}
                 disabled={isInCart}
               >
