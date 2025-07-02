@@ -231,24 +231,24 @@ const Sidebar = React.forwardRef<
                 {/* This is what handles the sidebar gap on desktop */}
                 <div
                     className={cn(
-                        "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+                        "duration-200 relative h-svh bg-transparent transition-[width] ease-linear",
                         "group-data-[collapsible=offcanvas]:w-0",
                         "group-data-[side=right]:rotate-180",
                         variant === "floating" || variant === "inset"
-                            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-                            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
+                            ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))] group-data-[state=expanded]:w-[calc(var(--sidebar-width)_+_theme(spacing.4))]"
+                            : "w-[--sidebar-width-icon] group-data-[state=expanded]:w-[--sidebar-width]"
                     )}
                 />
                 <div
                     className={cn(
-                        "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+                        "duration-200 fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] ease-linear md:flex",
                         side === "left"
                             ? "left-0 group-data-[state=collapsed]:group-data-[collapsible=offcanvas]:-left-[--sidebar-width]"
                             : "right-0 group-data-[state=collapsed]:group-data-[collapsible=offcanvas]:-right-[--sidebar-width]",
                         // Adjust the padding for floating and inset variants.
                         variant === "floating" || variant === "inset"
-                            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-                            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
+                            ? "p-2 w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] group-data-[state=expanded]:w-[calc(var(--sidebar-width)_+_theme(spacing.4)_+2px)]"
+                            : "w-[--sidebar-width-icon] group-data-[state=expanded]:w-[--sidebar-width] group-data-[side=left]:border-r group-data-[side=right]:border-l",
                         className
                     )}
                     {...props}
@@ -640,7 +640,7 @@ SidebarMenuAction.displayName = "SidebarMenuAction"
 const SidebarMenuBadge = React.forwardRef<
     HTMLDivElement,
     React.ComponentProps<"div">
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
     <div
         ref={ref}
         data-sidebar="menu-badge"
@@ -649,11 +649,16 @@ const SidebarMenuBadge = React.forwardRef<
             "peer-data-[size=sm]/menu-button:top-1",
             "peer-data-[size=default]/menu-button:top-1.5",
             "peer-data-[size=lg]/menu-button:top-2.5",
-            "group-data-[collapsible=icon]:hidden",
+            // Correctly handle collapsed state: become a small dot
+            "group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:right-1.5 group-data-[collapsible=icon]:top-1.5",
             className
         )}
         {...props}
-    />
+    >
+        <span className="group-data-[collapsible=icon]:hidden">
+            {children}
+        </span>
+    </div>
 ))
 SidebarMenuBadge.displayName = "SidebarMenuBadge"
 

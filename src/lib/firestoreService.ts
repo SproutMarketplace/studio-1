@@ -51,12 +51,14 @@ export const getTimestamp = () => serverTimestamp() as Timestamp;
 // --- Notification Functions ---
 const createNotification = async (
     userIdToNotify: string, 
-    fromUser: User, 
+    fromUserId: string,
     type: Notification['type'], 
     message: string, 
     link: string
 ): Promise<void> => {
-    if (!db || userIdToNotify === fromUser.userId) return; // Don't notify self
+    const fromUserProfile = await getUserProfile(fromUserId);
+    // Don't notify self, and ensure the user triggering the notification exists.
+    if (!db || !fromUserProfile || userIdToNotify === fromUserId) return; 
 
     const notificationRef = collection(db, 'users', userIdToNotify, 'notifications');
     await addDoc(notificationRef, {
@@ -67,9 +69,9 @@ const createNotification = async (
         isRead: false,
         createdAt: serverTimestamp(),
         fromUser: {
-            id: fromUser.userId,
-            username: fromUser.username,
-            avatarUrl: fromUser.avatarUrl || '',
+            id: fromUserProfile.userId,
+            username: fromUserProfile.username,
+            avatarUrl: fromUserProfile.avatarUrl || '',
         }
     });
 };
@@ -306,16 +308,15 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
         lastMessageTimestamp: serverTimestamp(),
     });
 
+    // Create a notification for the receiver
     const senderProfile = await getUserProfile(senderId);
-    if(senderProfile) {
-        await createNotification(
-            receiverId,
-            senderProfile,
-            'newMessage',
-            `New message from ${senderProfile.username}`,
-            `/messages/${chatId}`
-        );
-    }
+    await createNotification(
+        receiverId,
+        senderId,
+        'newMessage',
+        `New message from ${senderProfile?.username || 'a user'}.`,
+        `/messages/${chatId}`
+    );
 };
 
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
@@ -484,11 +485,10 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
     const postSnap = await getDoc(postDocRef);
     if (postSnap.exists()) {
         const postData = postSnap.data() as Post;
-        const commentAuthorProfile = await getUserProfile(comment.authorId);
-        if (postData.authorId !== comment.authorId && commentAuthorProfile) { // Don't notify if user comments on their own post
+        if (postData.authorId !== comment.authorId) { // Don't notify if user comments on their own post
              await createNotification(
                 postData.authorId,
-                commentAuthorProfile,
+                comment.authorId,
                 'newComment',
                 `${comment.authorUsername} commented on your post.`,
                 `/forums/${forumId}` // Simplified link for now
@@ -605,7 +605,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         for (const sellerId of sellerIds) {
             await createNotification(
                 sellerId,
-                buyerProfile,
+                buyerProfile.userId,
                 'newSale',
                 `Your plant was sold to ${buyerProfile.username}!`,
                 '/seller/orders'
@@ -653,10 +653,10 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
     await batch.commit();
 
     const currentUserProfile = await getUserProfile(currentUserId);
-    if(currentUserProfile) {
+    if (currentUserProfile) {
         await createNotification(
             targetUserId,
-            currentUserProfile,
+            currentUserId,
             'newFollower',
             `${currentUserProfile.username} started following you.`,
             `/profile/${currentUserId}`
