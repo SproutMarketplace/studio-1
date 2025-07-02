@@ -266,16 +266,16 @@ export default function PlantDetailPage() {
                     </div>
                      <Card className="bg-muted/50 p-3">
                         <div className="flex items-center justify-between space-x-3">
-                            <div className="flex items-center space-x-3">
+                            <Link href={`/profile/${plant.ownerId}`} className="flex items-center space-x-3 group/profile-link">
                                 <Avatar className="h-12 w-12 border">
                                     <AvatarImage src={plant.ownerAvatarUrl} alt={plant.ownerUsername} />
                                     <AvatarFallback><UserIcon /></AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Seller</p>
-                                    <p className="font-semibold text-foreground">{plant.ownerUsername}</p>
+                                    <p className="font-semibold text-foreground group-hover/profile-link:underline">{plant.ownerUsername}</p>
                                 </div>
-                            </div>
+                            </Link>
                             {!isOwner && user && (
                                 <Button 
                                     variant={isFollowing ? "secondary" : "outline"} 
@@ -441,3 +441,5 @@ function PlantDetailSkeleton() {
         </div>
     )
 }
+
+    
