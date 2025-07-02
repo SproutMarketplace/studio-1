@@ -58,7 +58,7 @@ export default function OrdersPage() {
                     <div key={item.plantId} className="flex items-center gap-2 text-sm">
                         <Link href={`/plant/${item.plantId}`} className="flex items-center gap-2 text-sm group">
                             <Image
-                                src={item.imageUrls[0] || "https://placehold.co/40x40.png"}
+                                src={item.imageUrl || "https://placehold.co/40x40.png"}
                                 alt={item.name}
                                 width={40}
                                 height={40}

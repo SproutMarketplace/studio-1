@@ -43,7 +43,7 @@ export interface OrderItem {
     name: string;
     price: number;
     quantity: number;
-    imageUrls: string[];
+    imageUrl: string;
     sellerId: string;
 }
 

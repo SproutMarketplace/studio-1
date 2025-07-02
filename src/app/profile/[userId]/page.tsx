@@ -402,7 +402,7 @@ export default function ProfilePage() {
                                                 <div className="space-y-2">
                                                     {order.items.map(item => (
                                                         <div key={item.plantId} className="flex items-center gap-2 text-sm">
-                                                            <Image src={item.imageUrls[0]} alt={item.name} width={40} height={40} className="rounded-md object-cover"/>
+                                                            <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded-md object-cover"/>
                                                             <div>
                                                                 <p className="font-medium">{item.name}</p>
                                                                 <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>

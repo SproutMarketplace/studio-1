@@ -5,7 +5,7 @@ import { createOrder } from '@/lib/firestoreService';
 import type { OrderItem } from '@/models';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const webhookSecret = process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET;
 
 let stripe: Stripe | null = null;
 if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
@@ -16,7 +16,7 @@ if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HE
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
-        return NextResponse.json({ error: 'Stripe or webhook secret not configured.' }, { status: 500 });
+        return NextResponse.json({ error: 'Stripe or checkout webhook secret not configured.' }, { status: 500 });
     }
 
     const sig = req.headers.get('stripe-signature');
