@@ -13,21 +13,18 @@ if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HE
 }
 
 export async function POST(req: NextRequest) {
-    if (!stripe) {
-        return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 503 });
-    }
-
-    const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
-    const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
-
-    if (!refreshUrl || !returnUrl) {
-        const errorMessage = "Stripe Connect return/refresh URLs are not configured on the server. Please check your .env.local file.";
-        console.error("Stripe Config Error:", errorMessage);
-        return NextResponse.json({ error: "Stripe connection is not configured correctly by the administrator." }, { status: 503 });
-    }
-
-
     try {
+        if (!stripe) {
+            throw new Error('Stripe is not configured on the server. The STRIPE_SECRET_KEY may be missing.');
+        }
+
+        const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
+        const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
+
+        if (!refreshUrl || !returnUrl) {
+            throw new Error("Stripe Connect return/refresh URLs are not configured. Please add them to your .env.local file and restart your development server.");
+        }
+
         const { userId } = await req.json();
         if (!userId) {
             return NextResponse.json({ error: 'User not authenticated.' }, { status: 401 });
