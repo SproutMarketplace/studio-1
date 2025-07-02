@@ -1,35 +1,136 @@
 
 "use client"
 
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { getOrdersForSeller } from "@/lib/firestoreService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Leaf } from "lucide-react";
+import { BarChart3, TrendingUp, Leaf, Loader2 } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { format } from "date-fns";
+import type { Timestamp } from "firebase/firestore";
 
+interface MonthlySales {
+    month: string;
+    sales: number;
+}
 
-const monthlySalesData = [
-  { month: 'Jan', sales: 4 },
-  { month: 'Feb', sales: 3 },
-  { month: 'Mar', sales: 5 },
-  { month: 'Apr', sales: 7 },
-  { month: 'May', sales: 6 },
-  { month: 'Jun', sales: 10 },
-];
-
-const topPlantsData = [
-    { name: 'Monstera D.', sales: 25 },
-    { name: 'Pothos', sales: 18 },
-    { name: 'Snake Plant', sales: 15 },
-    { name: 'Fiddle Leaf', sales: 12 },
-    { name: 'ZZ Plant', sales: 8 },
-];
-
+interface TopPlant {
+    name: string;
+    sales: number;
+}
 
 export default function StatsPage() {
+    const { user, loading: authLoading } = useAuth();
+    const [monthlySalesData, setMonthlySalesData] = useState<MonthlySales[]>([]);
+    const [topPlantsData, setTopPlantsData] = useState<TopPlant[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            const fetchAndProcessStats = async () => {
+                setIsLoading(true);
+                try {
+                    const orders = await getOrdersForSeller(user.uid);
+                    
+                    // Process for monthly sales
+                    const monthlySales: { [key: string]: number } = {};
+                    orders.forEach(order => {
+                        const month = format((order.createdAt as Timestamp).toDate(), "MMM yy");
+                        const sellerItems = order.items.filter(item => item.sellerId === user.uid);
+                        if (!monthlySales[month]) {
+                            monthlySales[month] = 0;
+                        }
+                        monthlySales[month] += sellerItems.length;
+                    });
+                    
+                    const last6Months = Array.from({ length: 6 }, (_, i) => {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() - i);
+                        return format(d, "MMM yy");
+                    }).reverse();
+
+                    const formattedMonthlySales = last6Months.map(month => ({
+                        month: month.split(' ')[0], // just 'Jan', 'Feb'
+                        sales: monthlySales[month] || 0
+                    }));
+
+                    setMonthlySalesData(formattedMonthlySales);
+                    
+                    // Process for top plants
+                    const plantSales: { [key: string]: number } = {};
+                    orders.forEach(order => {
+                        order.items.forEach(item => {
+                            if (item.sellerId === user.uid) {
+                                if (!plantSales[item.name]) {
+                                    plantSales[item.name] = 0;
+                                }
+                                plantSales[item.name] += item.quantity;
+                            }
+                        });
+                    });
+
+                    const sortedTopPlants = Object.entries(plantSales)
+                        .sort(([, a], [, b]) => b - a)
+                        .slice(0, 5)
+                        .map(([name, sales]) => ({ name, sales }));
+                        
+                    setTopPlantsData(sortedTopPlants);
+
+                } catch (error) {
+                    console.error("Failed to fetch stats:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+            fetchAndProcessStats();
+        } else if (!authLoading) {
+            setIsLoading(false);
+        }
+    }, [user, authLoading]);
+
+    const renderChart = (data: any[], type: 'monthly' | 'plants') => {
+        if (isLoading) {
+            return <div className="flex justify-center items-center h-[250px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+        }
+        if (data.length === 0) {
+            return <div className="flex justify-center items-center h-[250px] text-muted-foreground">No sales data yet.</div>;
+        }
+        if (type === 'monthly') {
+            return (
+                <ChartContainer config={{ sales: { label: "Sales", color: "hsl(var(--primary))" } }} className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                            <Bar dataKey="sales" radius={4} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </ChartContainer>
+            );
+        }
+        return (
+            <ChartContainer config={{ sales: { label: "Sales", color: "hsl(var(--secondary))" } }} className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart layout="vertical" data={data} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+                        <CartesianGrid horizontal={false} />
+                        <XAxis type="number" dataKey="sales" allowDecimals={false} />
+                        <YAxis dataKey="name" type="category" width={80} tickLine={false} axisLine={false} />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                        <Bar dataKey="sales" layout="vertical" radius={4} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </ChartContainer>
+        );
+    }
+    
     return (
         <div>
             <h1 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
@@ -42,49 +143,16 @@ export default function StatsPage() {
                         <CardDescription>Your plant sales over the last 6 months.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={{
-                            sales: {
-                                label: "Sales",
-                                color: "hsl(var(--primary))",
-                            },
-                        }} className="h-[250px] w-full">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={monthlySalesData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                                <ChartTooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent />}
-                                />
-                                <Bar dataKey="sales" radius={4} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
+                        {renderChart(monthlySalesData, 'monthly')}
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Leaf className="h-5 w-5"/>Top Performing Plants</CardTitle>
-                        <CardDescription>Your most popular plant listings.</CardDescription>
+                        <CardDescription>Your most popular plant listings by units sold.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={{
-                            sales: {
-                                label: "Sales",
-                                color: "hsl(var(--secondary))",
-                            },
-                        }} className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart layout="vertical" data={topPlantsData} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
-                                    <CartesianGrid horizontal={false} />
-                                    <XAxis type="number" dataKey="sales" />
-                                    <YAxis dataKey="name" type="category" width={80} tickLine={false} axisLine={false} />
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                    <Bar dataKey="sales" layout="vertical" radius={4} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
+                        {renderChart(topPlantsData, 'plants')}
                     </CardContent>
                 </Card>
             </div>
