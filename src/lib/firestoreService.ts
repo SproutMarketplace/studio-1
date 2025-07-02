@@ -621,7 +621,8 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
 
     const targetUserRef = doc(db, 'users', targetUserId);
     batch.update(targetUserRef, {
-        followers: arrayUnion(currentUserId)
+        followers: arrayUnion(currentUserId),
+        unreadMessageCount: increment(1)
     });
 
     await batch.commit();
