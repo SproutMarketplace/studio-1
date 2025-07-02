@@ -2,7 +2,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { updateUserData } from '@/lib/firestoreService';
-import { headers } from 'next/headers';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
     
     const body = await req.text();
-    const sig = headers().get('stripe-signature');
+    const sig = req.headers.get('stripe-signature');
 
     if (!sig) {
          return NextResponse.json({ error: 'No Stripe signature found.' }, { status: 400 });
