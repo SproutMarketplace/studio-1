@@ -460,6 +460,18 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
 
     const postDocRef = doc(db, 'forums', forumId, 'posts', postId);
     await updateDoc(postDocRef, { commentCount: increment(1) });
+    
+    // Notify post author
+    const postSnap = await getDoc(postDocRef);
+    if (postSnap.exists()) {
+        const postData = postSnap.data() as Post;
+        if (postData.authorId !== comment.authorId) { // Don't notify if user comments on their own post
+            const authorRef = doc(db, 'users', postData.authorId);
+            await updateDoc(authorRef, {
+                unreadMessageCount: increment(1)
+            });
+        }
+    }
 
     return docRef.id;
 };
@@ -548,7 +560,6 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
 
     const batch = writeBatch(db);
 
-    // 1. Create the main order document
     const orderRef = doc(collection(db, 'orders'));
     const buyerProfile = await getUserProfile(orderData.userId);
     const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
@@ -561,19 +572,24 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         buyerUsername: buyerProfile?.username || 'Unknown Buyer'
     });
 
-    // 2. Update each plant listing to mark it as sold
     for (const item of orderData.items) {
         const plantRef = doc(db, 'plants', item.plantId);
         batch.update(plantRef, { isAvailable: false });
+    }
 
-        // 3. Update seller's stats
-        const sellerRef = doc(db, 'users', item.sellerId);
-        // We can increment here, but for simplicity we rely on the dashboard to calculate stats for now.
-        // This can be added later if performance becomes an issue.
+    // Notify each unique seller
+    for (const sellerId of sellerIds) {
+        if (sellerId !== orderData.userId) { // Don't notify if seller is the buyer
+            const sellerRef = doc(db, 'users', sellerId);
+            batch.update(sellerRef, {
+                unreadMessageCount: increment(1)
+            });
+        }
     }
 
     await batch.commit();
 };
+
 
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'orders'

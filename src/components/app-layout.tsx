@@ -132,7 +132,7 @@ function AppSidebar() {
                             </Link>
                             {item.href === "/messages" && profile && profile.unreadMessageCount > 0 && (
                                 <SidebarMenuBadge>
-                                    {profile.unreadMessageCount}
+                                    {profile.unreadMessageCount > 9 ? '9+' : profile.unreadMessageCount}
                                 </SidebarMenuBadge>
                             )}
                         </SidebarMenuItem>
@@ -200,7 +200,9 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
                         </Button>
                     </SidebarTrigger>
                      {unreadCount > 0 && (
-                        <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground ring-2 ring-background">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
                     )}
                 </div>
             </div>
