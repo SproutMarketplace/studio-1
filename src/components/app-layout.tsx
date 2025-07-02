@@ -60,7 +60,6 @@ const mainNavItems: NavItem[] = [
     { href: "/catalog", icon: ShoppingBag, label: "Plant Catalog" },
     { href: "/list-plant", icon: PlusSquare, label: "List a Plant" },
     { href: "/forums", icon: MessagesSquare, label: "Community Forums" },
-    { href: "/notifications", icon: Bell, label: "Notifications" },
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
     { href: "/wishlist", icon: Heart, label: "Wishlist" },
     { href: "/rewards", icon: Award, label: "Rewards" },
