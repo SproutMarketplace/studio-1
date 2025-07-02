@@ -17,6 +17,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 503 });
     }
 
+    const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
+    const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
+
+    if (!refreshUrl || !returnUrl) {
+        const errorMessage = "Stripe Connect return/refresh URLs are not configured on the server. Please check your .env.local file.";
+        console.error("Stripe Config Error:", errorMessage);
+        return NextResponse.json({ error: "Stripe connection is not configured correctly by the administrator." }, { status: 503 });
+    }
+
+
     try {
         const { userId } = await req.json();
         if (!userId) {
@@ -51,8 +61,8 @@ export async function POST(req: NextRequest) {
         // Create a unique onboarding link for the user
         const accountLink = await stripe.accountLinks.create({
             account: accountId,
-            refresh_url: process.env.STRIPE_CONNECT_REFRESH_URL!,
-            return_url: process.env.STRIPE_CONNECT_RETURN_URL!,
+            refresh_url: refreshUrl,
+            return_url: returnUrl,
             type: 'account_onboarding',
         });
 
