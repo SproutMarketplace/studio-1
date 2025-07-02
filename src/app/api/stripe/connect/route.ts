@@ -3,27 +3,32 @@ import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import { getUserProfile, updateUserData } from '@/lib/firestoreService';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-let stripe: Stripe | null = null;
-if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
-    stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-06-20',
-        typescript: true,
-    });
-}
-
 export async function POST(req: NextRequest) {
+    // --- Start of Defensive Checks ---
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
+        console.error("CRITICAL: STRIPE_SECRET_KEY is missing or invalid in .env.local");
+        return NextResponse.json({ error: 'Stripe is not configured on the server. The STRIPE_SECRET_KEY is missing or invalid.' }, { status: 500 });
+    }
+
+    const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
+    if (!refreshUrl) {
+        console.error("CRITICAL: STRIPE_CONNECT_REFRESH_URL is not configured in .env.local");
+        return NextResponse.json({ error: "Stripe Connect 'refresh_url' is not configured on the server." }, { status: 500 });
+    }
+
+    const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
+    if (!returnUrl) {
+        console.error("CRITICAL: STRIPE_CONNECT_RETURN_URL is not configured in .env.local");
+        return NextResponse.json({ error: "Stripe Connect 'return_url' is not configured on the server." }, { status: 500 });
+    }
+    // --- End of Defensive Checks ---
+
     try {
-        if (!stripe) {
-            throw new Error('Stripe is not configured on the server. The STRIPE_SECRET_KEY may be missing.');
-        }
-
-        const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
-        const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
-
-        if (!refreshUrl || !returnUrl) {
-            throw new Error("Stripe Connect return/refresh URLs are not configured. Please add them to your .env.local file and restart your development server.");
-        }
+        const stripe = new Stripe(stripeSecretKey, {
+            apiVersion: '2024-06-20',
+            typescript: true,
+        });
 
         const { userId } = await req.json();
         if (!userId) {
@@ -48,7 +53,7 @@ export async function POST(req: NextRequest) {
                     transfers: { requested: true },
                 },
                 metadata: {
-                    userId: userId, // Link our user ID to the Stripe account
+                    userId: userId,
                 },
             });
             accountId = account.id;
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         console.error('Stripe Connect error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+        const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred.';
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
