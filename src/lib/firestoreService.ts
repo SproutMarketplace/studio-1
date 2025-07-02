@@ -61,7 +61,7 @@ const createNotification = async (
     // Fetch the profile of the user triggering the notification to ensure data is fresh.
     const fromUserProfile = await getUserProfile(fromUserId);
     if (!fromUserProfile) {
-        console.error("Could not create notification: 'from' user profile not found.");
+        console.error("Could not create notification: 'from' user profile not found for ID:", fromUserId);
         return;
     }
 
@@ -74,7 +74,7 @@ const createNotification = async (
         isRead: false,
         createdAt: serverTimestamp(),
         fromUser: {
-            id: fromUserProfile.userId,
+            id: fromUserId, // Use fromUserId directly. It's guaranteed to be the string UID.
             username: fromUserProfile.username,
             avatarUrl: fromUserProfile.avatarUrl || '',
         }
@@ -640,7 +640,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         for (const sellerId of sellerIds) {
             await createNotification(
                 sellerId,
-                buyerProfile.userId,
+                orderData.userId,
                 'newSale',
                 `sold one of your plants to ${buyerProfile.username}!`,
                 '/seller/orders'
