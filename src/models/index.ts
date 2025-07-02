@@ -17,6 +17,8 @@ export interface User {
     favoritePlants: string[]; // Array of PlantListing IDs for wishlist
     followers: string[]; // Array of UserIDs
     following: string[]; // Array of UserIDs
+    stripeAccountId?: string; // For Stripe Connect
+    stripeDetailsSubmitted?: boolean; // For Stripe Connect
 }
 
 // Replaces the old Plant interface

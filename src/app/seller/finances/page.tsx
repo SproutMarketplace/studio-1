@@ -7,10 +7,12 @@ import { getOrdersForSeller } from "@/lib/firestoreService";
 import type { Order } from "@/models";
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CircleDollarSign, Banknote, Clock, ArrowRight, Loader2, Inbox } from "lucide-react";
+import { CircleDollarSign, Banknote, Clock, ArrowRight, Loader2, Inbox, CheckCircle2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,9 +26,34 @@ interface Transaction {
 }
 
 export default function FinancesPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading, refreshUserProfile } = useAuth();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isConnectingStripe, setIsConnectingStripe] = useState(false);
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (searchParams.get('stripe_return')) {
+            toast({
+                title: "Welcome back!",
+                description: "Refreshing your account details...",
+            });
+            refreshUserProfile();
+            router.replace('/seller/finances');
+        }
+        if (searchParams.get('stripe_refresh')) {
+            toast({
+                variant: 'destructive',
+                title: "Connection Timed Out",
+                description: "The secure connection to Stripe timed out. Please try again.",
+            });
+            router.replace('/seller/finances');
+        }
+    }, [searchParams, router, toast, refreshUserProfile]);
+
 
     useEffect(() => {
         if (user) {
@@ -61,6 +88,33 @@ export default function FinancesPage() {
         }
     }, [user, authLoading]);
 
+    const handleStripeConnect = async () => {
+        if (!user) return;
+        setIsConnectingStripe(true);
+        try {
+            const response = await fetch('/api/stripe/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.uid }),
+            });
+
+            if (!response.ok) {
+                const { error } = await response.json();
+                throw new Error(error || 'Failed to create Stripe connection link.');
+            }
+
+            const { url } = await response.json();
+            window.location.href = url;
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Stripe Connection Failed',
+                description: error instanceof Error ? error.message : 'An unknown error occurred.',
+            });
+            setIsConnectingStripe(false);
+        }
+    };
+    
     const getStatusVariant = (status: Order['status']): "default" | "secondary" | "destructive" => {
         switch (status) {
             case 'processing': return 'default';
@@ -70,6 +124,49 @@ export default function FinancesPage() {
             default: return 'default';
         }
       };
+
+    const renderStripeCardContent = () => {
+        if (authLoading) {
+            return <CardContent className="p-6"><Loader2 className="h-5 w-5 animate-spin" /></CardContent>;
+        }
+        
+        if (profile?.stripeDetailsSubmitted) {
+            return (
+                <CardContent>
+                    <div className="flex items-center text-green-600 mb-2">
+                        <CheckCircle2 className="h-4 w-4 mr-2"/>
+                        <p className="text-sm font-medium">Your account is ready to receive payouts.</p>
+                    </div>
+                    <Button onClick={handleStripeConnect} disabled={isConnectingStripe} className="w-full">
+                        {isConnectingStripe ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ArrowRight className="mr-2 h-4 w-4" />}
+                        Manage Payouts on Stripe
+                    </Button>
+                </CardContent>
+            );
+        }
+
+        if (profile?.stripeAccountId) {
+            return (
+                <CardContent>
+                    <p className="text-sm text-amber-600 mb-2">Finish setting up your Stripe account to get paid.</p>
+                     <Button onClick={handleStripeConnect} disabled={isConnectingStripe} className="w-full">
+                        {isConnectingStripe ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ArrowRight className="mr-2 h-4 w-4" />}
+                        Continue Onboarding
+                    </Button>
+                </CardContent>
+            );
+        }
+
+        return (
+            <CardContent>
+                <Button onClick={handleStripeConnect} disabled={isConnectingStripe} className="w-full">
+                    {isConnectingStripe ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ArrowRight className="mr-2 h-4 w-4" />}
+                    Connect Stripe to Get Paid
+                </Button>
+            </CardContent>
+        );
+    }
+
 
     return (
         <div>
@@ -103,11 +200,7 @@ export default function FinancesPage() {
                         <CardTitle className="text-sm font-medium">Manage Payouts</CardTitle>
                          <CardDescription>Connect your bank account to receive funds.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                         <Button disabled className="w-full">
-                            Connect Stripe (Coming Soon) <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </CardContent>
+                    {renderStripeCardContent()}
                 </Card>
             </div>
 
