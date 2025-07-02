@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { updateUserData } from '@/lib/firestoreService';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+// The connect webhook secret is temporarily optional to allow the main connect flow to work.
 const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
 
 let stripe: Stripe | null = null;
@@ -15,8 +16,11 @@ if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HE
 }
 
 export async function POST(req: NextRequest) {
+    // If the webhook secret isn't configured, we'll just acknowledge the request and return.
+    // This allows the core Stripe Connect flow to work without the webhook being fully set up.
     if (!stripe || !webhookSecret || webhookSecret.includes('_PUT_YOUR_CONNECT_WEBHOOK_SECRET_HERE')) {
-        return NextResponse.json({ error: 'Stripe Connect webhook secret not configured.' }, { status: 500 });
+        console.log("Stripe Connect webhook received, but secret not configured. Acknowledging.");
+        return NextResponse.json({ received: true, message: 'Webhook handler is active, but secret not configured.' });
     }
     
     const body = await req.text();
