@@ -7,20 +7,14 @@ export async function POST(req: NextRequest) {
     // --- Start of Defensive Checks ---
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey || !stripeSecretKey.startsWith('sk_')) {
-        console.error("CRITICAL: STRIPE_SECRET_KEY is missing or invalid in .env.local");
+        console.error("CRITICAL: STRIPE_SECRET_KEY is missing or invalid in .env or .env.local");
         return NextResponse.json({ error: 'Stripe is not configured on the server. The STRIPE_SECRET_KEY is missing or invalid.' }, { status: 500 });
     }
-
-    const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
-    if (!refreshUrl) {
-        console.error("CRITICAL: STRIPE_CONNECT_REFRESH_URL is not configured in .env.local");
-        return NextResponse.json({ error: "Stripe Connect 'refresh_url' is not configured on the server." }, { status: 500 });
-    }
-
-    const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
-    if (!returnUrl) {
-        console.error("CRITICAL: STRIPE_CONNECT_RETURN_URL is not configured in .env.local");
-        return NextResponse.json({ error: "Stripe Connect 'return_url' is not configured on the server." }, { status: 500 });
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+        console.error("CRITICAL: NEXT_PUBLIC_BASE_URL is not configured in .env or .env.local");
+        return NextResponse.json({ error: "The application's base URL is not configured on the server." }, { status: 500 });
     }
     // --- End of Defensive Checks ---
 
@@ -63,8 +57,8 @@ export async function POST(req: NextRequest) {
         // Create a unique onboarding link for the user
         const accountLink = await stripe.accountLinks.create({
             account: accountId,
-            refresh_url: refreshUrl,
-            return_url: returnUrl,
+            refresh_url: `${baseUrl}/seller/finances?stripe_refresh=true`,
+            return_url: `${baseUrl}/seller/finances?stripe_return=true`,
             type: 'account_onboarding',
         });
 
