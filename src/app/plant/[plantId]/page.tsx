@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { deletePlantListing, getPlantListing, createOrGetChat } from "@/lib/firestoreService";
+import { deletePlantListing, getPlantListing, createOrGetChat, followUser, unfollowUser } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil, MessageSquare } from "lucide-react";
+import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil, MessageSquare, UserPlus, UserCheck } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +51,7 @@ export default function PlantDetailPage() {
     const [isWishlistLoading, setIsWishlistLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isMessaging, setIsMessaging] = useState(false);
+    const [isFollowLoading, setIsFollowLoading] = useState(false);
 
     useEffect(() => {
         if (plantId) {
@@ -127,6 +128,30 @@ export default function PlantDetailPage() {
         }
     };
 
+    const handleFollowToggle = async () => {
+        if (!user || !profile || !plant?.ownerId || isOwner) {
+            toast({ variant: "destructive", title: "Action not allowed." });
+            return;
+        }
+    
+        setIsFollowLoading(true);
+        try {
+            if (isFollowing) {
+                await unfollowUser(user.uid, plant.ownerId);
+                toast({ title: "Unfollowed", description: `You are no longer following ${plant.ownerUsername}.` });
+            } else {
+                await followUser(user.uid, plant.ownerId);
+                toast({ title: "Followed!", description: `You are now following ${plant.ownerUsername}.` });
+            }
+            await refreshUserProfile();
+        } catch (error) {
+            console.error("Follow/unfollow error:", error);
+            toast({ variant: "destructive", title: "Something went wrong", description: "Could not update follow status." });
+        } finally {
+            setIsFollowLoading(false);
+        }
+    };
+
     async function handleDelete() {
         if (!isOwner || !plant) return;
         setIsDeleting(true);
@@ -164,10 +189,11 @@ export default function PlantDetailPage() {
     if (error) return <div className="text-center py-10">{error}</div>;
     if (!plant) return <div className="text-center py-10">Plant not found.</div>;
 
+    const isOwner = user?.uid === plant.ownerId;
+    const isFollowing = profile?.following?.includes(plant.ownerId);
     const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
     const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
     const isInCart = cartItems.some(item => item.id === plant.id);
-    const isOwner = user?.uid === plant.ownerId;
 
     return (
         <div className="container mx-auto max-w-4xl py-8">
@@ -239,15 +265,34 @@ export default function PlantDetailPage() {
                         )}
                     </div>
                      <Card className="bg-muted/50 p-3">
-                        <div className="flex items-center space-x-3">
-                             <Avatar className="h-12 w-12 border">
-                                <AvatarImage src={plant.ownerAvatarUrl} alt={plant.ownerUsername} />
-                                <AvatarFallback><UserIcon /></AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Seller</p>
-                                <p className="font-semibold text-foreground">{plant.ownerUsername}</p>
+                        <div className="flex items-center justify-between space-x-3">
+                            <div className="flex items-center space-x-3">
+                                <Avatar className="h-12 w-12 border">
+                                    <AvatarImage src={plant.ownerAvatarUrl} alt={plant.ownerUsername} />
+                                    <AvatarFallback><UserIcon /></AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Seller</p>
+                                    <p className="font-semibold text-foreground">{plant.ownerUsername}</p>
+                                </div>
                             </div>
+                            {!isOwner && user && (
+                                <Button 
+                                    variant={isFollowing ? "secondary" : "outline"} 
+                                    size="sm"
+                                    onClick={handleFollowToggle}
+                                    disabled={authLoading || isFollowLoading}
+                                >
+                                    {isFollowLoading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : isFollowing ? (
+                                        <UserCheck className="mr-2 h-4 w-4" />
+                                    ) : (
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                    )}
+                                    {isFollowing ? 'Following' : 'Follow'}
+                                </Button>
+                            )}
                         </div>
                     </Card>
 
@@ -396,5 +441,3 @@ function PlantDetailSkeleton() {
         </div>
     )
 }
-
-    

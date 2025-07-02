@@ -593,6 +593,41 @@ export const getOrdersForSeller = async (sellerId: string): Promise<Order[]> => 
     return orders;
 };
 
+// --- Follow Functions ---
+export const followUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
+    if (!db || currentUserId === targetUserId) return;
+    const batch = writeBatch(db);
+
+    const currentUserRef = doc(db, 'users', currentUserId);
+    batch.update(currentUserRef, {
+        following: arrayUnion(targetUserId)
+    });
+
+    const targetUserRef = doc(db, 'users', targetUserId);
+    batch.update(targetUserRef, {
+        followers: arrayUnion(currentUserId)
+    });
+
+    await batch.commit();
+};
+
+export const unfollowUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
+    if (!db || currentUserId === targetUserId) return;
+    const batch = writeBatch(db);
+
+    const currentUserRef = doc(db, 'users', currentUserId);
+    batch.update(currentUserRef, {
+        following: arrayRemove(targetUserId)
+    });
+
+    const targetUserRef = doc(db, 'users', targetUserId);
+    batch.update(targetUserRef, {
+        followers: arrayRemove(currentUserId)
+    });
+
+    await batch.commit();
+};
+
 
 // --- Auth Functions ---
 export const loginUser = async (email: string, password: string) => {

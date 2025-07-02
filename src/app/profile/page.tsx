@@ -183,6 +183,14 @@ export default function ProfilePage() {
               <Calendar className="h-4 w-4" />
               <span>Joined {joinedDate}</span>
             </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2 justify-center sm:justify-start">
+                <div className="flex items-center gap-1">
+                    <span className="font-bold text-foreground">{profile.following?.length || 0}</span> Following
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="font-bold text-foreground">{profile.followers?.length || 0}</span> Followers
+                </div>
+            </div>
             {profile.bio && <p className="mt-2 text-sm">{profile.bio}</p>}
           </div>
         </CardContent>
