@@ -81,9 +81,9 @@ const createNotification = async (
     });
 };
 
-export const getNotificationsForUser = async (userId: string): Promise<Notification[]> => {
+export const getNotificationsForUser = async (userId: string, limitNum: number = 50): Promise<Notification[]> => {
     if (!db) return [];
-    const q = query(collection(db, 'users', userId, 'notifications'), orderBy('createdAt', 'desc'), limit(50));
+    const q = query(collection(db, 'users', userId, 'notifications'), orderBy('createdAt', 'desc'), limit(limitNum));
     const querySnapshot = await getDocs(q);
     const notifications: Notification[] = [];
     querySnapshot.forEach(doc => {
@@ -324,6 +324,7 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
     if (!db) return;
     const chatDocRef = doc(db, 'chats', chatId);
     const messagesCollectionRef = collection(chatDocRef, 'messages');
+    const senderProfile = await getUserProfile(senderId);
 
     // Add the new message
     await addDoc(messagesCollectionRef, {
@@ -345,7 +346,7 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
         receiverId,
         senderId,
         'newMessage',
-        `New message from you.`, // This message is for the sender, the receiver's is created dynamically
+        `sent you a new message.`,
         `/messages/${chatId}`
     );
 };
@@ -524,7 +525,7 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
                 postData.authorId,
                 comment.authorId,
                 'newComment',
-                `${comment.authorUsername} commented on your post.`,
+                `commented on your post: "${postData.title}"`,
                 `/forums/${forumId}` // Simplified link for now
             );
         }
@@ -641,7 +642,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
                 sellerId,
                 buyerProfile.userId,
                 'newSale',
-                `Your plant was sold to ${buyerProfile.username}!`,
+                `sold one of your plants to ${buyerProfile.username}!`,
                 '/seller/orders'
             );
         }
@@ -673,6 +674,8 @@ export const getOrdersForSeller = async (sellerId: string): Promise<Order[]> => 
 export const followUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
     if (!db || currentUserId === targetUserId) return;
     const batch = writeBatch(db);
+    const currentUserProfile = await getUserProfile(currentUserId);
+
 
     const currentUserRef = doc(db, 'users', currentUserId);
     batch.update(currentUserRef, {
@@ -690,7 +693,7 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
         targetUserId,
         currentUserId,
         'newFollower',
-        `You have a new follower!`,
+        `started following you.`,
         `/profile/${currentUserId}`
     );
 };

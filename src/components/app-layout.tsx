@@ -46,6 +46,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { AuthGuard } from "@/components/auth-guard";
 import { useCart } from "@/contexts/cart-context";
 import { CartSheet } from "@/components/cart-sheet";
+import { NotificationPopover } from "@/components/notification-popover";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 
@@ -131,11 +132,6 @@ function AppSidebar() {
                                     <span>{item.label}</span>
                                 </SidebarMenuButton>
                             </Link>
-                            {item.href === "/notifications" && unreadNotificationCount > 0 && (
-                                <SidebarMenuBadge>
-                                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                                </SidebarMenuBadge>
-                            )}
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>
@@ -194,23 +190,34 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
     return (
         <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <div className="relative">
-                    <SidebarTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Toggle Menu" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                            <PanelLeft />
-                        </Button>
-                    </SidebarTrigger>
-                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground ring-2 ring-background">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </div>
+                <SidebarTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="Toggle Menu" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                        <PanelLeft />
+                    </Button>
+                </SidebarTrigger>
             </div>
+            
             <Link href="/catalog" passHref aria-label="Sprout Home">
                 <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                 <NotificationPopover>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Open notifications"
+                        className="relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    >
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground ring-2 ring-background">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                        <Bell />
+                    </Button>
+                </NotificationPopover>
+                
                 <Button
                     variant="ghost"
                     size="icon"
