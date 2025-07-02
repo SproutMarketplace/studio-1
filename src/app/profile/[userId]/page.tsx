@@ -241,26 +241,7 @@ export default function ProfilePage() {
             />
           </div>
           <div className="flex-1 text-center sm:text-left">
-             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center sm:justify-start">
-              <h1 className="text-3xl font-bold text-primary">{viewedProfile.username}</h1>
-              {!isOwner && loggedInUser && (
-                <Button 
-                    variant={isFollowing ? "secondary" : "outline"} 
-                    size="sm"
-                    onClick={handleFollowToggle}
-                    disabled={authLoading || isFollowLoading}
-                >
-                    {isFollowLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : isFollowing ? (
-                        <UserCheck className="mr-2 h-4 w-4" />
-                    ) : (
-                        <UserPlus className="mr-2 h-4 w-4" />
-                    )}
-                    {isFollowing ? 'Following' : 'Follow'}
-                </Button>
-              )}
-            </div>
+            <h1 className="text-3xl font-bold text-primary">{viewedProfile.username}</h1>
             <p className="text-muted-foreground">{viewedProfile.email}</p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 justify-center sm:justify-start">
               <Calendar className="h-4 w-4" />
@@ -276,6 +257,26 @@ export default function ProfilePage() {
             </div>
             {viewedProfile.bio && <p className="mt-2 text-sm">{viewedProfile.bio}</p>}
           </div>
+
+          {!isOwner && loggedInUser && (
+            <div className="w-full sm:w-auto">
+              <Button 
+                  variant={isFollowing ? "secondary" : "outline"} 
+                  className="w-full sm:w-auto"
+                  onClick={handleFollowToggle}
+                  disabled={authLoading || isFollowLoading}
+              >
+                  {isFollowLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : isFollowing ? (
+                      <UserCheck className="mr-2 h-4 w-4" />
+                  ) : (
+                      <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  {isFollowing ? 'Following' : 'Follow'}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -372,5 +373,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
