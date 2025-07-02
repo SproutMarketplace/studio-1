@@ -56,9 +56,14 @@ const createNotification = async (
     message: string, 
     link: string
 ): Promise<void> => {
+    if (!db || userIdToNotify === fromUserId) return; 
+
+    // Fetch the profile of the user triggering the notification to ensure data is fresh.
     const fromUserProfile = await getUserProfile(fromUserId);
-    // Don't notify self, and ensure the user triggering the notification exists.
-    if (!db || !fromUserProfile || userIdToNotify === fromUserId) return; 
+    if (!fromUserProfile) {
+        console.error("Could not create notification: 'from' user profile not found.");
+        return;
+    }
 
     const notificationRef = collection(db, 'users', userIdToNotify, 'notifications');
     await addDoc(notificationRef, {
@@ -74,6 +79,33 @@ const createNotification = async (
             avatarUrl: fromUserProfile.avatarUrl || '',
         }
     });
+};
+
+export const getNotificationsForUser = async (userId: string): Promise<Notification[]> => {
+    if (!db) return [];
+    const q = query(collection(db, 'users', userId, 'notifications'), orderBy('createdAt', 'desc'), limit(50));
+    const querySnapshot = await getDocs(q);
+    const notifications: Notification[] = [];
+    querySnapshot.forEach(doc => {
+        notifications.push({ id: doc.id, ...doc.data() } as Notification);
+    });
+    return notifications;
+};
+
+export const markUserNotificationsAsRead = async (userId: string): Promise<void> => {
+    if (!db) return;
+    const notificationsRef = collection(db, 'users', userId, 'notifications');
+    const q = query(notificationsRef, where('isRead', '==', false));
+    const unreadSnapshot = await getDocs(q);
+
+    if (unreadSnapshot.empty) return;
+    
+    const batch = writeBatch(db);
+    unreadSnapshot.forEach(notificationDoc => {
+        batch.update(notificationDoc.ref, { isRead: true });
+    });
+    
+    await batch.commit();
 };
 
 
@@ -309,12 +341,11 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
     });
 
     // Create a notification for the receiver
-    const senderProfile = await getUserProfile(senderId);
     await createNotification(
         receiverId,
         senderId,
         'newMessage',
-        `New message from ${senderProfile?.username || 'a user'}.`,
+        `New message from you.`, // This message is for the sender, the receiver's is created dynamically
         `/messages/${chatId}`
     );
 };
@@ -334,6 +365,9 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
 
 export const markChatAsRead = async (chatId: string, currentUserId: string): Promise<void> => {
     if (!db) return;
+    // This function is now superseded by markUserNotificationsAsRead,
+    // but can be kept for more granular 'read' status on messages if needed in the future.
+    // For now, the main notification clearing happens on the notifications page.
     const notificationsRef = collection(db, 'users', currentUserId, 'notifications');
     const q = query(notificationsRef, where('link', '==', `/messages/${chatId}`), where('isRead', '==', false));
     const unreadNotificationsSnapshot = await getDocs(q);
@@ -652,16 +686,13 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
 
     await batch.commit();
 
-    const currentUserProfile = await getUserProfile(currentUserId);
-    if (currentUserProfile) {
-        await createNotification(
-            targetUserId,
-            currentUserId,
-            'newFollower',
-            `${currentUserProfile.username} started following you.`,
-            `/profile/${currentUserId}`
-        );
-    }
+    await createNotification(
+        targetUserId,
+        currentUserId,
+        'newFollower',
+        `You have a new follower!`,
+        `/profile/${currentUserId}`
+    );
 };
 
 export const unfollowUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
