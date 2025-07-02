@@ -74,7 +74,7 @@ const createNotification = async (
         isRead: false,
         createdAt: serverTimestamp(),
         fromUser: {
-            id: fromUserId, // Use fromUserId directly. It's guaranteed to be the string UID.
+            id: fromUserId,
             username: fromUserProfile.username,
             avatarUrl: fromUserProfile.avatarUrl || '',
         }
@@ -324,7 +324,6 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
     if (!db) return;
     const chatDocRef = doc(db, 'chats', chatId);
     const messagesCollectionRef = collection(chatDocRef, 'messages');
-    const senderProfile = await getUserProfile(senderId);
 
     // Add the new message
     await addDoc(messagesCollectionRef, {
@@ -670,12 +669,29 @@ export const getOrdersForSeller = async (sellerId: string): Promise<Order[]> => 
     return orders;
 };
 
+// REQUIRED FIRESTORE INDEX:
+// Collection: 'orders'
+// Fields: 1. userId (Ascending), 2. createdAt (Descending)
+export const getOrdersForBuyer = async (buyerId: string): Promise<Order[]> => {
+    if (!db) return [];
+    const q = query(
+        collection(db, 'orders'),
+        where('userId', '==', buyerId),
+        orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    const orders: Order[] = [];
+    querySnapshot.forEach((doc: DocumentSnapshot) => {
+        orders.push({ id: doc.id, ...doc.data() } as Order);
+    });
+    return orders;
+};
+
+
 // --- Follow Functions ---
 export const followUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
     if (!db || currentUserId === targetUserId) return;
     const batch = writeBatch(db);
-    const currentUserProfile = await getUserProfile(currentUserId);
-
 
     const currentUserRef = doc(db, 'users', currentUserId);
     batch.update(currentUserRef, {

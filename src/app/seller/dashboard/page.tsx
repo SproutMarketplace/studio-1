@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserPlantListings } from "@/lib/firestoreService";
-import type { PlantListing } from "@/models";
+import { getUserPlantListings, getOrdersForSeller } from "@/lib/firestoreService";
+import type { OrderItem } from "@/models";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CircleDollarSign, Package, BarChart3, Loader2 } from "lucide-react";
 
@@ -22,12 +22,19 @@ export default function SellerDashboardPage() {
             const fetchStats = async () => {
                 setIsLoading(true);
                 try {
-                    const userPlants = await getUserPlantListings(user.uid);
+                    const [userPlants, sellerOrders] = await Promise.all([
+                        getUserPlantListings(user.uid),
+                        getOrdersForSeller(user.uid)
+                    ]);
                     
                     const activeListings = userPlants.filter(p => p.isAvailable).length;
-                    const soldPlants = userPlants.filter(p => !p.isAvailable);
-                    const sales = soldPlants.length;
-                    const revenue = soldPlants.reduce((acc, p) => acc + (p.price || 0), 0);
+                    
+                    const itemsSold: OrderItem[] = sellerOrders.flatMap(order => 
+                        order.items.filter(item => item.sellerId === user.uid)
+                    );
+                    
+                    const sales = itemsSold.length;
+                    const revenue = itemsSold.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
                     setStats({ revenue, sales, activeListings });
                 } catch (error) {
@@ -58,6 +65,7 @@ export default function SellerDashboardPage() {
                         {isCurrency ? `$${value.toFixed(2)}` : value}
                     </div>
                 )}
+                 {!loading && isCurrency && <p className="text-xs text-muted-foreground">Based on completed sales</p>}
             </CardContent>
         </Card>
     );
@@ -70,7 +78,7 @@ export default function SellerDashboardPage() {
                 <CardHeader>
                     <CardTitle>Welcome to your Seller Dashboard!</CardTitle>
                     <CardDescription>
-                        This is your central hub for managing your plant listings. Stats below are calculated from your current listings.
+                        This is your central hub for managing your plant listings. Stats below are calculated from your current listings and completed orders.
                     </CardDescription>
                 </CardHeader>
             </Card>

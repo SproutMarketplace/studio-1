@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData, getUserProfile, followUser, unfollowUser } from "@/lib/firestoreService";
-import type { PlantListing, User } from "@/models";
+import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData, getUserProfile, followUser, unfollowUser, getOrdersForBuyer } from "@/lib/firestoreService";
+import type { PlantListing, User, Order } from "@/models";
 import { format } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
 import Link from "next/link";
@@ -14,11 +14,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { EditProfileForm } from "@/components/edit-profile-form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const params = useParams();
@@ -31,10 +34,12 @@ export default function ProfilePage() {
   const [viewedProfile, setViewedProfile] = useState<User | null>(null);
   const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
   const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
+  const [orderHistory, setOrderHistory] = useState<Order[]>([]);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +106,19 @@ export default function ProfilePage() {
             }
         };
         fetchWishlist();
+
+        const fetchOrders = async () => {
+            setOrdersLoading(true);
+            try {
+                const orders = await getOrdersForBuyer(userId);
+                setOrderHistory(orders);
+            } catch (error) {
+                console.error("Failed to fetch order history:", error);
+            } finally {
+                setOrdersLoading(false);
+            }
+        };
+        fetchOrders();
     }
   }, [userId, isOwner, loggedInUserProfile?.favoritePlants]);
 
@@ -202,6 +220,16 @@ export default function ProfilePage() {
 
   const joinedDate = viewedProfile.joinedDate ? format((viewedProfile.joinedDate as Timestamp).toDate(), 'MMMM yyyy') : 'N/A';
 
+  const getStatusVariant = (status: Order['status']): "default" | "secondary" | "destructive" => {
+    switch (status) {
+        case 'processing': return 'default';
+        case 'shipped': return 'secondary';
+        case 'delivered': return 'secondary';
+        case 'cancelled': return 'destructive';
+        default: return 'default';
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <Card className="shadow-lg">
@@ -281,9 +309,10 @@ export default function ProfilePage() {
       </Card>
       
       <Tabs defaultValue="listings" className="w-full">
-        <TabsList className={cn("grid w-full", isOwner ? "grid-cols-2 md:grid-cols-4" : "grid-cols-1")}>
+        <TabsList className={cn("grid w-full", isOwner ? "grid-cols-2 md:grid-cols-5" : "grid-cols-1")}>
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />Listings</TabsTrigger>
           {isOwner && <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>}
+          {isOwner && <TabsTrigger value="order-history"><ClipboardList className="mr-2 h-4 w-4" />Order History</TabsTrigger>}
           {isOwner && <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>}
           {isOwner && <TabsTrigger value="seller-dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Seller Tools</TabsTrigger>}
         </TabsList>
@@ -343,6 +372,63 @@ export default function ProfilePage() {
                         )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+                <TabsContent value="order-history" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                        <CardTitle>My Order History</CardTitle>
+                        <CardDescription>A record of all your past purchases on Sprout.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {ordersLoading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            </div>
+                        ) : orderHistory.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Order Date</TableHead>
+                                        <TableHead>Items</TableHead>
+                                        <TableHead>Total</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {orderHistory.map((order) => (
+                                        <TableRow key={order.id}>
+                                            <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                            <TableCell>
+                                                <div className="space-y-2">
+                                                    {order.items.map(item => (
+                                                        <div key={item.plantId} className="flex items-center gap-2 text-sm">
+                                                            <Image src={item.imageUrls[0]} alt={item.name} width={40} height={40} className="rounded-md object-cover"/>
+                                                            <div>
+                                                                <p className="font-medium">{item.name}</p>
+                                                                <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-medium">${order.totalAmount.toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center py-12">
+                                <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
+                                <h3 className="mt-4 text-xl font-semibold">No orders yet</h3>
+                                <p className="mt-1 text-muted-foreground">When you purchase a plant, your order will appear here.</p>
+                                <Button asChild className="mt-4"><Link href="/catalog">Browse Plants</Link></Button>
+                            </div>
+                        )}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
                 <TabsContent value="settings" className="mt-6">
                     <EditProfileForm />

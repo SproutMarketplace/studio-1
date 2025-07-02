@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getOrdersForSeller } from "@/lib/firestoreService";
 import type { Order, OrderItem } from "@/models";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Inbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function OrdersPage() {
     const { user, loading: authLoading } = useAuth();
@@ -54,15 +56,19 @@ export default function OrdersPage() {
             <div className="space-y-2">
                 {sellerItems.map(item => (
                     <div key={item.plantId} className="flex items-center gap-2 text-sm">
-                        <Image
-                            src={item.imageUrls[0] || "https://placehold.co/40x40.png"}
-                            alt={item.name}
-                            width={40}
-                            height={40}
-                            className="rounded-md aspect-square object-cover"
-                        />
-                        <span className="font-medium">{item.name}</span>
-                        <span>(${item.price.toFixed(2)})</span>
+                        <Link href={`/plant/${item.plantId}`} className="flex items-center gap-2 text-sm group">
+                            <Image
+                                src={item.imageUrls[0] || "https://placehold.co/40x40.png"}
+                                alt={item.name}
+                                width={40}
+                                height={40}
+                                className="rounded-md aspect-square object-cover"
+                            />
+                            <div>
+                                <span className="font-medium group-hover:underline">{item.name}</span>
+                                <p className="text-muted-foreground text-xs">Qty: {item.quantity}</p>
+                            </div>
+                        </Link>
                     </div>
                 ))}
             </div>
@@ -135,6 +141,7 @@ export default function OrdersPage() {
                             <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
                             <h3 className="mt-4 text-xl font-semibold">No sales yet</h3>
                             <p className="mt-1 text-muted-foreground">When you sell a plant, the order will appear here.</p>
+                            <Button asChild className="mt-4"><Link href="/list-plant">List Your First Plant</Link></Button>
                         </div>
                     )}
                 </CardContent>
