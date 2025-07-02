@@ -42,10 +42,38 @@ import {
     RewardTransaction,
     Order,
     OrderItem,
+    Notification,
 } from '@/models';
 
 // --- General Utility Functions ---
 export const getTimestamp = () => serverTimestamp() as Timestamp;
+
+// --- Notification Functions ---
+const createNotification = async (
+    userIdToNotify: string, 
+    fromUser: User, 
+    type: Notification['type'], 
+    message: string, 
+    link: string
+): Promise<void> => {
+    if (!db || userIdToNotify === fromUser.userId) return; // Don't notify self
+
+    const notificationRef = collection(db, 'users', userIdToNotify, 'notifications');
+    await addDoc(notificationRef, {
+        userId: userIdToNotify,
+        type,
+        message,
+        link,
+        isRead: false,
+        createdAt: serverTimestamp(),
+        fromUser: {
+            id: fromUser.userId,
+            username: fromUser.username,
+            avatarUrl: fromUser.avatarUrl || '',
+        }
+    });
+};
+
 
 // --- User Functions (Profile Page: /profile) ---
 export const getUserProfile = async (userId: string): Promise<User | null> => {
@@ -278,11 +306,16 @@ export const sendMessage = async (chatId: string, senderId: string, receiverId: 
         lastMessageTimestamp: serverTimestamp(),
     });
 
-    // Increment the unread count for the receiver
-    const receiverUserRef = doc(db, 'users', receiverId);
-    await updateDoc(receiverUserRef, {
-        unreadMessageCount: increment(1)
-    });
+    const senderProfile = await getUserProfile(senderId);
+    if(senderProfile) {
+        await createNotification(
+            receiverId,
+            senderProfile,
+            'newMessage',
+            `New message from ${senderProfile.username}`,
+            `/messages/${chatId}`
+        );
+    }
 };
 
 export const subscribeToMessages = (chatId: string, callback: (messages: Message[]) => void) => {
@@ -300,32 +333,18 @@ export const subscribeToMessages = (chatId: string, callback: (messages: Message
 
 export const markChatAsRead = async (chatId: string, currentUserId: string): Promise<void> => {
     if (!db) return;
+    const notificationsRef = collection(db, 'users', currentUserId, 'notifications');
+    const q = query(notificationsRef, where('link', '==', `/messages/${chatId}`), where('isRead', '==', false));
+    const unreadNotificationsSnapshot = await getDocs(q);
 
-    const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const q = query(messagesRef, where('receiverId', '==', currentUserId), where('read', '==', false));
-    
-    const unreadMessagesSnapshot = await getDocs(q);
-    
-    if (unreadMessagesSnapshot.empty) {
-        return; // No unread messages to process
-    }
+    if (unreadNotificationsSnapshot.empty) return;
     
     const batch = writeBatch(db);
-    let unreadCount = 0;
-
-    unreadMessagesSnapshot.forEach(messageDoc => {
-        batch.update(messageDoc.ref, { read: true });
-        unreadCount++;
+    unreadNotificationsSnapshot.forEach(notificationDoc => {
+        batch.update(notificationDoc.ref, { isRead: true });
     });
-
-    if (unreadCount > 0) {
-        const userRef = doc(db, 'users', currentUserId);
-        batch.update(userRef, {
-            unreadMessageCount: increment(-unreadCount)
-        });
     
-        await batch.commit();
-    }
+    await batch.commit();
 };
 
 export const getChatDocument = async (chatId: string): Promise<Chat | null> => {
@@ -465,11 +484,15 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
     const postSnap = await getDoc(postDocRef);
     if (postSnap.exists()) {
         const postData = postSnap.data() as Post;
-        if (postData.authorId !== comment.authorId) { // Don't notify if user comments on their own post
-            const authorRef = doc(db, 'users', postData.authorId);
-            await updateDoc(authorRef, {
-                unreadMessageCount: increment(1)
-            });
+        const commentAuthorProfile = await getUserProfile(comment.authorId);
+        if (postData.authorId !== comment.authorId && commentAuthorProfile) { // Don't notify if user comments on their own post
+             await createNotification(
+                postData.authorId,
+                commentAuthorProfile,
+                'newComment',
+                `${comment.authorUsername} commented on your post.`,
+                `/forums/${forumId}` // Simplified link for now
+            );
         }
     }
 
@@ -578,12 +601,15 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     }
 
     // Notify each unique seller
-    for (const sellerId of sellerIds) {
-        if (sellerId !== orderData.userId) { // Don't notify if seller is the buyer
-            const sellerRef = doc(db, 'users', sellerId);
-            batch.update(sellerRef, {
-                unreadMessageCount: increment(1)
-            });
+    if (buyerProfile) {
+        for (const sellerId of sellerIds) {
+            await createNotification(
+                sellerId,
+                buyerProfile,
+                'newSale',
+                `Your plant was sold to ${buyerProfile.username}!`,
+                '/seller/orders'
+            );
         }
     }
 
@@ -621,11 +647,21 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
 
     const targetUserRef = doc(db, 'users', targetUserId);
     batch.update(targetUserRef, {
-        followers: arrayUnion(currentUserId),
-        unreadMessageCount: increment(1)
+        followers: arrayUnion(currentUserId)
     });
 
     await batch.commit();
+
+    const currentUserProfile = await getUserProfile(currentUserId);
+    if(currentUserProfile) {
+        await createNotification(
+            targetUserId,
+            currentUserProfile,
+            'newFollower',
+            `${currentUserProfile.username} started following you.`,
+            `/profile/${currentUserId}`
+        );
+    }
 };
 
 export const unfollowUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
@@ -669,7 +705,6 @@ export const registerUser = async (email: string, password: string, username: st
         plantsListed: 0,
         plantsTraded: 0,
         rewardPoints: 0,
-        unreadMessageCount: 0,
         favoritePlants: [],
         followers: [],
         following: [],

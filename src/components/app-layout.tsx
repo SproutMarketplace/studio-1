@@ -68,7 +68,7 @@ function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
     const { setOpen, isMobile, setOpenMobile } = useSidebar();
-    const { user, profile, loading, refreshUserProfile } = useAuth();
+    const { user, profile, loading, refreshUserProfile, unreadNotificationCount } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -130,9 +130,9 @@ function AppSidebar() {
                                     <span>{item.label}</span>
                                 </SidebarMenuButton>
                             </Link>
-                            {item.href === "/messages" && profile && profile.unreadMessageCount > 0 && (
+                            {item.href === "/messages" && unreadNotificationCount > 0 && (
                                 <SidebarMenuBadge>
-                                    {profile.unreadMessageCount > 9 ? '9+' : profile.unreadMessageCount}
+                                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                                 </SidebarMenuBadge>
                             )}
                         </SidebarMenuItem>
@@ -235,7 +235,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const isRootRoute = pathname === "/";
     const isSellerRoute = pathname.startsWith('/seller');
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const { profile } = useAuth();
+    const { unreadNotificationCount } = useAuth();
 
 
     // The root page has its own full-screen layout (for redirection)
@@ -275,7 +275,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <SidebarInset className="flex flex-col min-h-screen">
                 <PersistentHeader 
                     onCartClick={() => setIsCartOpen(true)} 
-                    unreadCount={profile?.unreadMessageCount || 0}
+                    unreadCount={unreadNotificationCount || 0}
                 />
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     <AuthGuard>{children}</AuthGuard>

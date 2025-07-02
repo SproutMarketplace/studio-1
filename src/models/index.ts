@@ -14,7 +14,6 @@ export interface User {
     plantsListed: number;
     plantsTraded: number;
     rewardPoints: number;
-    unreadMessageCount: number;
     favoritePlants: string[]; // Array of PlantListing IDs for wishlist
     followers: string[]; // Array of UserIDs
     following: string[]; // Array of UserIDs
@@ -123,4 +122,19 @@ export interface RewardTransaction {
     points: number;
     description: string;
     timestamp: Timestamp;
+}
+
+export interface Notification {
+    id?: string; // Document ID
+    userId: string; // The user who *receives* the notification
+    type: 'newMessage' | 'newFollower' | 'newComment' | 'newSale';
+    message: string; // e.g., "Mikaela followed you."
+    link: string; // e.g., "/profile/mikaela-id" or "/messages/chat-id"
+    isRead: boolean;
+    createdAt: Timestamp;
+    fromUser: { // Info about the user who triggered the notification
+        id: string;
+        username: string;
+        avatarUrl?: string;
+    }
 }
