@@ -11,11 +11,9 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Mail, KeyRound, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
 import { sendPasswordResetEmail } from "firebase/auth"; 
@@ -85,45 +83,38 @@ export default function ForgotPasswordPage() {
 
   return (
      <>
-        <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Forgot Password?</h1>
-            <p className="text-muted-foreground">No problem. Enter your email to receive a reset link.</p>
+        <div className="grid gap-2 text-left">
+          <h1 className="text-3xl font-bold">Forgot your password?</h1>
+          <p className="text-balance text-muted-foreground">
+            No problem. Enter your email and we'll send you a reset link.
+          </p>
         </div>
       
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base" />
-                    </div>
+                    <Input type="email" placeholder="Email address" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full text-lg py-3" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Sending Link..." : (
-                <>
-                  <KeyRound className="mr-2 h-5 w-5" /> Send Reset Link
-                </>
-              )}
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Sending Link..." : "Send Reset Link"}
             </Button>
           </form>
         </Form>
       
-        <div className="mt-6 text-center">
-            <Button variant="link" asChild className="text-muted-foreground hover:text-primary">
-                <Link href="/login">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sign In
-                </Link>
-            </Button>
+        <div className="mt-4 text-center text-sm">
+          Remembered your password?{" "}
+          <Link href="/login" className="underline">
+            Sign in
+          </Link>
         </div>
     </>
   );
