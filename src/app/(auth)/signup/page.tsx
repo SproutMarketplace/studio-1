@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import Image from "next/image"; 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { registerUser, logoutUser, createUserProfile } from "@/lib/firestoreService";
 import { auth, db, signInWithGooglePopup } from "@/lib/firebase";
-import { Separator } from "@/components/ui/separator";
 import { doc, getDoc } from "firebase/firestore";
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { useAuth } from "@/contexts/auth-context";
@@ -187,23 +184,20 @@ export default function SignupPage() {
 
 
   return (
-    <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-8 pb-4"> 
-        <div className="flex justify-center mb-6"> 
-          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+    <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-primary">Create an Account</h1>
+            <p className="text-muted-foreground">Join the Sprout community today!</p>
         </div>
-        <CardTitle className="text-3xl font-bold text-primary">Create Account</CardTitle>
-        <CardDescription>Join the Sprout community today!</CardDescription>
-      </CardHeader>
-      <CardContent>
+      
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Full Name</FormLabel>
+                  <FormLabel>Full Name</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -219,7 +213,7 @@ export default function SignupPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -235,7 +229,7 @@ export default function SignupPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                      <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -251,7 +245,7 @@ export default function SignupPage() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Confirm Password</FormLabel>
+                  <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -262,7 +256,7 @@ export default function SignupPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
+            <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
               {form.formState.isSubmitting ? "Creating Account..." : (
                 <>
                   <UserPlus className="mr-2 h-5 w-5" /> Sign Up
@@ -272,13 +266,13 @@ export default function SignupPage() {
           </form>
         </Form>
 
-        <div className="relative my-4">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+            <span className="bg-card px-2 text-muted-foreground">
+              Or sign up with
             </span>
           </div>
         </div>
@@ -297,15 +291,12 @@ export default function SignupPage() {
           )}
         </Button>
 
-      </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Button variant="link" asChild className="px-0 text-primary hover:text-primary/80">
-            <Link href="/login">Sign In</Link>
-          </Button>
+          <Link href="/login" className="font-semibold text-primary hover:text-primary/80 hover:underline">
+            Sign In
+          </Link>
         </p>
-      </CardFooter>
-    </Card>
+    </div>
   );
 }

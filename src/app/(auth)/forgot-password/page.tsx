@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import Image from "next/image"; // Added import
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, KeyRound, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
@@ -86,15 +84,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-8 pb-4"> {/* Adjusted padding */}
-        <div className="flex justify-center mb-6"> {/* Added logo container */}
-          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+     <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-primary">Forgot Password?</h1>
+            <p className="text-muted-foreground">No problem. Enter your email to receive a reset link.</p>
         </div>
-        <CardTitle className="text-3xl font-bold text-primary">Forgot Password?</CardTitle>
-        <CardDescription>Enter your email to receive a reset link.</CardDescription>
-      </CardHeader>
-      <CardContent>
+      
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -102,7 +97,7 @@ export default function ForgotPasswordPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -113,7 +108,7 @@ export default function ForgotPasswordPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full text-lg py-3" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Sending Link..." : (
                 <>
                   <KeyRound className="mr-2 h-5 w-5" /> Send Reset Link
@@ -122,14 +117,14 @@ export default function ForgotPasswordPage() {
             </Button>
           </form>
         </Form>
-      </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center">
-        <Button variant="link" asChild className="text-muted-foreground hover:text-primary">
-          <Link href="/login">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sign In
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+      
+        <div className="mt-6 text-center">
+            <Button variant="link" asChild className="text-muted-foreground hover:text-primary">
+                <Link href="/login">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sign In
+                </Link>
+            </Button>
+        </div>
+    </div>
   );
 }

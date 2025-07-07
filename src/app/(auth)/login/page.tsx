@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react"; 
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Mail, Lock, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth, signInWithGooglePopup, db } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword } from "firebase/auth"; 
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
 import { doc, getDoc } from "firebase/firestore";
 import { logoutUser } from "@/lib/firestoreService";
@@ -169,23 +166,20 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-2xl">
-      <CardHeader className="text-center px-6 pt-8 pb-4">
-        <div className="flex justify-center mb-6">
-          <Image src="/logo.png" alt="Sprout Logo" width={280} height={78} priority />
+    <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-primary">Welcome Back!</h1>
+            <p className="text-muted-foreground">Sign in to continue to Sprout.</p>
         </div>
-        <CardTitle className="text-3xl font-bold text-primary">Welcome Back!</CardTitle>
-        <CardDescription>Sign in to continue to Sprout.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+      
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -201,7 +195,12 @@ export default function LoginPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">Password</FormLabel>
+                   <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 hover:underline">
+                            Forgot password?
+                        </Link>
+                    </div>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -212,7 +211,7 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full text-lg py-3" disabled={form.formState.isSubmitting || isGoogleLoading}>
+            <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
               {form.formState.isSubmitting ? "Signing In..." : (
                 <>
                   <LogIn className="mr-2 h-5 w-5" /> Sign In
@@ -222,12 +221,12 @@ export default function LoginPage() {
           </form>
         </Form>
         
-        <div className="relative my-4">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
+            <span className="bg-card px-2 text-muted-foreground">
               Or continue with
             </span>
           </div>
@@ -247,18 +246,12 @@ export default function LoginPage() {
           )}
         </Button>
 
-      </CardContent>
-      <CardFooter className="flex flex-col items-center justify-center pt-4 space-y-1">
-        <Button variant="link" asChild className="px-0 text-sm text-primary hover:text-primary/80">
-          <Link href="/forgot-password">Forgot password?</Link>
-        </Button>
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Button variant="link" asChild className="px-0 text-primary hover:text-primary/80">
-            <Link href="/signup">Sign Up</Link>
-          </Button>
+            <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 hover:underline">
+                Sign Up
+            </Link>
         </p>
-      </CardFooter>
-    </Card>
+    </div>
   );
 }
