@@ -61,7 +61,6 @@ export default function LoginPage() {
         const result = await signInWithGooglePopup();
         const { user } = result;
 
-        // Use a more robust check to see if the user is new
         const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
         if (isNewUser) {
            await registerUser(user.email!, "password", user.displayName || 'Sprout User');
