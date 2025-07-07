@@ -7,12 +7,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
       <div className="hidden lg:block relative bg-muted">
         <Image
-          src="https://placehold.co/1200x1800.png"
+          src="/logo.png"
           alt="A vibrant collection of diverse houseplants"
           layout="fill"
           objectFit="cover"
           priority
-          data-ai-hint="houseplants diversity"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-8 flex flex-col justify-end">
             <h1 className="text-4xl font-bold text-white">Welcome to Sprout</h1>
