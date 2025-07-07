@@ -12,6 +12,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -62,10 +63,10 @@ export default function ForgotPasswordPage() {
             errorMessage = "The email address is not valid.";
             break;
           case "auth/user-not-found":
-            errorMessage = "If an account exists for this email, a reset link has been sent.";
+            // To prevent user enumeration, we show the same message as success.
             toast({
               title: "Password Reset Link Sent",
-              description: errorMessage,
+              description: `If an account exists for this email, a reset link has been sent.`,
             });
             form.reset();
             return;
@@ -97,8 +98,9 @@ export default function ForgotPasswordPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Email address" {...field} />
+                    <Input type="email" placeholder="name@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

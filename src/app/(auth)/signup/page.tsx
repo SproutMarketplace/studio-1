@@ -13,6 +13,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -97,8 +98,9 @@ export default function SignupPage() {
             name="name"
             render={({ field }) => (
               <FormItem>
+                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Full Name" {...field} />
+                  <Input placeholder="Jane Doe" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,8 +111,9 @@ export default function SignupPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
+                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Email address" {...field} />
+                  <Input type="email" placeholder="name@example.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -121,8 +124,9 @@ export default function SignupPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
+                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Password" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -133,8 +137,9 @@ export default function SignupPage() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
+                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Confirm Password" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

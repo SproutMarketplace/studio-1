@@ -5,17 +5,23 @@ import Image from 'next/image';
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
-      <div className="hidden bg-muted lg:block">
+      <div className="hidden bg-muted lg:block relative">
         <Image
           src="https://placehold.co/1200x1800.png"
-          alt="Abstract image of blue mountains"
-          width={1200}
-          height={1800}
-          className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-          data-ai-hint="mountains abstract"
+          alt="A vibrant collection of diverse houseplants"
+          fill
+          className="h-full w-full object-cover"
+          data-ai-hint="houseplants diversity"
+          priority
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-8 flex flex-col justify-end">
+            <h1 className="text-4xl font-bold text-white">Welcome to Sprout</h1>
+            <p className="text-lg text-white/90 mt-2">
+                Discover, trade, and grow your plant collection with a thriving community.
+            </p>
+        </div>
       </div>
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[350px] gap-6">
           {children}
         </div>

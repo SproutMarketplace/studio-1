@@ -13,6 +13,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
+  FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +89,9 @@ export default function LoginPage() {
     <>
       <div className="grid gap-2 text-left">
         <h1 className="text-3xl font-bold">Welcome back!</h1>
+         <p className="text-balance text-muted-foreground">
+            Enter your credentials to access your account.
+        </p>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -96,8 +100,9 @@ export default function LoginPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Email address" {...field} />
+                  <Input type="email" placeholder="name@example.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,8 +113,14 @@ export default function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
+                 <div className="flex items-center">
+                  <FormLabel>Password</FormLabel>
+                  <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
+                    Forgot password?
+                  </Link>
+                </div>
                 <FormControl>
-                  <Input type="password" placeholder="Password" {...field} />
+                  <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -120,11 +131,6 @@ export default function LoginPage() {
           </Button>
         </form>
       </Form>
-      <div className="text-center">
-          <Link href="/forgot-password" className="inline-block text-sm underline">
-            Forgot password?
-          </Link>
-      </div>
       <div className="mt-4 text-center text-sm">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="underline">
