@@ -9,8 +9,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <Image
           src="https://placehold.co/1200x1800.png"
           alt="A vibrant collection of diverse houseplants"
-          fill
-          className="h-full w-full object-cover"
+          layout="fill"
+          objectFit="cover"
           data-ai-hint="houseplants diversity"
           priority
         />
