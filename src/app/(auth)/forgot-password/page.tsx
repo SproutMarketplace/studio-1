@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-     <div className="w-full max-w-sm">
+     <>
         <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-primary">Forgot Password?</h1>
             <p className="text-muted-foreground">No problem. Enter your email to receive a reset link.</p>
@@ -125,6 +125,6 @@ export default function ForgotPasswordPage() {
                 </Link>
             </Button>
         </div>
-    </div>
+    </>
   );
 }

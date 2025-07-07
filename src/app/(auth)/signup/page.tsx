@@ -134,7 +134,6 @@ export default function SignupPage() {
             });
             router.push('/login');
         } else {
-            // Create a new profile for the Google user
             await createUserProfile({
                 userId: user.uid,
                 username: user.displayName || 'Sprout User',
@@ -161,7 +160,7 @@ export default function SignupPage() {
         if (error.code) {
             switch (error.code) {
                 case 'auth/popup-closed-by-user':
-                    return; // Don't show an error for this
+                    return;
                 case 'auth/account-exists-with-different-credential':
                     errorMessage = "An account with this email already exists. Please sign in using your original method.";
                     break;
@@ -184,119 +183,119 @@ export default function SignupPage() {
 
 
   return (
-    <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Create an Account</h1>
-            <p className="text-muted-foreground">Join the Sprout community today!</p>
+    <>
+      <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-primary">Create an Account</h1>
+          <p className="text-muted-foreground">Join the Sprout community today!</p>
+      </div>
+    
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input placeholder="Your Name" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                   <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
+            {form.formState.isSubmitting ? "Creating Account..." : (
+              <>
+                <UserPlus className="mr-2 h-5 w-5" /> Sign Up
+              </>
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
         </div>
-      
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="Your Name" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
-              {form.formState.isSubmitting ? "Creating Account..." : (
-                <>
-                  <UserPlus className="mr-2 h-5 w-5" /> Sign Up
-                </>
-              )}
-            </Button>
-          </form>
-        </Form>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or sign up with
-            </span>
-          </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or sign up with
+          </span>
         </div>
+      </div>
 
-        <Button 
-          variant="outline" 
-          className="w-full text-lg py-3" 
-          onClick={handleGoogleSignUp}
-          disabled={isGoogleLoading || form.formState.isSubmitting}
-        >
-          {isGoogleLoading ? "Signing Up..." : (
-            <>
-              <GoogleLogo /> 
-              <span className="ml-2">Sign up with Google</span>
-            </>
-          )}
-        </Button>
+      <Button 
+        variant="outline" 
+        className="w-full text-lg py-3" 
+        onClick={handleGoogleSignUp}
+        disabled={isGoogleLoading || form.formState.isSubmitting}
+      >
+        {isGoogleLoading ? "Signing Up..." : (
+          <>
+            <GoogleLogo /> 
+            <span className="ml-2">Sign up with Google</span>
+          </>
+        )}
+      </Button>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-primary hover:text-primary/80 hover:underline">
-            Sign In
-          </Link>
-        </p>
-    </div>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" className="font-semibold text-primary hover:text-primary/80 hover:underline">
+          Sign In
+        </Link>
+      </p>
+    </>
   );
 }

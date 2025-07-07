@@ -115,13 +115,10 @@ export default function LoginPage() {
       const userCredential = await signInWithGooglePopup();
       const user = userCredential.user;
 
-      // Check if user has a profile document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
       if (!docSnap.exists()) {
-        // This Google account is not associated with an existing user profile in our app.
-        // We must sign them out and instruct them to sign up first.
         await logoutUser();
         toast({
           variant: "destructive",
@@ -129,7 +126,6 @@ export default function LoginPage() {
           description: "No account exists with this Google account. Please sign up first.",
         });
       } else {
-        // User profile exists, this is a valid login.
         await refreshUserProfile();
         toast({
           title: "Google Sign-In Successful!",
@@ -143,7 +139,6 @@ export default function LoginPage() {
        if (error.code) {
         switch (error.code) {
           case "auth/popup-closed-by-user":
-            // This is a normal user action, so we don't show an error toast.
             return;
           case "auth/account-exists-with-different-credential":
             errorMessage = "An account already exists with this email address using a different sign-in method. Try signing in with your original method.";
@@ -166,92 +161,92 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary">Welcome Back!</h1>
-            <p className="text-muted-foreground">Sign in to continue to Sprout.</p>
-        </div>
+    <>
+      <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-primary">Welcome Back!</h1>
+          <p className="text-muted-foreground">Sign in to continue to Sprout.</p>
+      </div>
+    
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                 <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 hover:underline">
+                          Forgot password?
+                      </Link>
+                  </div>
+                <FormControl>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
+            {form.formState.isSubmitting ? "Signing In..." : (
+              <>
+                <LogIn className="mr-2 h-5 w-5" /> Sign In
+              </>
+            )}
+          </Button>
+        </form>
+      </Form>
       
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                   <div className="flex items-center justify-between">
-                        <FormLabel>Password</FormLabel>
-                        <Link href="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 hover:underline">
-                            Forgot password?
-                        </Link>
-                    </div>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full text-lg py-3 mt-6" disabled={form.formState.isSubmitting || isGoogleLoading}>
-              {form.formState.isSubmitting ? "Signing In..." : (
-                <>
-                  <LogIn className="mr-2 h-5 w-5" /> Sign In
-                </>
-              )}
-            </Button>
-          </form>
-        </Form>
-        
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
         </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with
+          </span>
+        </div>
+      </div>
 
-        <Button 
-          variant="outline" 
-          className="w-full text-lg py-3" 
-          onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading || form.formState.isSubmitting}
-        >
-          {isGoogleLoading ? "Signing In..." : (
-            <>
-              <GoogleLogo /> 
-              <span className="ml-2">Sign in with Google</span>
-            </>
-          )}
-        </Button>
+      <Button 
+        variant="outline" 
+        className="w-full text-lg py-3" 
+        onClick={handleGoogleSignIn}
+        disabled={isGoogleLoading || form.formState.isSubmitting}
+      >
+        {isGoogleLoading ? "Signing In..." : (
+          <>
+            <GoogleLogo /> 
+            <span className="ml-2">Sign in with Google</span>
+          </>
+        )}
+      </Button>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 hover:underline">
-                Sign Up
-            </Link>
-        </p>
-    </div>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Don&apos;t have an account?{" "}
+          <Link href="/signup" className="font-semibold text-primary hover:text-primary/80 hover:underline">
+              Sign Up
+          </Link>
+      </p>
+    </>
   );
 }

@@ -7,7 +7,8 @@ import { Sprout as SproutIcon } from 'lucide-react';
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="w-full min-h-screen grid lg:grid-cols-2">
-      {/* Left side: Image and Text */}
+
+      {/* Left side: Image Panel */}
       <div className="hidden lg:block relative bg-muted">
         <Image
           src="https://placehold.co/1200x1800.png"
@@ -34,24 +35,26 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      {/* Right side: Form */}
+      {/* Right side: Form Panel */}
       <main className="bg-background flex flex-col items-center justify-center p-6 sm:p-12 relative">
-         {/* Logo for mobile view */}
-        <div className="lg:hidden absolute top-8 left-8">
+         <div className="lg:hidden absolute top-8 left-8">
              <Link href="/" className="flex items-center gap-2" aria-label="Sprout Home">
                 <SproutIcon className="h-8 w-8 text-primary" />
                 <span className="text-2xl font-bold text-primary">Sprout</span>
             </Link>
         </div>
+        
         <div className="w-full max-w-sm">
             {children}
         </div>
+
         <footer className="w-full text-center py-4 mt-auto pt-8">
             <p className="text-xs text-muted-foreground">
                 &copy; {new Date().getFullYear()} Sprout Plant Marketplace. All rights reserved.
             </p>
         </footer>
       </main>
+
     </div>
   );
 }
