@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; 
+import { auth, signInWithGooglePopup } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword } from "firebase/auth"; 
 import { useAuth } from "@/contexts/auth-context";
+import { registerUser } from "@/lib/firestoreService";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -27,6 +28,20 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+      >
+        <title>Google</title>
+        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 1.9-4.63 1.9-3.87 0-7-3.13-7-7s3.13-7 7-7c1.73 0 3.26.56 4.48 1.73l2.43-2.43C17.47 1.88 15.22 1 12.48 1 5.88 1 1 5.88 1 12.48s4.88 11.48 11.48 11.48c3.22 0 5.85-1.13 7.84-3.13 2.1-2.1 2.53-5.22 2.53-8.32 0-.6-.05-1.18-.15-1.73H12.48z" />
+      </svg>
+    );
+  }
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,6 +55,30 @@ export default function LoginPage() {
       password: "",
     },
   });
+  
+  const handleGoogleSignIn = async () => {
+    try {
+        const result = await signInWithGooglePopup();
+        const { user } = result;
+
+        await registerUser(user.email!, "password", user.displayName || 'Sprout User');
+        await refreshUserProfile();
+        
+        toast({
+            title: "Sign In Successful!",
+            description: "Welcome to Sprout!",
+        });
+        router.push("/catalog");
+    } catch (error: any) {
+        if (error.code !== "auth/popup-closed-by-user") {
+            toast({
+                variant: "destructive",
+                title: "Google Sign-In Failed",
+                description: "There was a problem signing you in with Google. Please try again.",
+            });
+        }
+    }
+  };
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
@@ -92,6 +131,18 @@ export default function LoginPage() {
          <p className="text-balance text-muted-foreground">
             Enter your credentials to access your account.
         </p>
+      </div>
+      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+        <GoogleIcon className="mr-2 h-4 w-4" />
+        Sign in with Google
+      </Button>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+        </div>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
