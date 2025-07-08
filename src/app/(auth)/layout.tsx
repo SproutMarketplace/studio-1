@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-8 flex flex-col justify-end">
             <h1 className="text-4xl font-bold text-white">Welcome to Sprout</h1>
             <p className="text-lg text-white/90 mt-2">
-                Discover, trade, and grow your plant collection with a thriving community.
+                Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
             </p>
         </div>
       </div>

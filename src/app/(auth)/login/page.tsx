@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,11 +131,8 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="grid gap-2 text-center">
-        <h1 className="text-3xl font-bold">Welcome back!</h1>
-        <p className="text-balance text-muted-foreground">
-          Enter your credentials to access your account.
-        </p>
+      <div className="flex justify-center mb-4">
+        <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -156,7 +154,15 @@ export default function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                 <div className="flex items-center">
+                  <FormLabel>Password</FormLabel>
+                  <Link
+                    href="/forgot-password"
+                    className="ml-auto inline-block text-sm underline"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
@@ -187,11 +193,6 @@ export default function LoginPage() {
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="underline">
           Sign up
-        </Link>
-      </div>
-      <div className="text-center text-sm">
-        <Link href="/forgot-password" className="underline">
-          Forgot password?
         </Link>
       </div>
     </>
