@@ -17,7 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { sendPasswordResetEmail } from "firebase/auth"; 
+import { sendPasswordResetEmail } from "firebase/auth";
+import Image from "next/image";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -84,11 +85,13 @@ export default function ForgotPasswordPage() {
 
   return (
      <>
-        <div className="grid gap-2 text-left">
-          <h1 className="text-3xl font-bold">Forgot your password?</h1>
-          <p className="text-balance text-muted-foreground">
-            No problem. Enter your email and we'll send you a reset link.
-          </p>
+        <div className="grid gap-2 text-center">
+            <div className="flex justify-center">
+                <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
+            </div>
+            <p className="text-balance text-muted-foreground">
+                Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
+            </p>
         </div>
       
         <Form {...form}>

@@ -13,12 +13,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-8 flex flex-col justify-end">
-            <h1 className="text-4xl font-bold text-white">Welcome to Sprout</h1>
-            <p className="mt-2 rounded-lg bg-black/50 p-4 text-lg text-white/90 backdrop-blur-sm">
-                Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
-            </p>
-        </div>
       </div>
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[350px] gap-6">

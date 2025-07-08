@@ -131,9 +131,15 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="flex justify-center mb-4">
-        <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
+      <div className="grid gap-2 text-center">
+        <div className="flex justify-center">
+            <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
+        </div>
+        <p className="text-balance text-muted-foreground">
+            Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
+        </p>
       </div>
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
           <FormField
@@ -156,12 +162,6 @@ export default function LoginPage() {
               <FormItem>
                  <div className="flex items-center">
                   <FormLabel>Password</FormLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto inline-block text-sm underline"
-                  >
-                    Forgot your password?
-                  </Link>
                 </div>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} />
@@ -190,10 +190,17 @@ export default function LoginPage() {
         Sign in with Google
       </Button>
       <div className="mt-4 text-center text-sm">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="underline">
-          Sign up
-        </Link>
+        <p>
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="underline">
+                Sign up
+            </Link>
+        </p>
+        <p>
+            <Link href="/forgot-password" className="underline">
+                Forgot password?
+            </Link>
+        </p>
       </div>
     </>
   );

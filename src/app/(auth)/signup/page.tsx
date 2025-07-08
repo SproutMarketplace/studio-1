@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { registerUser } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { signInWithGooglePopup } from "@/lib/firebase";
+import Image from "next/image";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -128,10 +129,12 @@ export default function SignupPage() {
 
   return (
     <>
-      <div className="grid gap-2 text-left">
-        <h1 className="text-3xl font-bold">Create an account</h1>
+      <div className="grid gap-2 text-center">
+        <div className="flex justify-center">
+            <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
+        </div>
         <p className="text-balance text-muted-foreground">
-            Enter your details below to join the Sprout community.
+            Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
         </p>
       </div>
       <Button variant="outline" className="w-full" onClick={handleGoogleSignUp}>
