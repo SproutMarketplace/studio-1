@@ -3,11 +3,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import { PlantCard } from "@/components/plant-card";
 import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Loader2 } from "lucide-react";
+import { Search, ListFilter, Loader2, Sparkles } from "lucide-react";
 import { getAvailablePlantListings } from "@/lib/firestoreService";
 import type { DocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/cart-context";
+import { Card, CardContent } from "@/components/ui/card";
 
 
 const PLANTS_PER_PAGE = 8;
@@ -195,17 +198,33 @@ export default function PlantCatalogPage() {
 
 
     return (
-        <div className="container mx-auto">
-            <header className="mb-8 text-center">
-                <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-                    Discover Your Next Plant
-                </h1>
-                <p className="mt-2 text-lg text-muted-foreground">
-                    Browse our community's collection of plants for sale or trade.
-                </p>
-            </header>
+        <div className="container mx-auto space-y-8">
+            <Card className="relative overflow-hidden shadow-lg border-none -mx-4 md:-mx-6 lg:-mx-8">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/20 z-10" />
+                <Image
+                    src="https://placehold.co/1200x400.png"
+                    data-ai-hint="plants banner"
+                    alt="A vibrant collection of house plants arranged on shelves"
+                    fill
+                    className="object-cover"
+                />
+                <div className="relative z-20 flex h-[400px] flex-col items-center justify-center text-center p-6">
+                    <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl drop-shadow-lg">
+                        Find Your Green Soulmate
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-lg text-white/90 drop-shadow-md">
+                        Use our AI Plant Finder to identify a plant from a photo, or browse the full catalog below.
+                    </p>
+                    <Button asChild size="lg" className="mt-6 text-base">
+                        <Link href="/ai-finder">
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            Try the AI Plant Finder
+                        </Link>
+                    </Button>
+                </div>
+            </Card>
 
-            <div className="mb-8 flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -328,4 +347,5 @@ export default function PlantCatalogPage() {
             )}
         </div>
     );
-}
+
+    
