@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
 
   return (
      <>
-        <div className="grid gap-2 text-center">
+        <div className="grid gap-1 text-center">
             <div className="flex justify-center">
                 <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
             </div>
