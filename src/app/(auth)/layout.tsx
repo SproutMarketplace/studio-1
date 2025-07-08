@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
       <div className="hidden bg-muted lg:block relative">
         <Image
-          src="/plant images/landing.jpeg"
+          src="/plant-images/landing.jpeg"
           alt="A beautiful arrangement of plants for the landing page"
           fill
           className="object-cover"
