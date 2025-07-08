@@ -133,7 +133,7 @@ export default function SignupPage() {
         <div className="flex justify-center">
             <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
         </div>
-        <p className="text-balance text-muted-foreground">
+        <p className="text-sm font-medium text-center text-foreground/80">
             Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
         </p>
       </div>
