@@ -148,11 +148,11 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="grid gap-1 text-center">
+      <div className="grid text-center">
         <div className="flex justify-center">
             <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
         </div>
-        <p className="text-sm font-medium text-center text-foreground/80">
+        <p className="text-sm font-medium text-center text-foreground/80 -mt-2">
             Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
         </p>
       </div>
