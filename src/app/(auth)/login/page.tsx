@@ -152,9 +152,11 @@ export default function LoginPage() {
         <div className="flex justify-center">
             <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
         </div>
-        <p className="text-sm font-medium text-center text-foreground/80 -mt-2">
-            Effortlessly Buy, Sell, & Trade plants with communities that share your interests.
-        </p>
+        <div className="bg-primary/10 p-3 rounded-lg -mt-4 shadow-inner">
+             <p className="text-sm font-medium text-center text-primary/90">
+                Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
+            </p>
+        </div>
       </div>
       
       <Form {...form}>
