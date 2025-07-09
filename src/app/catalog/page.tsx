@@ -210,17 +210,11 @@ export default function PlantCatalogPage() {
                 />
                 <div className="relative z-20 flex h-[400px] flex-col items-center justify-center text-center p-6">
                     <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl drop-shadow-lg">
-                        Find Your Green Soulmate
+                        Discover Your Next Plant
                     </h1>
                     <p className="mt-4 max-w-2xl text-lg text-white/90 drop-shadow-md">
-                        Use our AI Plant Finder to identify a plant from a photo, or browse the full catalog below.
+                        Browse our community's collection of plants for sale or trade.
                     </p>
-                    <Button asChild size="lg" className="mt-6 text-base">
-                        <Link href="/ai-finder">
-                            <Sparkles className="mr-2 h-5 w-5" />
-                            Try the AI Plant Finder
-                        </Link>
-                    </Button>
                 </div>
             </Card>
 
