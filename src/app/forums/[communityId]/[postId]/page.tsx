@@ -155,13 +155,13 @@ export default function PostDetailPage() {
 
     const nextImage = () => {
         if (post && post.imageUrls && post.imageUrls.length > 1) {
-            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % post.imageUrls.length);
+            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % post.imageUrls!.length);
         }
     };
 
     const prevImage = () => {
         if (post && post.imageUrls && post.imageUrls.length > 1) {
-            setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls.length) % post.imageUrls.length);
+            setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls!.length) % post.imageUrls!.length);
         }
     };
     
