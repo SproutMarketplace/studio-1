@@ -2,10 +2,10 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, UserPlus, MessagesSquare, Loader2, UploadCloud, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlusCircle, UserPlus, MessagesSquare, Loader2, UploadCloud, X, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Timestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 const postSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters.").max(100, "Title cannot exceed 100 characters."),
@@ -47,19 +48,22 @@ function PostCard({ post }: { post: Post }) {
     }
 
     const hasImages = post.imageUrls && post.imageUrls.length > 0;
+    const postLink = `/forums/${post.forumId}/${post.id}`;
 
     return (
         <Card className="shadow-md hover:shadow-lg transition-shadow group flex flex-col">
             {hasImages && (
                 <CardHeader className="p-0">
                     <div className="relative w-full h-56 group/image">
-                        <Image
-                            src={post.imageUrls![currentImageIndex]}
-                            alt={`Image for post: ${post.title}`}
-                            layout="fill"
-                            objectFit="cover"
-                            className="transition-transform duration-300 group-hover:scale-105"
-                        />
+                         <Link href={postLink}>
+                            <Image
+                                src={post.imageUrls![currentImageIndex]}
+                                alt={`Image for post: ${post.title}`}
+                                layout="fill"
+                                objectFit="cover"
+                                className="transition-transform duration-300 group-hover:scale-105"
+                            />
+                        </Link>
                          {post.imageUrls!.length > 1 && (
                             <>
                                 <Button size="icon" variant="ghost" onClick={handlePrevImage} className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/30 text-white opacity-0 group-hover/image:opacity-100 transition-opacity hover:bg-black/50 hover:text-white">
@@ -75,17 +79,23 @@ function PostCard({ post }: { post: Post }) {
             )}
             <CardContent className={cn("p-4 flex-grow", !hasImages && "pt-6")}>
                 <CardTitle className="text-xl hover:text-primary transition-colors">
-                    <Link href="#" className="hover:underline">
+                    <Link href={postLink} className="hover:underline">
                         {post.title}
                     </Link>
                 </CardTitle>
-                <CardDescription className="text-xs text-muted-foreground mt-1">
-                    Posted by {post.authorUsername} &bull; {post.commentCount} replies
+                 <CardDescription className="text-xs text-muted-foreground mt-1">
+                    Posted by {post.authorUsername} &bull; {post.createdAt ? formatDistanceToNow((post.createdAt as Timestamp).toDate(), { addSuffix: true }) : ''}
                 </CardDescription>
                 <p className="text-sm line-clamp-2 mt-2">{post.content}</p>
             </CardContent>
-            <CardFooter className="p-4 border-t">
-                <Button variant="outline" size="sm" className="w-full" disabled>View Post (soon)</Button>
+            <CardFooter className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <MessageCircle className="h-4 w-4"/>
+                    {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
+                </div>
+                 <Button asChild variant="outline" size="sm">
+                    <Link href={postLink}>View Post</Link>
+                </Button>
             </CardFooter>
         </Card>
     );
