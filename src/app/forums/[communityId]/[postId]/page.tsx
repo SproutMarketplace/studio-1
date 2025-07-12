@@ -67,10 +67,10 @@ export default function PostDetailPage() {
 
                 if (!postData) {
                     setError("Post not found.");
-                    return;
+                } else {
+                    setPost(postData);
+                    setComments(commentsData);
                 }
-                setPost(postData);
-                setComments(commentsData);
             } catch (err) {
                 console.error("Error fetching post details:", err);
                 setError("Failed to load post. It may have been deleted.");
@@ -178,7 +178,10 @@ export default function PostDetailPage() {
             </div>
         );
     }
-    if (!post) return notFound();
+    if (!post) {
+      // If loading is finished and there's still no post (and no error string), then it's a true 404
+      notFound();
+    }
 
     const voteCount = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
     const userVote = post.upvotes?.includes(user?.uid || '') ? 'up' : post.downvotes?.includes(user?.uid || '') ? 'down' : null;
