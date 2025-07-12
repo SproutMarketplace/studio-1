@@ -202,8 +202,7 @@ export default function PlantCatalogPage() {
             <Card className="relative overflow-hidden shadow-lg border-none -mx-4 md:-mx-6 lg:-mx-8">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/20 z-10" />
                 <Image
-                    src="https://placehold.co/1200x400.png"
-                    data-ai-hint="plants banner"
+                    src="/plant-images/catalogimage.jpeg"
                     alt="A vibrant collection of house plants arranged on shelves"
                     fill
                     className="object-cover"
@@ -343,3 +342,4 @@ export default function PlantCatalogPage() {
     );
 
     
+
