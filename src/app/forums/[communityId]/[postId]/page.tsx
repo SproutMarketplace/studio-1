@@ -54,20 +54,20 @@ export default function PostDetailPage() {
     });
 
     useEffect(() => {
+        // Ensure we have valid IDs before fetching
         if (!communityId || !postId) return;
 
         const fetchPostAndComments = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const [postData, commentsData] = await Promise.all([
-                    getPostById(communityId, postId),
-                    getCommentsForPost(communityId, postId),
-                ]);
+                const postData = await getPostById(communityId, postId);
 
                 if (!postData) {
                     setError("Post not found.");
+                    // No need to fetch comments if post doesn't exist
                 } else {
+                    const commentsData = await getCommentsForPost(communityId, postId);
                     setPost(postData);
                     setComments(commentsData);
                 }
@@ -155,17 +155,18 @@ export default function PostDetailPage() {
 
     const nextImage = () => {
         if (post && post.imageUrls && post.imageUrls.length > 1) {
-            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % post.imageUrls!.length);
+            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % post.imageUrls.length);
         }
     };
 
     const prevImage = () => {
         if (post && post.imageUrls && post.imageUrls.length > 1) {
-            setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls!.length) % post.imageUrls!.length);
+            setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls.length) % post.imageUrls.length);
         }
     };
     
     if (isLoading) return <PostPageSkeleton />;
+    
     if (error) {
         return (
             <div className="container mx-auto py-8 text-center">
@@ -178,8 +179,9 @@ export default function PostDetailPage() {
             </div>
         );
     }
+    
+    // If loading has finished and there's no error, but the post is still null, it means it wasn't found.
     if (!post) {
-      // If loading is finished and there's still no post (and no error string), then it's a true 404
       notFound();
     }
 
