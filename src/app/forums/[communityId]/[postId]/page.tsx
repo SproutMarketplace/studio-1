@@ -87,7 +87,7 @@ export default function PostDetailPage() {
             toast({ variant: 'destructive', title: 'Please log in to vote.' });
             return;
         }
-        setVoteLoading(voteType);
+        setVoteLoading(voteType === 'upvote' ? 'up' : 'down');
         try {
             await togglePostVote(communityId, postId, user.uid, voteType);
             // Optimistic update
