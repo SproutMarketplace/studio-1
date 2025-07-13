@@ -9,7 +9,7 @@ import type { Post, Comment } from "@/models";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import type { Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -41,7 +41,7 @@ export default function PostDetailPage() {
     const postId = params.postId as string;
     
     const [post, setPost] = useState<Post | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<(Comment & { createdAt: Timestamp | Date })[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [postFound, setPostFound] = useState<boolean | null>(null);
 
@@ -64,7 +64,7 @@ export default function PostDetailPage() {
                 if (postData) {
                     const commentsData = await getCommentsForPost(communityId, postId);
                     setPost(postData);
-                    setComments(commentsData);
+                    setComments(commentsData as (Comment & { createdAt: Timestamp | Date })[]);
                     setPostFound(true);
                 } else {
                     setPostFound(false);
@@ -93,22 +93,21 @@ export default function PostDetailPage() {
                 if (!prevPost) return null;
                 const upvotes = new Set(prevPost.upvotes || []);
                 const downvotes = new Set(prevPost.downvotes || []);
+                const currentVote = upvotes.has(user.uid) ? 'upvote' : downvotes.has(user.uid) ? 'downvote' : null;
 
-                if (voteType === 'upvote') {
-                    if (upvotes.has(user.uid)) {
-                        upvotes.delete(user.uid);
-                    } else {
+                // Clear existing votes for the user
+                upvotes.delete(user.uid);
+                downvotes.delete(user.uid);
+                
+                // Set the new vote, unless it's the same as the old one (which means we're toggling it off)
+                if (voteType !== currentVote) {
+                    if (voteType === 'upvote') {
                         upvotes.add(user.uid);
-                        downvotes.delete(user.uid);
-                    }
-                } else { // downvote
-                    if (downvotes.has(user.uid)) {
-                        downvotes.delete(user.uid);
-                    } else {
+                    } else { // downvote
                         downvotes.add(user.uid);
-                        upvotes.delete(user.uid);
                     }
                 }
+
                 return { ...prevPost, upvotes: Array.from(upvotes), downvotes: Array.from(downvotes) };
             });
         } catch (error) {
@@ -139,7 +138,7 @@ export default function PostDetailPage() {
             setComments(prev => [...prev, {
                 id: newCommentId,
                 ...newComment,
-                createdAt: new Date() as unknown as Timestamp,
+                createdAt: new Date(), // Use JS Date for optimistic update
             }]);
 
             setPost(p => p ? ({ ...p, commentCount: p.commentCount + 1 }) : null);
@@ -161,6 +160,11 @@ export default function PostDetailPage() {
         if (post && post.imageUrls && post.imageUrls.length > 1) {
             setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls!.length) % post.imageUrls!.length);
         }
+    };
+
+    const getFormattedDate = (date: Timestamp | Date) => {
+        const dateToFormat = date instanceof Timestamp ? date.toDate() : date;
+        return formatDistanceToNow(dateToFormat, { addSuffix: true });
     };
     
     if (isLoading) return <PostPageSkeleton />;
@@ -212,7 +216,7 @@ export default function PostDetailPage() {
                         <Link href={`/profile/${post.authorId}`} className="font-medium text-foreground hover:underline">
                             {post.authorUsername}
                         </Link>
-                        {' '} &bull; {post.createdAt ? formatDistanceToNow((post.createdAt as Timestamp).toDate(), { addSuffix: true }) : ''}
+                        {' '} &bull; {post.createdAt ? getFormattedDate(post.createdAt as Timestamp) : ''}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -284,7 +288,7 @@ export default function PostDetailPage() {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 text-sm">
                                     <Link href={`/profile/${comment.authorId}`} className="font-semibold hover:underline">{comment.authorUsername}</Link>
-                                    <span className="text-muted-foreground">&bull; {formatDistanceToNow((comment.createdAt as Timestamp).toDate(), { addSuffix: true })}</span>
+                                    <span className="text-muted-foreground">&bull; {getFormattedDate(comment.createdAt)}</span>
                                 </div>
                                 <p className="text-foreground mt-1">{comment.content}</p>
                             </div>
