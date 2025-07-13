@@ -43,7 +43,7 @@ export default function PostDetailPage() {
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [postFound, setPostFound] = useState<boolean | null>(null);
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [voteLoading, setVoteLoading] = useState<null | 'up' | 'down'>(null);
@@ -54,26 +54,24 @@ export default function PostDetailPage() {
     });
 
     useEffect(() => {
-        // Ensure we have valid IDs before fetching
         if (!communityId || !postId) return;
 
         const fetchPostAndComments = async () => {
             setIsLoading(true);
-            setError(null);
             try {
                 const postData = await getPostById(communityId, postId);
 
-                if (!postData) {
-                    setError("Post not found.");
-                    // No need to fetch comments if post doesn't exist
-                } else {
+                if (postData) {
                     const commentsData = await getCommentsForPost(communityId, postId);
                     setPost(postData);
                     setComments(commentsData);
+                    setPostFound(true);
+                } else {
+                    setPostFound(false);
                 }
             } catch (err) {
                 console.error("Error fetching post details:", err);
-                setError("Failed to load post. It may have been deleted.");
+                setPostFound(false);
             } finally {
                 setIsLoading(false);
             }
@@ -167,22 +165,13 @@ export default function PostDetailPage() {
     
     if (isLoading) return <PostPageSkeleton />;
     
-    if (error) {
-        return (
-            <div className="container mx-auto py-8 text-center">
-                <Card>
-                    <CardHeader><CardTitle className="text-destructive">{error}</CardTitle></CardHeader>
-                    <CardContent>
-                        <Button asChild className="mt-4"><Link href={`/forums/${communityId}`}>Back to Community</Link></Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+    if (postFound === false) {
+        notFound();
     }
     
-    // If loading has finished and there's no error, but the post is still null, it means it wasn't found.
     if (!post) {
-      notFound();
+      // This should ideally not be reached if loading is done and postFound is not false, but as a fallback:
+      return <PostPageSkeleton />;
     }
 
     const voteCount = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
