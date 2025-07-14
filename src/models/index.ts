@@ -107,14 +107,16 @@ export interface Post {
 
 // Replaces the old ForumComment interface
 export interface Comment {
-    id?: string; // Document ID
+    id: string; // Document ID
     postId: string; // Which post it belongs to
     forumId: string; // Which forum it belongs to (for easier queries)
     authorId: string;
     authorUsername:string; // Denormalized
     authorAvatarUrl?: string; // Denormalized
     content: string;
-    createdAt: Timestamp;
+    createdAt: Timestamp | Date; // Allow JS Date for optimistic updates
+    parentId?: string | null; // ID of the parent comment, if it's a reply
+    replyCount?: number; // Denormalized count of replies
 }
 
 export interface RewardTransaction {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { getPostById, getCommentsForPost, addCommentToPost, togglePostVote } from "@/lib/firestoreService";
@@ -23,13 +23,129 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft, CornerDownRight } from "lucide-react";
 
 
 const commentSchema = z.object({
   content: z.string().min(1, "Comment cannot be empty.").max(2000, "Comment is too long."),
 });
 type CommentFormValues = z.infer<typeof commentSchema>;
+
+function CommentForm({
+    onSubmit,
+    isSubmitting,
+    onCancel,
+    placeholder = "Add your comment...",
+    buttonText = "Post Comment"
+}: {
+    onSubmit: (data: CommentFormValues) => Promise<void>;
+    isSubmitting: boolean;
+    onCancel?: () => void;
+    placeholder?: string;
+    buttonText?: string;
+}) {
+    const form = useForm<CommentFormValues>({
+        resolver: zodResolver(commentSchema),
+        defaultValues: { content: "" },
+    });
+
+    const handleSubmit = async (data: CommentFormValues) => {
+        await onSubmit(data);
+        form.reset();
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
+                <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="sr-only">Your Comment</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder={placeholder} {...field} rows={2} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <div className="flex justify-end gap-2">
+                    {onCancel && (
+                         <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+                            Cancel
+                         </Button>
+                    )}
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {buttonText}
+                    </Button>
+                </div>
+            </form>
+        </Form>
+    );
+}
+
+function CommentComponent({ comment, onReply, replies }: { comment: Comment, onReply: (data: CommentFormValues, parentId: string) => Promise<void>, replies: Comment[] }) {
+    const { user } = useAuth();
+    const [isReplying, setIsReplying] = useState(false);
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+    
+    const getFormattedDate = (date: Timestamp | Date) => {
+        const dateToFormat = date instanceof Timestamp ? date.toDate() : date;
+        return formatDistanceToNow(dateToFormat, { addSuffix: true });
+    };
+
+    const handleReplySubmit = async (data: CommentFormValues) => {
+        setIsSubmittingReply(true);
+        await onReply(data, comment.id);
+        setIsSubmittingReply(false);
+        setIsReplying(false);
+    };
+
+    return (
+        <div className="flex flex-col">
+            <div className="flex items-start gap-4">
+                <Avatar className="h-10 w-10 border">
+                    <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorUsername} />
+                    <AvatarFallback><UserIcon /></AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Link href={`/profile/${comment.authorId}`} className="font-semibold hover:underline">{comment.authorUsername}</Link>
+                        <span className="text-muted-foreground">&bull; {getFormattedDate(comment.createdAt)}</span>
+                    </div>
+                    <p className="text-foreground mt-1 whitespace-pre-wrap">{comment.content}</p>
+                    <div className="mt-1">
+                       {user && (
+                         <Button variant="ghost" size="sm" onClick={() => setIsReplying(!isReplying)}>
+                            <CornerDownRight className="w-4 h-4 mr-2"/>
+                            Reply
+                         </Button>
+                       )}
+                    </div>
+                </div>
+            </div>
+            <div className="pl-8 pt-4">
+                 {isReplying && (
+                    <CommentForm
+                        onSubmit={handleReplySubmit}
+                        isSubmitting={isSubmittingReply}
+                        onCancel={() => setIsReplying(false)}
+                        placeholder={`Replying to ${comment.authorUsername}...`}
+                        buttonText="Post Reply"
+                    />
+                 )}
+                 {replies.map(reply => (
+                    <div key={reply.id} className="mt-4">
+                         <CommentComponent comment={reply} onReply={onReply} replies={[]} />
+                    </div>
+                 ))}
+            </div>
+        </div>
+    );
+}
+
 
 export default function PostDetailPage() {
     const params = useParams();
@@ -41,17 +157,14 @@ export default function PostDetailPage() {
     const postId = params.postId as string;
     
     const [post, setPost] = useState<Post | null>(null);
-    const [comments, setComments] = useState<(Comment & { createdAt: Timestamp | Date })[]>([]);
+    const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [postFound, setPostFound] = useState<boolean | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [voteLoading, setVoteLoading] = useState<null | 'up' | 'down'>(null);
 
-    const form = useForm<CommentFormValues>({
-        resolver: zodResolver(commentSchema),
-        defaultValues: { content: "" },
-    });
 
     useEffect(() => {
         if (!communityId || !postId) return;
@@ -64,7 +177,7 @@ export default function PostDetailPage() {
                 if (postData) {
                     const commentsData = await getCommentsForPost(communityId, postId);
                     setPost(postData);
-                    setComments(commentsData as (Comment & { createdAt: Timestamp | Date })[]);
+                    setComments(commentsData as Comment[]);
                     setPostFound(true);
                 } else {
                     setPostFound(false);
@@ -95,11 +208,9 @@ export default function PostDetailPage() {
                 const downvotes = new Set(prevPost.downvotes || []);
                 const currentVote = upvotes.has(user.uid) ? 'upvote' : downvotes.has(user.uid) ? 'downvote' : null;
 
-                // Clear existing votes for the user
                 upvotes.delete(user.uid);
                 downvotes.delete(user.uid);
                 
-                // Set the new vote, unless it's the same as the old one (which means we're toggling it off)
                 if (voteType !== currentVote) {
                     if (voteType === 'upvote') {
                         upvotes.add(user.uid);
@@ -118,55 +229,76 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleCommentSubmit = async (data: CommentFormValues) => {
+    const handleCommentSubmit = async (data: CommentFormValues, parentId: string | null = null) => {
         if (!user || !profile || !post) {
             toast({ variant: 'destructive', title: 'You must be logged in to comment.' });
             return;
         }
+        setIsSubmitting(true);
         try {
-            const newComment = {
+            const newCommentData = {
                 postId: postId,
                 forumId: communityId,
                 authorId: user.uid,
                 authorUsername: profile.username,
                 authorAvatarUrl: profile.avatarUrl || "",
                 content: data.content,
+                parentId,
             };
-            const newCommentId = await addCommentToPost(communityId, postId, newComment);
+            const newCommentId = await addCommentToPost(communityId, postId, newCommentData);
             
             // Optimistic update
-            setComments(prev => [...prev, {
+            const optimisticComment: Comment = {
                 id: newCommentId,
-                ...newComment,
-                createdAt: new Date(), // Use JS Date for optimistic update
-            }]);
+                ...newCommentData,
+                replyCount: 0,
+                createdAt: new Date(),
+            };
+
+            setComments(prev => [...prev, optimisticComment]);
 
             setPost(p => p ? ({ ...p, commentCount: p.commentCount + 1 }) : null);
-
-            form.reset();
+            if (parentId) {
+                setComments(prev => prev.map(c => c.id === parentId ? { ...c, replyCount: (c.replyCount || 0) + 1 } : c));
+            }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to post comment.' });
             console.error(error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+
     const nextImage = () => {
-        if (post && post.imageUrls && post.imageUrls.length > 1) {
+        if (post?.imageUrls && post.imageUrls.length > 1) {
             setCurrentImageIndex((prevIndex) => (prevIndex + 1) % post.imageUrls!.length);
         }
     };
 
     const prevImage = () => {
-        if (post && post.imageUrls && post.imageUrls.length > 1) {
+        if (post?.imageUrls && post.imageUrls.length > 1) {
             setCurrentImageIndex((prevIndex) => (prevIndex - 1 + post.imageUrls!.length) % post.imageUrls!.length);
         }
     };
-
-    const getFormattedDate = (date: Timestamp | Date) => {
-        const dateToFormat = date instanceof Timestamp ? date.toDate() : date;
-        return formatDistanceToNow(dateToFormat, { addSuffix: true });
-    };
     
+    const { rootComments, repliesByParentId } = useMemo(() => {
+        const root: Comment[] = [];
+        const replies: Record<string, Comment[]> = {};
+        for (const comment of comments) {
+            if (comment.parentId) {
+                if (!replies[comment.parentId]) {
+                    replies[comment.parentId] = [];
+                }
+                replies[comment.parentId].push(comment);
+            } else {
+                root.push(comment);
+            }
+        }
+        return { rootComments: root, repliesByParentId: replies };
+    }, [comments]);
+
+
     if (isLoading) return <PostPageSkeleton />;
     
     if (postFound === false) {
@@ -174,12 +306,15 @@ export default function PostDetailPage() {
     }
     
     if (!post) {
-      // This should ideally not be reached if loading is done and postFound is not false, but as a fallback:
       return <PostPageSkeleton />;
     }
 
     const voteCount = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
     const userVote = post.upvotes?.includes(user?.uid || '') ? 'up' : post.downvotes?.includes(user?.uid || '') ? 'down' : null;
+    const getFormattedDate = (date: Timestamp | Date) => {
+        const dateToFormat = date instanceof Timestamp ? date.toDate() : date;
+        return formatDistanceToNow(dateToFormat, { addSuffix: true });
+    };
 
     return (
         <div className="container mx-auto max-w-3xl py-8">
@@ -194,7 +329,7 @@ export default function PostDetailPage() {
                         <Image
                             src={post.imageUrls[currentImageIndex]}
                             alt={`Image for post: ${post.title}`}
-                            layout="fill"
+                            fill
                             objectFit="contain"
                         />
                          {post.imageUrls.length > 1 && (
@@ -246,29 +381,7 @@ export default function PostDetailPage() {
                 {user && (
                     <Card className="mb-6 bg-muted/50">
                         <CardContent className="p-4">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleCommentSubmit)} className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="content"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="sr-only">Your Comment</FormLabel>
-                                                <FormControl>
-                                                    <Textarea placeholder="Add your comment..." {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <div className="flex justify-end">
-                                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Post Comment
-                                        </Button>
-                                    </div>
-                                </form>
-                            </Form>
+                             <CommentForm onSubmit={handleCommentSubmit} isSubmitting={isSubmitting} />
                         </CardContent>
                     </Card>
                 )}
@@ -279,20 +392,13 @@ export default function PostDetailPage() {
                 )}
                 
                 <div className="space-y-6">
-                    {comments.map(comment => (
-                        <div key={comment.id} className="flex items-start gap-4">
-                            <Avatar className="h-10 w-10 border">
-                                <AvatarImage src={comment.authorAvatarUrl} alt={comment.authorUsername} />
-                                <AvatarFallback><UserIcon /></AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 text-sm">
-                                    <Link href={`/profile/${comment.authorId}`} className="font-semibold hover:underline">{comment.authorUsername}</Link>
-                                    <span className="text-muted-foreground">&bull; {getFormattedDate(comment.createdAt)}</span>
-                                </div>
-                                <p className="text-foreground mt-1">{comment.content}</p>
-                            </div>
-                        </div>
+                    {rootComments.map(comment => (
+                        <CommentComponent
+                            key={comment.id}
+                            comment={comment}
+                            onReply={handleCommentSubmit}
+                            replies={repliesByParentId[comment.id] || []}
+                        />
                     ))}
                     {comments.length === 0 && (
                         <p className="text-center text-muted-foreground py-8">Be the first to comment on this post.</p>

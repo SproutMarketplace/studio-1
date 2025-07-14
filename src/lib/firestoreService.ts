@@ -507,31 +507,66 @@ export const getPostById = async (forumId: string, postId: string): Promise<Post
     return null;
 };
 
-export const addCommentToPost = async (forumId: string, postId: string, comment: Omit<Comment, 'id' | 'createdAt'>): Promise<string> => {
+type NewCommentData = Omit<Comment, 'id' | 'createdAt' | 'replyCount'>;
+export const addCommentToPost = async (forumId: string, postId: string, comment: NewCommentData): Promise<string> => {
     if (!db) throw new Error("Firebase Firestore is not configured.");
+    
+    const batch = writeBatch(db);
+
     const commentsCollectionRef = collection(db, 'forums', forumId, 'posts', postId, 'comments');
-    const docRef = await addDoc(commentsCollectionRef, { ...comment, createdAt: serverTimestamp() });
+    const newCommentRef = doc(commentsCollectionRef); // Create a new doc reference with an auto-generated ID
+    
+    batch.set(newCommentRef, { 
+        ...comment, 
+        createdAt: serverTimestamp(),
+        replyCount: 0,
+    });
 
     const postDocRef = doc(db, 'forums', forumId, 'posts', postId);
-    await updateDoc(postDocRef, { commentCount: increment(1) });
+    batch.update(postDocRef, { commentCount: increment(1) });
     
-    // Notify post author
+    let parentAuthorId: string | null = null;
+    if (comment.parentId) {
+        const parentCommentRef = doc(db, 'forums', forumId, 'posts', postId, 'comments', comment.parentId);
+        batch.update(parentCommentRef, { replyCount: increment(1) });
+        
+        // Fetch parent comment author for notification
+        const parentSnap = await getDoc(parentCommentRef);
+        if (parentSnap.exists()) {
+            parentAuthorId = parentSnap.data().authorId;
+        }
+    }
+    
+    await batch.commit();
+
     const postSnap = await getDoc(postDocRef);
     if (postSnap.exists()) {
         const postData = postSnap.data() as Post;
-        if (postData.authorId !== comment.authorId) { // Don't notify if user comments on their own post
-             await createNotification(
+        // Notify the post author if it's a root comment
+        if (!comment.parentId && postData.authorId !== comment.authorId) {
+            await createNotification(
                 postData.authorId,
                 comment.authorId,
                 'newComment',
                 `commented on your post: "${postData.title}"`,
-                `/forums/${forumId}` // Simplified link for now
+                `/forums/${forumId}/${postId}`
+            );
+        }
+        // Notify the parent comment author if it's a reply
+        if (parentAuthorId && parentAuthorId !== comment.authorId) {
+            await createNotification(
+                parentAuthorId,
+                comment.authorId,
+                'newComment',
+                `replied to your comment.`,
+                `/forums/${forumId}/${postId}`
             );
         }
     }
 
-    return docRef.id;
+    return newCommentRef.id;
 };
+
 
 export const getCommentsForPost = async (forumId: string, postId: string): Promise<Comment[]> => {
     if (!db) return [];
