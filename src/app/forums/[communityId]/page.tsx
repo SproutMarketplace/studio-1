@@ -456,7 +456,7 @@ export default function CommunityPage() {
         );
     }
     
-    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || (!user);
+    const isPostButtonDisabled = form.formState.isSubmitting;
 
 
     return (
