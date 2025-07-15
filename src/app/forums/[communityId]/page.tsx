@@ -490,9 +490,9 @@ export default function CommunityPage() {
             <div className="mb-6 flex justify-end">
                  <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
                     <DialogTrigger asChild>
-                        <Button className="text-base" disabled={!user || authLoading}>
+                        <Button className="text-base">
                             <PlusCircle className="mr-2 h-5 w-5" />
-                            {authLoading ? "Loading..." : "Create Post"}
+                            Create Post
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-lg">
