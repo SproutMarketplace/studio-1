@@ -50,6 +50,13 @@ function PostCard({ post }: { post: Post }) {
     const hasImages = post.imageUrls && post.imageUrls.length > 0;
     const postLink = `/forums/${post.forumId}/${post.id}`;
 
+    const getFormattedDate = (date: Timestamp | Date) => {
+        if (!date) return '';
+        // Check if it's a Firestore Timestamp, which has a toDate method
+        const dateToFormat = typeof (date as Timestamp).toDate === 'function' ? (date as Timestamp).toDate() : date;
+        return formatDistanceToNow(dateToFormat, { addSuffix: true });
+    };
+
     return (
         <Card className="shadow-md hover:shadow-lg transition-shadow group flex flex-col">
             {hasImages && (
@@ -84,7 +91,7 @@ function PostCard({ post }: { post: Post }) {
                     </Link>
                 </CardTitle>
                  <CardDescription className="text-xs text-muted-foreground mt-1">
-                    Posted by {post.authorUsername} &bull; {post.createdAt ? formatDistanceToNow((post.createdAt as Timestamp).toDate(), { addSuffix: true }) : ''}
+                    Posted by {post.authorUsername} &bull; {getFormattedDate(post.createdAt)}
                 </CardDescription>
                 <p className="text-sm line-clamp-2 mt-2">{post.content}</p>
             </CardContent>
@@ -250,7 +257,7 @@ export default function CommunityPage() {
                 id: postId,
                 ...newPost,
                 imageUrls,
-                createdAt: new Date() as unknown as Timestamp, // Visually correct, server has true value
+                createdAt: new Date(), // Use JS Date for optimistic update
                 upvotes: [],
                 downvotes: [],
                 commentCount: 0,
