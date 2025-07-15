@@ -346,7 +346,7 @@ export default function CommunityPage() {
     };
 
     const handleCreatePost = async (data: PostFormValues) => {
-        if (!user || !profile) {
+        if (!user) {
             toast({ 
                 variant: "destructive", 
                 title: "Authentication Error", 
@@ -355,7 +355,7 @@ export default function CommunityPage() {
             return;
         }
 
-        const username = profile?.username || user?.displayName;
+        const username = profile?.username || user.displayName;
         if (!username) {
              toast({ 
                 variant: "destructive", 
@@ -376,7 +376,7 @@ export default function CommunityPage() {
                 content: data.content,
                 authorId: user.uid,
                 authorUsername: username,
-                authorAvatarUrl: profile.avatarUrl || user.photoURL || "",
+                authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
                 imageUrls: [], // Start with empty array
             };
             postId = await addForumPost(newPost);
@@ -468,7 +468,7 @@ export default function CommunityPage() {
         );
     }
     
-    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || !profile;
+    const isPostButtonDisabled = form.formState.isSubmitting || authLoading || (!user);
 
 
     return (
@@ -630,3 +630,5 @@ export default function CommunityPage() {
         </div>
     );
 }
+
+    
