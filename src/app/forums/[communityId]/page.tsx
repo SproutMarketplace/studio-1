@@ -80,7 +80,6 @@ function PostCard({
     const getFormattedDate = (date: Post['createdAt']) => {
         if (!date) return '';
         
-        // Check if it's a Firebase Timestamp by looking for the toDate method
         const dateToFormat = (date && typeof (date as Timestamp).toDate === 'function')
             ? (date as Timestamp).toDate()
             : (date as Date);
@@ -173,7 +172,6 @@ export default function CommunityPage() {
     const [error, setError] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     
-    // Edit/Delete states
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [postToDelete, setPostToDelete] = useState<Post | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -187,23 +185,22 @@ export default function CommunityPage() {
         defaultValues: { title: "", content: "" },
     });
     
-    // When dialog opens for editing
     useEffect(() => {
-        if (editingPost) {
+        if (isDialogOpen && editingPost) {
             form.reset({
                 title: editingPost.title,
                 content: editingPost.content,
             });
-            // We don't handle image editing in this flow for simplicity
             setImageFiles([]);
             setImagePreviews([]);
-        } else {
-            // Reset for new post
+        } else if (!isDialogOpen) {
+            // Reset everything when dialog is closed, regardless of mode
             form.reset({ title: "", content: "" });
             setImageFiles([]);
             setImagePreviews([]);
+            setEditingPost(null);
         }
-    }, [editingPost, form]);
+    }, [isDialogOpen, editingPost, form]);
 
 
     useEffect(() => {
@@ -287,11 +284,6 @@ export default function CommunityPage() {
         setIsDialogOpen(true);
     };
 
-    const handleDialogClose = () => {
-        setIsDialogOpen(false);
-        setEditingPost(null); // Clear editing state on close
-    };
-    
     const handleDeleteInitiate = (post: Post) => {
         setPostToDelete(post);
         setIsDeleteAlertOpen(true);
@@ -335,7 +327,7 @@ export default function CommunityPage() {
             // Optimistic update
             setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, ...updatedData } : p));
             toast({ title: "Post Updated!", description: "Your changes have been saved." });
-            handleDialogClose();
+            setIsDialogOpen(false);
         } catch(e) {
              toast({ variant: "destructive", title: "Update Failed", description: "Could not save your changes." });
         }
@@ -399,8 +391,7 @@ export default function CommunityPage() {
             });
 
             // 5. Reset form and close dialog
-            form.reset();
-            handleDialogClose();
+            setIsDialogOpen(false);
         } catch (error) {
             console.error("Error creating post:", error);
             toast({
@@ -488,7 +479,7 @@ export default function CommunityPage() {
             </Card>
 
             <div className="mb-6 flex justify-end">
-                 <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button className="text-base">
                             <PlusCircle className="mr-2 h-5 w-5" />
@@ -558,7 +549,7 @@ export default function CommunityPage() {
                                     </FormItem>
                                 )}
                                 <DialogFooter>
-                                    <Button type="button" variant="ghost" onClick={handleDialogClose}>Cancel</Button>
+                                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                                     <Button type="submit" disabled={isPostButtonDisabled}>
                                         {form.formState.isSubmitting ? (
                                             <>
