@@ -105,6 +105,7 @@ export default function LoginPage() {
         const result = await signInWithGooglePopup();
         const { user } = result;
 
+        // Check if a profile exists, if not, create one.
         const existingProfile = await getUserProfile(user.uid);
 
         if (!existingProfile) {
