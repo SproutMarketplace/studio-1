@@ -479,6 +479,31 @@ export const updateForumPost = async (forumId: string, postId: string, data: Par
     await updateDoc(postRef, data);
 };
 
+export const deleteForumPost = async (forumId: string, post: Post): Promise<void> => {
+    if (!db || !storage || !post.id) {
+        throw new Error("Deletion failed: invalid post data or Firebase service not available.");
+    }
+    
+    // Delete images from Storage
+    if (post.imageUrls && post.imageUrls.length > 0) {
+        for (const url of post.imageUrls) {
+            try {
+                const imageRef = ref(storage, url);
+                await deleteObject(imageRef);
+            } catch (error) {
+                 console.error(`Failed to delete image ${url}:`, error);
+            }
+        }
+    }
+    
+    // Note: Deleting subcollections (like comments) client-side is not recommended for production.
+    // A Cloud Function would be a more robust solution for cascading deletes.
+    // For this implementation, we will just delete the post document.
+    const postDocRef = doc(db, 'forums', forumId, 'posts', post.id);
+    await deleteDoc(postDocRef);
+};
+
+
 export const uploadPostImage = async (forumId: string, postId: string, file: File, index: number): Promise<string> => {
     if (!storage) throw new Error("Firebase Storage is not configured.");
     const imageRef = ref(storage, `post_images/${forumId}/${postId}/${index}_${file.name}`);
