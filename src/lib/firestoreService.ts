@@ -697,20 +697,22 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         }
     }
 
-    // Notify each unique seller
+    await batch.commit();
+
+    // Notify each unique seller separately after the batch commit
     if (buyerProfile) {
         for (const sellerId of sellerIds) {
-            await createNotification(
+            // This is an async operation, but we don't need to wait for it to complete
+            // before returning from createOrder. Let it run in the background.
+            createNotification(
                 sellerId,
                 orderData.userId,
                 'newSale',
                 `sold one of your plants to ${buyerProfile.username}!`,
                 '/seller/orders'
-            );
+            ).catch(err => console.error("Failed to create sale notification:", err));
         }
     }
-
-    await batch.commit();
 };
 
 
@@ -886,5 +888,3 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     });
     return transactions;
 };
-
-    

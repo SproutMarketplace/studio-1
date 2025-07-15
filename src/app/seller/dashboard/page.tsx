@@ -29,12 +29,12 @@ export default function SellerDashboardPage() {
                     
                     const activeListings = userPlants.filter(p => p.isAvailable).length;
                     
-                    const itemsSold: OrderItem[] = sellerOrders.flatMap(order => 
+                    const itemsSoldBySeller = sellerOrders.flatMap(order => 
                         order.items.filter(item => item.sellerId === user.uid)
                     );
                     
-                    const sales = itemsSold.length;
-                    const revenue = itemsSold.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+                    const sales = itemsSoldBySeller.reduce((acc, item) => acc + item.quantity, 0);
+                    const revenue = itemsSoldBySeller.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
                     setStats({ revenue, sales, activeListings });
                 } catch (error) {

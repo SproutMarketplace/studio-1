@@ -66,7 +66,7 @@ export default function OrdersPage() {
                             />
                             <div>
                                 <span className="font-medium group-hover:underline">{item.name}</span>
-                                <p className="text-muted-foreground text-xs">Qty: {item.quantity}</p>
+                                <p className="text-muted-foreground text-xs">Qty: {item.quantity} &bull; Price: ${item.price.toFixed(2)}</p>
                             </div>
                         </Link>
                     </div>
@@ -116,6 +116,7 @@ export default function OrdersPage() {
                             <TableBody>
                                 {orders.map((order) => {
                                     const sellerItems = order.items.filter(item => item.sellerId === user?.uid);
+                                    if (sellerItems.length === 0) return null; // Don't render orders where this user sold nothing
                                     const sellerTotal = sellerItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
                                     return (
