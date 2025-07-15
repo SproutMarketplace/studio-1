@@ -689,9 +689,12 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         buyerUsername: buyerProfile?.username || 'Unknown Buyer'
     });
 
+    // Mark each plant as unavailable
     for (const item of orderData.items) {
-        const plantRef = doc(db, 'plants', item.plantId);
-        batch.update(plantRef, { isAvailable: false });
+        if (item.plantId) {
+            const plantRef = doc(db, 'plants', item.plantId);
+            batch.update(plantRef, { isAvailable: false });
+        }
     }
 
     // Notify each unique seller
@@ -883,3 +886,5 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     });
     return transactions;
 };
+
+    
