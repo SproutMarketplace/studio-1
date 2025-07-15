@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { auth, signInWithGooglePopup, db } from "@/lib/firebase";
+import { auth, signInWithGooglePopup } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "@/contexts/auth-context";
-import { doc, getDoc } from "firebase/firestore";
-import { logoutUser } from "@/lib/firestoreService";
+import { getUserProfile, createUserProfile } from "@/lib/firestoreService";
+
 
 const GoogleLogo = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -101,48 +101,47 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setIsGoogleLoading(true);
-    if (!auth || !db) {
-      toast({
-        variant: "destructive",
-        title: "Offline Mode",
-        description: "Cannot log in while in offline mode. Please configure Firebase keys.",
-      });
-      setIsGoogleLoading(false);
-      return;
-    }
     try {
-      const userCredential = await signInWithGooglePopup();
-      const user = userCredential.user;
+        const result = await signInWithGooglePopup();
+        const { user } = result;
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(userDocRef);
+        const existingProfile = await getUserProfile(user.uid);
 
-      if (docSnap.exists()) {
+        if (!existingProfile) {
+            await createUserProfile({
+                userId: user.uid,
+                username: user.displayName || 'Sprout User',
+                email: user.email!,
+                plantsListed: 0,
+                plantsTraded: 0,
+                rewardPoints: 0,
+                favoritePlants: [],
+                followers: [],
+                following: [],
+            });
+             toast({
+                title: "Welcome to Sprout!",
+                description: "Your account has been created.",
+            });
+        } else {
+             toast({
+                title: "Welcome Back!",
+                description: "You've been successfully signed in.",
+            });
+        }
+        
         await refreshUserProfile();
-        toast({
-          title: "Google Sign-In Successful!",
-          description: "Welcome! Redirecting to the catalog...",
-        });
         router.push("/catalog");
-      } else {
-        await logoutUser();
-        toast({
-          variant: "destructive",
-          title: "No Account Found",
-          description: "No account exists with this Google account. Please sign up first.",
-        });
-      }
     } catch (error: any) {
-      console.error("Google Sign-In error:", error);
-      if (error.code !== "auth/popup-closed-by-user") {
-          toast({
-              variant: "destructive",
-              title: "Google Sign-In Failed",
-              description: "There was a problem signing you in with Google. Please try again.",
-          });
-      }
+        if (error.code !== "auth/popup-closed-by-user") {
+            toast({
+                variant: "destructive",
+                title: "Google Sign-In Failed",
+                description: "There was a problem signing you in with Google. Please try again.",
+            });
+        }
     } finally {
-      setIsGoogleLoading(false);
+        setIsGoogleLoading(false);
     }
   }
 

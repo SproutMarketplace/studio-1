@@ -19,9 +19,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { registerUser, getUserProfile, createUserProfile } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
-import { auth, signInWithGooglePopup, db } from "@/lib/firebase";
+import { signInWithGooglePopup } from "@/lib/firebase";
 import Image from "next/image";
-import { User } from 'firebase/auth';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
