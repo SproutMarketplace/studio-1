@@ -43,10 +43,11 @@ export default function StatsPage() {
                     orders.forEach(order => {
                         const month = format((order.createdAt as Timestamp).toDate(), "MMM yy");
                         const sellerItems = order.items.filter(item => item.sellerId === user.uid);
+                        const saleCount = sellerItems.reduce((acc, item) => acc + item.quantity, 0);
                         if (!monthlySales[month]) {
                             monthlySales[month] = 0;
                         }
-                        monthlySales[month] += sellerItems.length;
+                        monthlySales[month] += saleCount;
                     });
                     
                     const last6Months = Array.from({ length: 6 }, (_, i) => {
