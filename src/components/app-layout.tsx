@@ -185,12 +185,18 @@ function AppSidebar() {
 
 function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => void; unreadCount: number }) {
     const { itemCount } = useCart();
+    const { open } = useSidebar();
 
     return (
         <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <SidebarTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Toggle Menu" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        aria-label="Toggle Menu" 
+                        className={cn("hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", open && "hidden")}
+                    >
                         <PanelLeft />
                     </Button>
                 </SidebarTrigger>
