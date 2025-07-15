@@ -98,7 +98,7 @@ export interface Post {
     authorId: string;
     authorUsername: string; // Denormalized
     authorAvatarUrl?: string; // Denormalized
-    createdAt: Timestamp;
+    createdAt: Timestamp | Date; // Allow JS Date for optimistic updates
     upvotes: string[]; // Array of userIDs
     downvotes: string[]; // Array of userIDs
     commentCount: number; // Denormalized

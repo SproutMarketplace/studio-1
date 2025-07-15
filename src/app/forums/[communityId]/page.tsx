@@ -54,9 +54,9 @@ function PostCard({ post }: { post: Post }) {
         if (!date) return '';
         
         let dateToFormat: Date;
-        if ('toDate' in date && typeof date.toDate === 'function') {
-            // It's a Firebase Timestamp
-            dateToFormat = date.toDate();
+        // Check if it's a Firebase Timestamp by looking for the toDate method
+        if (date && typeof (date as Timestamp).toDate === 'function') {
+            dateToFormat = (date as Timestamp).toDate();
         } else {
             // It's already a JavaScript Date
             dateToFormat = date as Date;
