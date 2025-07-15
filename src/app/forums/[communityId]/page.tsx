@@ -52,8 +52,16 @@ function PostCard({ post }: { post: Post }) {
 
     const getFormattedDate = (date: Timestamp | Date) => {
         if (!date) return '';
-        // Check if it's a Firestore Timestamp, which has a toDate method
-        const dateToFormat = typeof (date as Timestamp).toDate === 'function' ? (date as Timestamp).toDate() : date;
+        
+        let dateToFormat: Date;
+        if ('toDate' in date && typeof date.toDate === 'function') {
+            // It's a Firebase Timestamp
+            dateToFormat = date.toDate();
+        } else {
+            // It's already a JavaScript Date
+            dateToFormat = date as Date;
+        }
+
         return formatDistanceToNow(dateToFormat, { addSuffix: true });
     };
 
