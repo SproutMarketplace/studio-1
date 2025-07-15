@@ -16,7 +16,6 @@ interface AuthContextType {
   unreadNotificationCount: number;
   refreshUserProfile: () => Promise<void>;
   updateUserProfileInContext: (updatedProfileData: Partial<User>) => void;
-  developerBypass: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,7 +25,6 @@ const AuthContext = createContext<AuthContextType>({
   unreadNotificationCount: 0,
   refreshUserProfile: async () => {},
   updateUserProfileInContext: () => {},
-  developerBypass: () => {},
 });
 
 export function useAuth() {
@@ -121,40 +119,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateUserProfileInContext = useCallback((updatedProfileData: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
   }, []);
-
-  const developerBypass = useCallback(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const devUser = {
-        uid: 'dev_user_id',
-        email: 'dev@example.com',
-        displayName: 'Dev User',
-        photoURL: 'https://placehold.co/100x100.png',
-      } as FirebaseAuthUser;
-      
-      const devProfile: User = {
-        id: 'dev_user_id',
-        userId: 'dev_user_id',
-        username: 'Dev User',
-        email: 'dev@example.com',
-        avatarUrl: 'https://placehold.co/100x100.png',
-        bio: 'Bypassing auth for development.',
-        location: 'Localhost',
-        joinedDate: FirestoreTimestamp.now(),
-        plantsListed: 5,
-        plantsTraded: 2,
-        rewardPoints: 150,
-        favoritePlants: [],
-        followers: [],
-        following: [],
-      };
-      
-      setUser(devUser);
-      setProfile(devProfile);
-      setLoading(false);
-    } else {
-      console.warn("Developer bypass is only available in development environment.");
-    }
-  }, []);
   
   const value = useMemo(() => ({
     user,
@@ -163,8 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     unreadNotificationCount,
     refreshUserProfile,
     updateUserProfileInContext,
-    developerBypass,
-  }), [user, profile, loading, unreadNotificationCount, refreshUserProfile, updateUserProfileInContext, developerBypass]);
+  }), [user, profile, loading, unreadNotificationCount, refreshUserProfile, updateUserProfileInContext]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

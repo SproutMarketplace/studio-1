@@ -44,7 +44,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { refreshUserProfile, developerBypass } = useAuth();
+  const { refreshUserProfile } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -54,17 +54,6 @@ export default function LoginPage() {
       password: "",
     },
   });
-
-  const handleDeveloperBypass = () => {
-    if (process.env.NODE_ENV === 'development') {
-      developerBypass();
-      toast({
-        title: "Developer Bypass Activated",
-        description: "You are now logged in as a developer.",
-      });
-      router.push("/catalog");
-    }
-  };
 
   async function onSubmit(data: LoginFormValues) {
     form.clearErrors();
@@ -240,17 +229,6 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </p>
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6">
-            <Button
-              variant="link"
-              className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground"
-              onClick={handleDeveloperBypass}
-            >
-              Developer Bypass &rarr;
-            </Button>
-          </div>
-        )}
       </div>
     </>
   );
