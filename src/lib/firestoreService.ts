@@ -676,13 +676,16 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     if (!db) throw new Error("Firestore is not initialized.");
 
     const batch = writeBatch(db);
-
     const orderRef = doc(collection(db, 'orders'));
+    
     const buyerProfile = await getUserProfile(orderData.userId);
     const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
 
     batch.set(orderRef, {
-        ...orderData,
+        userId: orderData.userId,
+        items: orderData.items, // Use the parsed items array directly
+        totalAmount: orderData.totalAmount,
+        stripeSessionId: orderData.stripeSessionId,
         status: 'processing',
         createdAt: serverTimestamp(),
         sellerIds: sellerIds,
@@ -702,8 +705,6 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     // Notify each unique seller separately after the batch commit
     if (buyerProfile) {
         for (const sellerId of sellerIds) {
-            // This is an async operation, but we don't need to wait for it to complete
-            // before returning from createOrder. Let it run in the background.
             createNotification(
                 sellerId,
                 orderData.userId,
