@@ -128,20 +128,20 @@ export default function LoginPage() {
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
-      if (!docSnap.exists()) {
-        await logoutUser();
-        toast({
-          variant: "destructive",
-          title: "No Account Found",
-          description: "No account exists with this Google account. Please sign up first.",
-        });
-      } else {
+      if (docSnap.exists()) {
         await refreshUserProfile();
         toast({
           title: "Google Sign-In Successful!",
           description: "Welcome! Redirecting to the catalog...",
         });
         router.push("/catalog");
+      } else {
+        await logoutUser();
+        toast({
+          variant: "destructive",
+          title: "No Account Found",
+          description: "No account exists with this Google account. Please sign up first.",
+        });
       }
     } catch (error: any) {
       console.error("Google Sign-In error:", error);

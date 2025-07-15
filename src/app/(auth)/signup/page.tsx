@@ -17,10 +17,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { registerUser } from "@/lib/firestoreService";
+import { registerUser, getUserProfile, createUserProfile } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
-import { signInWithGooglePopup } from "@/lib/firebase";
+import { auth, signInWithGooglePopup, db } from "@/lib/firebase";
 import Image from "next/image";
+import { User } from 'firebase/auth';
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -68,17 +69,32 @@ export default function SignupPage() {
         const result = await signInWithGooglePopup();
         const { user } = result;
 
-        const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-        if (isNewUser) {
-           await registerUser(user.email!, "password", user.displayName || 'Sprout User');
+        const existingProfile = await getUserProfile(user.uid);
+
+        if (!existingProfile) {
+            await createUserProfile({
+                userId: user.uid,
+                username: user.displayName || 'Sprout User',
+                email: user.email!,
+                plantsListed: 0,
+                plantsTraded: 0,
+                rewardPoints: 0,
+                favoritePlants: [],
+                followers: [],
+                following: [],
+            });
+             toast({
+                title: "Sign Up Successful!",
+                description: "Welcome to Sprout!",
+            });
+        } else {
+             toast({
+                title: "Welcome Back!",
+                description: "You've been successfully signed in.",
+            });
         }
         
         await refreshUserProfile();
-        
-        toast({
-            title: "Sign Up Successful!",
-            description: "Welcome to Sprout!",
-        });
         router.push("/catalog");
     } catch (error: any) {
         if (error.code !== "auth/popup-closed-by-user") {
