@@ -80,14 +80,10 @@ function PostCard({
     const getFormattedDate = (date: Post['createdAt']) => {
         if (!date) return '';
         
-        let dateToFormat: Date;
         // Check if it's a Firebase Timestamp by looking for the toDate method
-        if (date && typeof (date as Timestamp).toDate === 'function') {
-            dateToFormat = (date as Timestamp).toDate();
-        } else {
-            // It's already a JavaScript Date
-            dateToFormat = date as Date;
-        }
+        const dateToFormat = (date && typeof (date as Timestamp).toDate === 'function')
+            ? (date as Timestamp).toDate()
+            : (date as Date);
 
         return formatDistanceToNow(dateToFormat, { addSuffix: true });
     };
@@ -355,15 +351,7 @@ export default function CommunityPage() {
             return;
         }
 
-        const username = profile?.username || user.displayName;
-        if (!username) {
-             toast({ 
-                variant: "destructive", 
-                title: "Profile Error", 
-                description: "Your username could not be found. Please try again." 
-            });
-            return;
-        }
+        const username = profile?.username || user.displayName || "Sprout User";
         
         form.clearErrors();
         let postId = "";
@@ -630,5 +618,3 @@ export default function CommunityPage() {
         </div>
     );
 }
-
-    
