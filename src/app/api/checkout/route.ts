@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
-                    imageUrl: item.imageUrls[0] || "", // Pass only the first URL
-                    sellerId: item.ownerId
+                    imageUrl: item.imageUrls[0] || "",
+                    ownerId: item.ownerId // Use ownerId here
                 }))),
             }
         });
