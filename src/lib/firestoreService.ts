@@ -696,7 +696,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
 
     // Mark each plant in the order as unavailable
     for (const item of orderData.items) {
-        if (item.id) { // Use item.id which is the plantId
+        if (item.id) { // Use item.id which is the plantId from webhook metadata
             const plantRef = doc(db, 'plants', item.id);
             batch.update(plantRef, { isAvailable: false });
         }
