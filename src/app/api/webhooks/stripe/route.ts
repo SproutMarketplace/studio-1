@@ -16,6 +16,7 @@ if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HE
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
+        console.error("Webhook Error: Stripe or webhook secret not configured.");
         return NextResponse.json({ error: 'Stripe or checkout webhook secret not configured.' }, { status: 500 });
     }
 
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     try {
         event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err: any) {
+        console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
@@ -39,8 +41,8 @@ export async function POST(req: NextRequest) {
         try {
             const { userId, cartItems: cartItemsString } = session.metadata || {};
             if (!userId || !cartItemsString) {
-                console.error('Webhook Error: Missing metadata in Stripe session.', session.metadata);
-                throw new Error('Missing metadata in Stripe session.');
+                console.error('Webhook Error: Missing metadata in Stripe session.', session.id);
+                throw new Error('Missing or invalid metadata in Stripe session.');
             }
 
             const items: OrderItem[] = JSON.parse(cartItemsString);

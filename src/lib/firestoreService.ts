@@ -716,8 +716,8 @@ export const createOrder = async (
 
         // 2. Mark each plant in this sub-order as unavailable
         for (const item of sellerItems) {
-            if (item.id) { // Use the plant's actual document ID
-                const plantRef = doc(db, 'plants', item.id);
+            if (item.plantId) { // Use the plant's actual document ID
+                const plantRef = doc(db, 'plants', item.plantId);
                 batch.update(plantRef, { isAvailable: false });
             }
         }

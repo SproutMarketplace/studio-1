@@ -39,8 +39,7 @@ export interface PlantListing {
 }
 
 export interface OrderItem {
-    id?: string; // The ID of the plant listing
-    plantId: string;
+    plantId: string; // The document ID of the plant listing
     name: string;
     price: number;
     quantity: number;
