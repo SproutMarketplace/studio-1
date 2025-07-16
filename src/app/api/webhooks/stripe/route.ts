@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
             }
 
             // Correctly parse the JSON string from metadata
-            const items: OrderItem[] = JSON.parse(cartItemsString);
+            const items = JSON.parse(cartItemsString);
 
             await createOrder({
                 userId: userId,

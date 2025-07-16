@@ -680,17 +680,12 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     
     const buyerProfile = await getUserProfile(orderData.userId);
 
-    const mappedItems: OrderItem[] = orderData.items.map(item => ({
-        ...item,
-        sellerId: (item as any).ownerId, // Map ownerId to sellerId
-    }));
-
-    const sellerIds = [...new Set(mappedItems.map(item => item.sellerId))];
+    const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
 
     // Create the order document
     batch.set(orderRef, {
         userId: orderData.userId,
-        items: mappedItems,
+        items: orderData.items,
         totalAmount: orderData.totalAmount,
         stripeSessionId: orderData.stripeSessionId,
         status: 'processing' as const,
@@ -700,9 +695,9 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     });
 
     // Mark each plant in the order as unavailable
-    for (const item of mappedItems) {
-        if (item.plantId) {
-            const plantRef = doc(db, 'plants', item.plantId);
+    for (const item of orderData.items) {
+        if (item.id) { // Use item.id which is the plantId
+            const plantRef = doc(db, 'plants', item.id);
             batch.update(plantRef, { isAvailable: false });
         }
     }
