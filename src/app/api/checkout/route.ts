@@ -68,12 +68,13 @@ export async function POST(req: NextRequest) {
             metadata: {
                 userId,
                 cartItems: JSON.stringify(items.map(item => ({
-                    id: item.id, // Ensure this is the plant document ID
+                    id: item.id,
+                    plantId: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
                     imageUrl: item.imageUrls[0] || "",
-                    sellerId: item.ownerId
+                    sellerId: item.ownerId, // Correctly map ownerId to sellerId
                 }))),
             }
         });
