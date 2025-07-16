@@ -33,6 +33,7 @@ export default function OrdersPage() {
             const fetchOrders = async () => {
                 setIsLoading(true);
                 try {
+                    // This function now correctly fetches orders where the user is the seller
                     const fetchedOrders = await getOrdersForSeller(user.uid);
                     setOrders(fetchedOrders);
                 } catch (error) {
@@ -48,13 +49,9 @@ export default function OrdersPage() {
     }, [user, authLoading]);
 
     const renderOrderItemsForSeller = (items: OrderItem[]) => {
-        if (!user) return null;
-
-        const sellerItems = items.filter(item => item.sellerId === user.uid);
-        
         return (
             <div className="space-y-2">
-                {sellerItems.map(item => (
+                {items.map(item => (
                     <div key={item.plantId} className="flex items-center gap-2 text-sm">
                         <Link href={`/plant/${item.plantId}`} className="flex items-center gap-2 text-sm group">
                             <Image
@@ -114,27 +111,21 @@ export default function OrdersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {orders.map((order) => {
-                                    const sellerItems = order.items.filter(item => item.sellerId === user?.uid);
-                                    if (sellerItems.length === 0) return null; // Don't render orders where this user sold nothing
-                                    const sellerTotal = sellerItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-                                    return (
-                                        <TableRow key={order.id}>
-                                            <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
-                                            <TableCell>{order.buyerUsername}</TableCell>
-                                            <TableCell>
-                                                {renderOrderItemsForSeller(order.items)}
-                                            </TableCell>
-                                            <TableCell className="font-medium">${sellerTotal.toFixed(2)}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={getStatusVariant(order.status)} className="capitalize">
-                                                    {order.status}
-                                                </Badge>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
+                                {orders.map((order) => (
+                                    <TableRow key={order.id}>
+                                        <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                        <TableCell>{order.buyerUsername}</TableCell>
+                                        <TableCell>
+                                            {renderOrderItemsForSeller(order.items)}
+                                        </TableCell>
+                                        <TableCell className="font-medium">${order.totalAmount.toFixed(2)}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getStatusVariant(order.status)} className="capitalize">
+                                                {order.status}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     ) : (

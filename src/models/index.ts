@@ -39,6 +39,7 @@ export interface PlantListing {
 }
 
 export interface OrderItem {
+    id?: string; // The ID of the plant listing
     plantId: string;
     name: string;
     price: number;
@@ -50,7 +51,7 @@ export interface OrderItem {
 export interface Order {
     id?: string; // Document ID
     userId: string; // Buyer's ID
-    sellerIds: string[]; // Array of all seller IDs in the order
+    sellerId: string; // The ID of the seller for this specific order
     items: OrderItem[];
     totalAmount: number;
     status: 'processing' | 'shipped' | 'delivered' | 'cancelled';

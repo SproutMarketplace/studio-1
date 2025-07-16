@@ -42,15 +42,14 @@ export async function POST(req: NextRequest) {
                 throw new Error('Missing metadata in Stripe session.');
             }
 
-            // Correctly parse the JSON string from metadata
-            const items = JSON.parse(cartItemsString);
+            const items: OrderItem[] = JSON.parse(cartItemsString);
 
-            await createOrder({
-                userId: userId,
-                items: items,
-                totalAmount: session.amount_total ? session.amount_total / 100 : 0,
-                stripeSessionId: session.id,
-            });
+            // The createOrder function now handles creating separate orders per seller
+            await createOrder(
+                userId,
+                items,
+                session.id
+            );
 
         } catch (error) {
             console.error('Error handling checkout.session.completed event:', error);

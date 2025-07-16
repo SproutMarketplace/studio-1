@@ -671,63 +671,79 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
 
 // --- Order Functions ---
 
-// Called by the Stripe webhook
-export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'sellerIds'>): Promise<void> => {
+// Called by the Stripe webhook. Now creates separate orders for each seller.
+export const createOrder = async (
+    buyerId: string, 
+    items: OrderItem[], 
+    stripeSessionId: string
+): Promise<void> => {
     if (!db) throw new Error("Firestore is not initialized.");
 
-    const batch = writeBatch(db);
-    const orderRef = doc(collection(db, 'orders'));
-    
-    const buyerProfile = await getUserProfile(orderData.userId);
-
-    const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
-
-    // Create the order document
-    batch.set(orderRef, {
-        userId: orderData.userId,
-        items: orderData.items,
-        totalAmount: orderData.totalAmount,
-        stripeSessionId: orderData.stripeSessionId,
-        status: 'processing' as const,
-        createdAt: serverTimestamp(),
-        sellerIds: sellerIds,
-        buyerUsername: buyerProfile?.username || 'Unknown Buyer'
-    });
-
-    // Mark each plant in the order as unavailable
-    for (const item of orderData.items) {
-        if (item.plantId) {
-            const plantRef = doc(db, 'plants', item.plantId);
-            batch.update(plantRef, { isAvailable: false });
-        }
+    const buyerProfile = await getUserProfile(buyerId);
+    if (!buyerProfile) {
+        console.error("Could not create order: Buyer profile not found.");
+        return;
     }
 
-    // Atomically commit all the changes
-    await batch.commit();
-
-    // Notify each unique seller separately after the batch commit
-    if (buyerProfile) {
-        for (const sellerId of sellerIds) {
-            createNotification(
-                sellerId,
-                orderData.userId,
-                'newSale',
-                `sold one of your plants to ${buyerProfile.username}!`,
-                '/seller/orders'
-            ).catch(err => console.error("Failed to create sale notification:", err));
+    // Group items by seller
+    const itemsBySeller = items.reduce((acc, item) => {
+        const sellerId = item.sellerId;
+        if (!acc[sellerId]) {
+            acc[sellerId] = [];
         }
+        acc[sellerId].push(item);
+        return acc;
+    }, {} as { [key: string]: OrderItem[] });
+
+    // Create a separate order and perform updates for each seller
+    for (const sellerId in itemsBySeller) {
+        const batch = writeBatch(db);
+        const sellerItems = itemsBySeller[sellerId];
+        const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+        // 1. Create one order document per seller
+        const orderRef = doc(collection(db, 'orders'));
+        batch.set(orderRef, {
+            userId: buyerId,
+            sellerId: sellerId,
+            items: sellerItems,
+            totalAmount: sellerTotal,
+            status: 'processing',
+            createdAt: serverTimestamp(),
+            stripeSessionId: stripeSessionId,
+            buyerUsername: buyerProfile.username || 'Unknown Buyer'
+        });
+
+        // 2. Mark each plant in this sub-order as unavailable
+        for (const item of sellerItems) {
+            if (item.id) { // Use the plant's actual document ID
+                const plantRef = doc(db, 'plants', item.id);
+                batch.update(plantRef, { isAvailable: false });
+            }
+        }
+
+        // 3. Commit the batch for this seller
+        await batch.commit();
+
+        // 4. Notify this seller
+        createNotification(
+            sellerId,
+            buyerId,
+            'newSale',
+            `sold one of your plants to ${buyerProfile.username}!`,
+            '/seller/orders'
+        ).catch(err => console.error("Failed to create sale notification:", err));
     }
 };
 
-
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'orders'
-// Fields: 1. sellerIds (Array-contains), 2. createdAt (Descending)
+// Fields: 1. sellerId (Ascending), 2. createdAt (Descending)
 export const getOrdersForSeller = async (sellerId: string): Promise<Order[]> => {
     if (!db) return [];
     const q = query(
         collection(db, 'orders'),
-        where('sellerIds', 'array-contains', sellerId),
+        where('sellerId', '==', sellerId),
         orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
