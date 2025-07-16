@@ -672,7 +672,7 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
 // --- Order Functions ---
 
 // Called by the Stripe webhook
-export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'sellerIds'>): Promise<void> => {
+export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'sellerIds' | 'items'> & { items: OrderItem[] }): Promise<void> => {
     if (!db) throw new Error("Firestore is not initialized.");
 
     const batch = writeBatch(db);
@@ -681,18 +681,19 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
     const buyerProfile = await getUserProfile(orderData.userId);
     const sellerIds = [...new Set(orderData.items.map(item => item.sellerId))];
 
+    // Create the order document
     batch.set(orderRef, {
         userId: orderData.userId,
-        items: orderData.items, // Use the parsed items array directly
+        items: orderData.items,
         totalAmount: orderData.totalAmount,
         stripeSessionId: orderData.stripeSessionId,
-        status: 'processing',
+        status: 'processing' as const,
         createdAt: serverTimestamp(),
         sellerIds: sellerIds,
         buyerUsername: buyerProfile?.username || 'Unknown Buyer'
     });
 
-    // Mark each plant as unavailable
+    // Mark each plant in the order as unavailable
     for (const item of orderData.items) {
         if (item.plantId) {
             const plantRef = doc(db, 'plants', item.plantId);
@@ -700,6 +701,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 's
         }
     }
 
+    // Atomically commit all the changes
     await batch.commit();
 
     // Notify each unique seller separately after the batch commit
