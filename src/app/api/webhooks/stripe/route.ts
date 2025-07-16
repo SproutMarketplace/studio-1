@@ -37,12 +37,13 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
 
         try {
-            const { userId, cartItems } = session.metadata || {};
-            if (!userId || !cartItems) {
+            const { userId, cartItems: cartItemsString } = session.metadata || {};
+            if (!userId || !cartItemsString) {
                 throw new Error('Missing metadata in Stripe session.');
             }
 
-            const items: OrderItem[] = JSON.parse(cartItems);
+            // Correctly parse the JSON string from metadata
+            const items: OrderItem[] = JSON.parse(cartItemsString);
 
             await createOrder({
                 userId: userId,
