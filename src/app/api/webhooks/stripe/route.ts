@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
     }
 
     let event: Stripe.Event;
+    const body = await req.text();
     
     try {
-        const body = await req.text();
         event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err: any) {
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         try {
             const { userId, cartItems: cartItemsString } = session.metadata || {};
             if (!userId || !cartItemsString) {
+                console.error('Webhook Error: Missing metadata in Stripe session.', session.metadata);
                 throw new Error('Missing metadata in Stripe session.');
             }
 
