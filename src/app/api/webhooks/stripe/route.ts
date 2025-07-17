@@ -11,8 +11,26 @@ let stripe: Stripe | null = null;
 if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
     stripe = new Stripe(stripeSecretKey, {
         apiVersion: '2024-06-20',
+        typescript: true,
     });
 }
+
+// This disables the default body parser to allow us to read the raw body
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
+// Helper function to buffer the request
+async function buffer(readable: ReadableStream<Uint8Array>) {
+    const chunks = [];
+    for await (const chunk of readable) {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    return Buffer.concat(chunks);
+}
+
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
@@ -22,21 +40,23 @@ export async function POST(req: NextRequest) {
 
     const sig = req.headers.get('stripe-signature');
     if (!sig) {
+        console.error('Webhook Error: No stripe-signature header value was provided.');
         return NextResponse.json({ error: 'No stripe-signature header value was provided.' }, { status: 400 });
     }
 
-    let verifiedEvent: Stripe.Event;
+    const rawBody = await buffer(req.body!);
+
+    let event: Stripe.Event;
     
     try {
-        const body = await req.arrayBuffer();
-        verifiedEvent = stripe.webhooks.constructEvent(Buffer.from(body), sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
-    if (verifiedEvent.type === 'checkout.session.completed') {
-        const session = verifiedEvent.data.object as Stripe.Checkout.Session;
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
 
         try {
             const { userId, cartItems: cartItemsString } = session.metadata || {};

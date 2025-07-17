@@ -697,6 +697,12 @@ export const createOrder = async (
 
     // Create a separate order and perform updates for each seller
     for (const sellerId in itemsBySeller) {
+        const sellerProfile = await getUserProfile(sellerId);
+        if (!sellerProfile) {
+            console.error(`Could not process order for seller ${sellerId}: Profile not found.`);
+            continue; // Skip this seller and move to the next
+        }
+        
         const batch = writeBatch(db);
         const sellerItems = itemsBySeller[sellerId];
         const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -716,7 +722,7 @@ export const createOrder = async (
 
         // 2. Mark each plant in this sub-order as unavailable
         for (const item of sellerItems) {
-            if (item.plantId) { // Use the plant's actual document ID
+            if (item.plantId) {
                 const plantRef = doc(db, 'plants', item.plantId);
                 batch.update(plantRef, { isAvailable: false });
             }
