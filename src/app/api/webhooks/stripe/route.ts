@@ -25,18 +25,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No stripe-signature header value was provided.' }, { status: 400 });
     }
 
-    let event: Stripe.Event;
+    let verifiedEvent: Stripe.Event;
     
     try {
         const body = await req.arrayBuffer();
-        event = stripe.webhooks.constructEvent(Buffer.from(body), sig, webhookSecret);
+        verifiedEvent = stripe.webhooks.constructEvent(Buffer.from(body), sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object as Stripe.Checkout.Session;
+    if (verifiedEvent.type === 'checkout.session.completed') {
+        const session = verifiedEvent.data.object as Stripe.Checkout.Session;
 
         try {
             const { userId, cartItems: cartItemsString } = session.metadata || {};
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
 
             const items: OrderItem[] = JSON.parse(cartItemsString);
 
-            // The createOrder function now handles creating separate orders per seller
             await createOrder(
                 userId,
                 items,
@@ -56,7 +55,6 @@ export async function POST(req: NextRequest) {
 
         } catch (error) {
             console.error('Error handling checkout.session.completed event:', error);
-            // Return 500 so Stripe knows to retry the webhook
             return NextResponse.json({ error: 'Error processing order.' }, { status: 500 });
         }
     }
