@@ -702,7 +702,7 @@ export const createOrder = async (
         try {
             const sellerProfile = await getUserProfile(sellerId);
             if (!sellerProfile) {
-                console.error(`Could not process order for seller ${sellerId}: Profile not found. Skipping.`);
+                console.warn(`Could not process order for seller ${sellerId}: Profile not found. Skipping.`);
                 continue; // Skip this seller's items and move to the next
             }
             
