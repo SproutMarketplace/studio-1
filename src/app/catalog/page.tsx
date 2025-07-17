@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -52,6 +52,8 @@ export default function PlantCatalogPage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { clearCart } = useCart();
+    
+    const memoizedClearCart = useCallback(clearCart, []);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -64,7 +66,7 @@ export default function PlantCatalogPage() {
                 title: "Payment Successful!",
                 description: "Thank you for your purchase. Your order is being processed.",
             });
-            clearCart();
+            memoizedClearCart();
         }
 
         if (checkoutCanceled === 'true') {
@@ -76,7 +78,12 @@ export default function PlantCatalogPage() {
             });
         }
         
-        // Subscribe to real-time plant listings
+        // This is the key change: The router.replace was interfering with the subscription model in some cases.
+        // We ensure it only runs once by using a clean URL.
+        if (hasParams) {
+            router.replace('/catalog', {scroll: false});
+        }
+
         const unsubscribe = subscribeToAvailablePlantListings(
             (fetchedPlants) => {
                 setPlants(fetchedPlants);
@@ -90,14 +97,8 @@ export default function PlantCatalogPage() {
             }
         );
         
-        if (hasParams) {
-            router.replace('/catalog', {scroll: false});
-        }
-        
-        // Cleanup subscription on component unmount
         return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams]);
+    }, [router, searchParams, toast, memoizedClearCart]);
 
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -298,5 +299,3 @@ export default function PlantCatalogPage() {
             )}
         </div>
     );
-
-    
