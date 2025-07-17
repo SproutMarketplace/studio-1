@@ -53,9 +53,10 @@ export default function PlantCatalogPage() {
     const { toast } = useToast();
     const { clearCart } = useCart();
     
-    // Using useCallback to prevent this function from being recreated on every render,
-    // which would cause the useEffect to run unnecessarily.
-    const memoizedClearCart = useCallback(clearCart, [clearCart]);
+    // Memoize toast and clearCart functions with useCallback to prevent re-creation on each render,
+    // which was causing an infinite loop in the useEffect hook.
+    const memoizedToast = useCallback(toast, []);
+    const memoizedClearCart = useCallback(clearCart, []);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -64,7 +65,7 @@ export default function PlantCatalogPage() {
         
         if (checkoutSuccess === 'true') {
             hasParams = true;
-            toast({
+            memoizedToast({
                 title: "Payment Successful!",
                 description: "Thank you for your purchase. Your order is being processed.",
             });
@@ -73,7 +74,7 @@ export default function PlantCatalogPage() {
 
         if (checkoutCanceled === 'true') {
             hasParams = true;
-            toast({
+            memoizedToast({
                 variant: "destructive",
                 title: "Payment Canceled",
                 description: "Your order was not completed. Your cart has been saved.",
@@ -81,13 +82,9 @@ export default function PlantCatalogPage() {
         }
         
         if (hasParams) {
-            // Clean the URL to avoid re-triggering toasts on refresh,
-            // but don't prevent the subscription from running.
             router.replace('/catalog', {scroll: false});
         }
 
-        // Subscribe to real-time plant data. The key change is here.
-        // This subscription will automatically update the `plants` state when data changes in Firestore.
         const unsubscribe = subscribeToAvailablePlantListings(
             (fetchedPlants) => {
                 setPlants(fetchedPlants);
@@ -101,10 +98,8 @@ export default function PlantCatalogPage() {
             }
         );
         
-        // This is the cleanup function. It's crucial for preventing memory leaks
-        // and will be called when the component unmounts.
         return () => unsubscribe();
-    }, [router, searchParams, toast, memoizedClearCart]);
+    }, [router, searchParams, memoizedToast, memoizedClearCart]);
 
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
