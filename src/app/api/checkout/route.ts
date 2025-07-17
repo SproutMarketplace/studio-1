@@ -3,14 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import type { PlantListing } from '@/models';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-let stripe: Stripe | null = null;
-if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
-    stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-06-20',
-    });
-}
+// This is the correct way to initialize Stripe in an API Route.
+// It will only be instantiated if the secret key is provided in .env.local.
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    })
+  : null;
 
 interface CartItem extends PlantListing {
     quantity: number;
@@ -22,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!stripe) {
-        const errorMessage = "Checkout is currently disabled. The server is missing a valid Stripe secret key. Please check your server's environment variables.";
+        const errorMessage = "Stripe is not configured. The server is missing a valid STRIPE_SECRET_KEY. Please check your server's environment variables.";
         console.error("Stripe Error:", errorMessage);
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
