@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         }
 
         const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
-            .filter(item => item.price && item.price > 0)
+            .filter(item => item.price && item.price > 0 && item.isAvailable)
             .map((item) => {
                 return {
                     price_data: {
@@ -68,12 +68,12 @@ export async function POST(req: NextRequest) {
             metadata: {
                 userId,
                 cartItems: JSON.stringify(items.map(item => ({
-                    plantId: item.id, // Ensure this is the plant document ID
+                    plantId: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
                     imageUrl: item.imageUrls[0] || "",
-                    sellerId: item.ownerId, 
+                    sellerId: item.ownerId, // CRITICAL: This was missing
                 }))),
             }
         });
