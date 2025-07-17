@@ -7,26 +7,26 @@ import type { OrderItem } from '@/models';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET;
 
-let stripe: Stripe | null = null;
-if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
-    stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-06-20',
-        typescript: true,
-    });
-}
+// This is the correct way to initialize Stripe in this file.
+const stripe = new Stripe(stripeSecretKey!, {
+    apiVersion: '2024-06-20',
+    typescript: true,
+});
 
-// This disables the default body parser to allow us to read the raw body
+// This disables the default body parser to allow us to read the raw body, which is required by Stripe.
 export const config = {
     api: {
         bodyParser: false,
     },
 };
 
-// Helper function to buffer the request
-async function buffer(readable: ReadableStream<Uint8Array>) {
-    const chunks = [];
-    for await (const chunk of readable) {
-        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+async function getRawBody(req: NextRequest) {
+    const reader = req.body!.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
     }
     return Buffer.concat(chunks);
 }
@@ -44,17 +44,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No stripe-signature header value was provided.' }, { status: 400 });
     }
 
-    const rawBody = await buffer(req.body!);
+    const rawBody = await getRawBody(req);
 
     let event: Stripe.Event;
     
     try {
+        // Use the rawBody Buffer for verification, this is the critical step.
         event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
+    // Handle the checkout.session.completed event
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session;
 
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
 
             const items: OrderItem[] = JSON.parse(cartItemsString);
 
+            // This function contains the logic to update the plant's availability.
             await createOrder(
                 userId,
                 items,
@@ -75,6 +78,7 @@ export async function POST(req: NextRequest) {
 
         } catch (error) {
             console.error('Error handling checkout.session.completed event:', error);
+            // Return a 500 so Stripe will retry the webhook for transient errors.
             return NextResponse.json({ error: 'Error processing order.' }, { status: 500 });
         }
     }

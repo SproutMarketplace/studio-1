@@ -697,48 +697,57 @@ export const createOrder = async (
 
     // Create a separate order and perform updates for each seller
     for (const sellerId in itemsBySeller) {
-        const sellerProfile = await getUserProfile(sellerId);
-        if (!sellerProfile) {
-            console.error(`Could not process order for seller ${sellerId}: Profile not found.`);
-            continue; // Skip this seller and move to the next
-        }
-        
-        const batch = writeBatch(db);
         const sellerItems = itemsBySeller[sellerId];
-        const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-        // 1. Create one order document per seller
-        const orderRef = doc(collection(db, 'orders'));
-        batch.set(orderRef, {
-            userId: buyerId,
-            sellerId: sellerId,
-            items: sellerItems,
-            totalAmount: sellerTotal,
-            status: 'processing',
-            createdAt: serverTimestamp(),
-            stripeSessionId: stripeSessionId,
-            buyerUsername: buyerProfile.username || 'Unknown Buyer'
-        });
-
-        // 2. Mark each plant in this sub-order as unavailable
-        for (const item of sellerItems) {
-            if (item.plantId) {
-                const plantRef = doc(db, 'plants', item.plantId);
-                batch.update(plantRef, { isAvailable: false });
+        try {
+            const sellerProfile = await getUserProfile(sellerId);
+            if (!sellerProfile) {
+                console.error(`Could not process order for seller ${sellerId}: Profile not found. Skipping.`);
+                continue; // Skip this seller's items and move to the next
             }
+            
+            const batch = writeBatch(db);
+            const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    
+            // 1. Create one order document per seller
+            const orderRef = doc(collection(db, 'orders'));
+            batch.set(orderRef, {
+                userId: buyerId,
+                sellerId: sellerId,
+                items: sellerItems,
+                totalAmount: sellerTotal,
+                status: 'processing',
+                createdAt: serverTimestamp(),
+                stripeSessionId: stripeSessionId,
+                buyerUsername: buyerProfile.username || 'Unknown Buyer'
+            });
+    
+            // 2. Mark each plant in this sub-order as unavailable
+            for (const item of sellerItems) {
+                if (item.plantId) {
+                    const plantRef = doc(db, 'plants', item.plantId);
+                    batch.update(plantRef, { isAvailable: false });
+                } else {
+                    console.warn("Order item is missing a plantId:", item.name);
+                }
+            }
+    
+            // 3. Commit the batch for this seller
+            await batch.commit();
+    
+            // 4. Notify this seller
+            await createNotification(
+                sellerId,
+                buyerId,
+                'newSale',
+                `sold one of your plants to ${buyerProfile.username}!`,
+                '/seller/orders'
+            );
+        } catch (error) {
+            console.error(`Failed to process order for seller ${sellerId}:`, error);
+            // Decide if you want to continue or stop if one seller fails.
+            // Continuing is generally better for the user experience.
         }
-
-        // 3. Commit the batch for this seller
-        await batch.commit();
-
-        // 4. Notify this seller
-        createNotification(
-            sellerId,
-            buyerId,
-            'newSale',
-            `sold one of your plants to ${buyerProfile.username}!`,
-            '/seller/orders'
-        ).catch(err => console.error("Failed to create sale notification:", err));
     }
 };
 
