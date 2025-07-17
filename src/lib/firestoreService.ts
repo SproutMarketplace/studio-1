@@ -935,4 +935,3 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     return transactions;
 };
 
-    

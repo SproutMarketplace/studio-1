@@ -53,7 +53,9 @@ export default function PlantCatalogPage() {
     const { toast } = useToast();
     const { clearCart } = useCart();
     
-    const memoizedClearCart = useCallback(clearCart, []);
+    // Using useCallback to prevent this function from being recreated on every render,
+    // which would cause the useEffect to run unnecessarily.
+    const memoizedClearCart = useCallback(clearCart, [clearCart]);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -78,12 +80,14 @@ export default function PlantCatalogPage() {
             });
         }
         
-        // This is the key change: The router.replace was interfering with the subscription model in some cases.
-        // We ensure it only runs once by using a clean URL.
         if (hasParams) {
+            // Clean the URL to avoid re-triggering toasts on refresh,
+            // but don't prevent the subscription from running.
             router.replace('/catalog', {scroll: false});
         }
 
+        // Subscribe to real-time plant data. The key change is here.
+        // This subscription will automatically update the `plants` state when data changes in Firestore.
         const unsubscribe = subscribeToAvailablePlantListings(
             (fetchedPlants) => {
                 setPlants(fetchedPlants);
@@ -97,6 +101,8 @@ export default function PlantCatalogPage() {
             }
         );
         
+        // This is the cleanup function. It's crucial for preventing memory leaks
+        // and will be called when the component unmounts.
         return () => unsubscribe();
     }, [router, searchParams, toast, memoizedClearCart]);
 
@@ -299,3 +305,4 @@ export default function PlantCatalogPage() {
             )}
         </div>
     );
+}

@@ -29,6 +29,7 @@ export default function SellerDashboardPage() {
                     
                     const activeListings = userPlants.filter(p => p.isAvailable).length;
                     
+                    // Flatten all items from all orders into a single array
                     const itemsSoldBySeller = sellerOrders.flatMap(order => 
                         order.items.filter(item => item.sellerId === user.uid)
                     );

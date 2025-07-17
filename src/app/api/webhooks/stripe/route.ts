@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Stripe webhook handler is not configured on the server.' }, { status: 500 });
     }
     
-    // Read the raw request body as a buffer
+    // Read the raw request body as a buffer, NOT as text or json.
     const buf = await req.arrayBuffer();
     const sig = req.headers.get('stripe-signature');
 
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 
     // Handle the checkout.session.completed event
     if (event.type === 'checkout.session.completed') {
+        // This is the correct way to get the session from the VERIFIED event.
         const session = event.data.object as Stripe.Checkout.Session;
 
         try {
