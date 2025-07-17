@@ -9,9 +9,9 @@ import { PlantCard } from "@/components/plant-card";
 import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Loader2, Sparkles } from "lucide-react";
-import { getAvailablePlantListings } from "@/lib/firestoreService";
-import type { DocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
+import { Search, ListFilter, Loader2 } from "lucide-react";
+import { subscribeToAvailablePlantListings } from "@/lib/firestoreService";
+import type { Timestamp } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -19,10 +19,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/cart-context";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 
-const PLANTS_PER_PAGE = 8;
 const CATEGORY_OPTIONS = [
   { id: "tropical", label: "Tropical" },
   { id: "cacti", label: "Cacti" },
@@ -38,8 +37,6 @@ export default function PlantCatalogPage() {
     const [plants, setPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastVisible, setLastVisible] = useState<DocumentSnapshot<DocumentData> | null>(null);
-    const [hasMore, setHasMore] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filters, setFilters] = useState<{
         tradeOnly: 'all' | 'sale' | 'trade';
@@ -79,60 +76,29 @@ export default function PlantCatalogPage() {
             });
         }
         
-        const fetchInitialPlants = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
-                    undefined,
-                    PLANTS_PER_PAGE
-                );
-
+        // Subscribe to real-time plant listings
+        const unsubscribe = subscribeToAvailablePlantListings(
+            (fetchedPlants) => {
                 setPlants(fetchedPlants);
-                setLastVisible(newLastVisible);
-                setHasMore(fetchedPlants.length === PLANTS_PER_PAGE);
-
-            } catch (err) {
+                setIsLoading(false);
+                setError(null);
+            },
+            (err) => {
                 console.error("Error fetching plants:", err);
                 setError("Failed to load plants. Please try again later.");
-            } finally {
                 setIsLoading(false);
             }
-        };
-
-        fetchInitialPlants();
+        );
         
         if (hasParams) {
             router.replace('/catalog', {scroll: false});
         }
+        
+        // Cleanup subscription on component unmount
+        return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
-    const loadMorePlants = async () => {
-        if (!hasMore || isLoading) {
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const { plants: fetchedPlants, lastVisible: newLastVisible } = await getAvailablePlantListings(
-                lastVisible || undefined,
-                PLANTS_PER_PAGE
-            );
-
-            setPlants(prevPlants => [...prevPlants, ...fetchedPlants]);
-            setLastVisible(newLastVisible);
-            setHasMore(fetchedPlants.length === PLANTS_PER_PAGE);
-
-        } catch (err) {
-            console.error("Error fetching plants:", err);
-            setError("Failed to load plants. Please try again later.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value.toLowerCase());
@@ -206,6 +172,7 @@ export default function PlantCatalogPage() {
                     alt="A vibrant collection of house plants arranged on shelves"
                     fill
                     className="object-cover"
+                    data-ai-hint="vibrant houseplants"
                 />
                 <div className="relative z-20 flex h-[400px] flex-col items-center justify-center text-center p-6">
                     <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl drop-shadow-lg">
@@ -309,7 +276,7 @@ export default function PlantCatalogPage() {
                 </Popover>
             </div>
 
-            {isLoading && plants.length === 0 ? (
+            {isLoading ? (
                 <div className="flex justify-center items-center py-12">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
@@ -318,20 +285,11 @@ export default function PlantCatalogPage() {
                     <h2 className="text-2xl font-semibold">{error}</h2>
                 </div>
             ) : processedPlants.length > 0 ? (
-                <>
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {processedPlants.map((plant) => (
-                            <PlantCard key={plant.id} plant={plant} />
-                        ))}
-                    </div>
-                    {hasMore && !searchTerm && filters.categories.length === 0 && (
-                        <div className="mt-8 text-center">
-                            <Button onClick={loadMorePlants} disabled={isLoading}>
-                                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading...</> : "Load More Plants"}
-                            </Button>
-                        </div>
-                    )}
-                </>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {processedPlants.map((plant) => (
+                        <PlantCard key={plant.id} plant={plant} />
+                    ))}
+                </div>
             ) : (
                 <div className="text-center py-12">
                     <h2 className="text-2xl font-semibold text-muted-foreground">No plants found.</h2>
@@ -342,4 +300,3 @@ export default function PlantCatalogPage() {
     );
 
     
-

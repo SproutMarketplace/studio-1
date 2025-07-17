@@ -189,27 +189,38 @@ export const getPlantListing = async (plantId: string): Promise<PlantListing | n
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'plants'
 // Fields: 1. isAvailable (Ascending), 2. listedDate (Descending)
-export const getAvailablePlantListings = async (lastDoc?: DocumentSnapshot, limitNum: number = 10): Promise<{ plants: PlantListing[], lastVisible: DocumentSnapshot | null }> => {
-    if (!db) return { plants: [], lastVisible: null };
-    let q = query(
-        collection(db, 'plants'),
-        where('isAvailable', '==', true),
-        orderBy('listedDate', 'desc'),
-        limit(limitNum)
-    );
-
-    if (lastDoc) {
-        q = query(q, startAfter(lastDoc));
+export const subscribeToAvailablePlantListings = (
+    onUpdate: (plants: PlantListing[]) => void,
+    onError: (error: Error) => void
+): (() => void) => {
+    if (!db) {
+        onError(new Error("Firestore is not initialized."));
+        return () => {};
     }
 
-    const querySnapshot = await getDocs(q);
-    const plants: PlantListing[] = [];
-    querySnapshot.forEach((doc: DocumentSnapshot) => {
-        plants.push({ id: doc.id, ...doc.data() } as PlantListing);
-    });
-    const lastVisible = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null;
-    return { plants, lastVisible };
+    const q = query(
+        collection(db, 'plants'),
+        where('isAvailable', '==', true),
+        orderBy('listedDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, 
+        (querySnapshot: QuerySnapshot) => {
+            const plants: PlantListing[] = [];
+            querySnapshot.forEach((doc: DocumentSnapshot) => {
+                plants.push({ id: doc.id, ...doc.data() } as PlantListing);
+            });
+            onUpdate(plants);
+        },
+        (error) => {
+            console.error("Error in plant subscription:", error);
+            onError(error);
+        }
+    );
+
+    return unsubscribe; // Return the unsubscribe function for cleanup
 };
+
 
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'plants'
@@ -923,3 +934,5 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     });
     return transactions;
 };
+
+    
