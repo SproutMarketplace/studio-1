@@ -28,12 +28,8 @@ export async function POST(req: NextRequest) {
     let event: Stripe.Event;
     
     try {
-        // Use req.arrayBuffer() and Buffer.from() to get the raw body for verification.
-        // This is the correct way to handle this in Next.js App Router.
-        const bodyBuffer = await req.arrayBuffer();
-        const body = Buffer.from(bodyBuffer);
-        
-        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+        const body = await req.arrayBuffer();
+        event = stripe.webhooks.constructEvent(Buffer.from(body), sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
