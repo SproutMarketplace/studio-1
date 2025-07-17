@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
                     price: item.price,
                     quantity: item.quantity,
                     imageUrl: item.imageUrls[0] || "",
-                    sellerId: item.ownerId, // CRITICAL: This was missing
+                    sellerId: item.ownerId, // CRITICAL FIX: Was missing
                 }))),
             }
         });
