@@ -816,11 +816,25 @@ export const createOrder = async (
                 buyerUsername: buyerProfile.username || 'Unknown Buyer'
             });
     
-            // 2. Mark each plant in this sub-order as unavailable
+            // 2. Decrement plant quantity and mark as unavailable if needed
             for (const item of sellerItems) {
                 if (item.plantId) {
                     const plantRef = doc(db, 'plants', item.plantId);
-                    batch.update(plantRef, { isAvailable: false });
+                    const plantSnap = await getDoc(plantRef);
+                    if (plantSnap.exists()) {
+                        const currentQuantity = plantSnap.data().quantity || 1;
+                        const newQuantity = currentQuantity - item.quantity;
+                        
+                        const updateData: Partial<PlantListing> = {
+                            quantity: newQuantity
+                        };
+
+                        if (newQuantity <= 0) {
+                            updateData.isAvailable = false;
+                        }
+                        
+                        batch.update(plantRef, updateData);
+                    }
                 } else {
                     console.warn("Order item is missing a plantId:", item.name);
                 }
@@ -843,8 +857,6 @@ export const createOrder = async (
 
         } catch (error) {
             console.error(`Failed to process order for seller ${sellerId}:`, error);
-            // Decide if you want to continue or stop if one seller fails.
-            // Continuing is generally better for the user experience.
         }
     }
 };
@@ -1021,3 +1033,5 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     });
     return transactions;
 };
+
+    

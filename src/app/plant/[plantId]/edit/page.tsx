@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Pencil, UploadCloud, X, XCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Schema for form validation (same as list-plant)
+// Schema for form validation
 const listPlantSchema = z.object({
   name: z.string().min(3, { message: "Plant name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
@@ -31,6 +31,7 @@ const listPlantSchema = z.object({
   tradeOnly: z.boolean().default(false),
   location: z.string().optional(),
   tags: z.array(z.string()).max(5, { message: "You can add a maximum of 5 tags." }).optional().default([]),
+  quantity: z.coerce.number().min(0, { message: "Quantity cannot be negative." }).default(1),
 });
 
 type ListPlantFormValues = z.infer<typeof listPlantSchema>;
@@ -66,6 +67,7 @@ export default function EditPlantPage() {
             tradeOnly: false,
             location: "",
             tags: [],
+            quantity: 1,
         },
     });
 
@@ -97,6 +99,7 @@ export default function EditPlantPage() {
                     tradeOnly: fetchedPlant.tradeOnly,
                     location: fetchedPlant.location || "",
                     tags: fetchedPlant.tags || [],
+                    quantity: fetchedPlant.quantity || 1,
                 });
             } catch (e) {
                 setPageError("Failed to load plant data. Please try again.");
@@ -167,10 +170,15 @@ export default function EditPlantPage() {
                 )
             );
             const finalImageUrls = [...existingImageUrls, ...newImageUrls];
-            await updatePlantListing(plant.id!, {
+
+            const updateData: Partial<PlantListing> = {
                 ...data,
                 imageUrls: finalImageUrls,
-            });
+            };
+            // Ensure isAvailable is correctly set based on quantity
+            updateData.isAvailable = data.quantity > 0;
+
+            await updatePlantListing(plant.id!, updateData);
 
             toast({ title: "Success!", description: "Your plant listing has been updated." });
             router.push(`/plant/${plant.id}`);
@@ -271,13 +279,38 @@ export default function EditPlantPage() {
                                 <FormField name="price" control={form.control} render={({ field }) => (
                                     <FormItem><FormLabel className="text-lg">Price ($)</FormLabel><FormControl><Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value ?? ''} /></FormControl><FormDescription>Leave blank or 0 if only trading.</FormDescription><FormMessage /></FormItem>
                                 )}/>
-                                <FormField name="tradeOnly" control={form.control} render={({ field }) => (
-                                    <FormItem className="flex flex-col rounded-lg border p-4 justify-between">
-                                        <div><FormLabel className="text-lg">Trade Only?</FormLabel><FormDescription>If checked, this plant will only be available for trade.</FormDescription></div>
-                                        <FormControl className="mt-2"><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                 <FormField
+                                  control={form.control}
+                                  name="quantity"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-lg">Quantity</FormLabel>
+                                      <FormControl>
+                                        <Input type="number" min="0" step="1" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : e.target.valueAsNumber)} value={field.value ?? 0}/>
+                                      </FormControl>
+                                      <FormDescription>
+                                        How many of this item do you have?
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                            </div>
+
+                             <FormField
+                                control={form.control}
+                                name="tradeOnly"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-lg">Trade Only?</FormLabel>
+                                            <FormDescription>If checked, this plant will only be available for trade.</FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                        </FormControl>
                                     </FormItem>
                                 )}/>
-                            </div>
 
                             <FormField name="location" control={form.control} render={({ field }) => (
                                 <FormItem><FormLabel className="text-lg">Location (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormDescription>Providing a location can help local buyers find your plant.</FormDescription><FormMessage /></FormItem>
@@ -341,3 +374,4 @@ function EditPlantSkeleton() {
     );
 }
 
+    

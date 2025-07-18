@@ -36,6 +36,7 @@ export interface PlantListing {
     ownerAvatarUrl?: string; // Denormalized
     listedDate: Timestamp;
     tags?: string[];
+    quantity?: number; // Number of items available
 }
 
 export interface OrderItem {
@@ -143,3 +144,5 @@ export interface Notification {
         avatarUrl?: string;
     }
 }
+
+    

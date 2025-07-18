@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, ShoppingCart, Trash2 } from "lucide-react";
+import { Loader2, ShoppingCart, Trash2, Minus, Plus } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,7 +20,7 @@ const isStripeDisabled = !stripePublishableKey || stripePublishableKey.includes(
 const stripePromise = !isStripeDisabled ? loadStripe(stripePublishableKey!) : null;
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
-    const { items, removeFromCart, totalPrice, itemCount } = useCart();
+    const { items, removeFromCart, updateQuantity, totalPrice, itemCount } = useCart();
     const { user } = useAuth();
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const { toast } = useToast();
@@ -93,10 +93,10 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                 {itemCount > 0 ? (
                     <>
                         <ScrollArea className="flex-1">
-                            <div className="flex flex-col gap-4 p-6 pr-6">
+                            <div className="flex flex-col gap-6 p-6 pr-6">
                                 {items.map((item) => (
-                                    <div key={item.id} className="flex items-center space-x-4">
-                                        <div className="relative h-16 w-16 overflow-hidden rounded-md">
+                                    <div key={item.id} className="flex items-start space-x-4">
+                                        <div className="relative h-20 w-20 overflow-hidden rounded-md">
                                             <Image
                                                 src={item.imageUrls[0] || 'https://placehold.co/100x100.png'}
                                                 alt={item.name}
@@ -104,11 +104,32 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                                                 objectFit="cover"
                                             />
                                         </div>
-                                        <div className="flex flex-1 flex-col gap-1 self-start text-sm">
+                                        <div className="flex flex-1 flex-col gap-1.5 self-start text-sm">
                                             <span className="font-semibold">{item.name}</span>
                                             <span className="text-muted-foreground">
                                                 {item.price ? `$${item.price.toFixed(2)}` : 'Free'}
                                             </span>
+                                             <div className="flex items-center border rounded-md w-fit">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => updateQuantity(item.id!, item.quantity - 1)}
+                                                    disabled={item.quantity <= 1}
+                                                >
+                                                    <Minus className="h-4 w-4" />
+                                                </Button>
+                                                <span className="w-8 text-center">{item.quantity}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => updateQuantity(item.id!, item.quantity + 1)}
+                                                    disabled={item.quantity >= (item.stockQuantity || 1)}
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -158,3 +179,5 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
         </Sheet>
     );
 }
+
+    

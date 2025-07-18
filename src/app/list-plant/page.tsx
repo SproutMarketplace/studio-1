@@ -29,6 +29,7 @@ const listPlantSchema = z.object({
   tradeOnly: z.boolean().default(false),
   location: z.string().optional(),
   tags: z.array(z.string()).max(5, { message: "You can add a maximum of 5 tags." }).optional().default([]),
+  quantity: z.coerce.number().min(1, { message: "Quantity must be at least 1."}).default(1),
 });
 
 type ListPlantFormValues = z.infer<typeof listPlantSchema>;
@@ -53,6 +54,7 @@ export default function ListPlantPage() {
       tradeOnly: false,
       location: "",
       tags: [],
+      quantity: 1,
     },
   });
 
@@ -268,14 +270,32 @@ export default function ListPlantPage() {
 
                 <FormField
                   control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" step="1" {...field} onChange={e => field.onChange(e.target.value === '' ? 1 : e.target.valueAsNumber)} value={field.value ?? 1}/>
+                      </FormControl>
+                      <FormDescription>
+                        How many of this item do you have?
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+               <FormField
+                  control={form.control}
                   name="tradeOnly"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col rounded-lg border p-4 justify-between">
-                        <div>
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
                             <FormLabel className="text-lg">Trade Only?</FormLabel>
                             <FormDescription>If checked, this plant will only be available for trade.</FormDescription>
                         </div>
-                        <FormControl className="mt-2">
+                        <FormControl>
                              <Switch
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
@@ -285,7 +305,6 @@ export default function ListPlantPage() {
                     </FormItem>
                   )}
                 />
-              </div>
 
               <FormField
                 control={form.control}
@@ -365,3 +384,5 @@ export default function ListPlantPage() {
     </div>
   );
 }
+
+    

@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil, MessageSquare, UserPlus, UserCheck } from "lucide-react";
+import { Loader2, Heart, ShoppingCart, ChevronLeft, ChevronRight, MapPin, Calendar, Tag, User as UserIcon, Trash2, Pencil, MessageSquare, UserPlus, UserCheck, Minus, Plus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 export default function PlantDetailPage() {
     const params = useParams();
@@ -52,6 +53,7 @@ export default function PlantDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isMessaging, setIsMessaging] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
+    const [purchaseQuantity, setPurchaseQuantity] = useState(1);
 
     useEffect(() => {
         if (plantId) {
@@ -193,7 +195,10 @@ export default function PlantDetailPage() {
     const isFollowing = profile?.following?.includes(plant.ownerId);
     const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
     const isTradeOnly = plant.tradeOnly && (plant.price === undefined || plant.price === null);
-    const isInCart = cartItems.some(item => item.id === plant.id);
+    const cartItem = cartItems.find(item => item.id === plant.id);
+    const isInCart = !!cartItem;
+    const quantityInCart = cartItem?.quantity || 0;
+    const maxPurchaseQuantity = (plant.quantity || 1) - quantityInCart;
 
     return (
         <div className="container mx-auto max-w-4xl py-8">
@@ -250,6 +255,14 @@ export default function PlantDetailPage() {
                     
                     <CardDescription className="text-base text-muted-foreground flex-grow">{plant.description}</CardDescription>
                     
+                    <div className="flex justify-between items-center text-sm font-semibold">
+                        {plant.quantity && plant.quantity > 0 ? (
+                            <p className="text-green-600">{plant.quantity} in stock</p>
+                        ) : (
+                            <p className="text-destructive">Out of stock</p>
+                        )}
+                    </div>
+
                     <Separator />
 
                     <div className="text-sm text-muted-foreground space-y-2">
@@ -347,15 +360,50 @@ export default function PlantDetailPage() {
                     {!isOwner && (
                         <div className="flex flex-col gap-2 pt-4 mt-auto">
                             {!isTradeOnly && (
-                                <Button
-                                    size="lg"
-                                    className="w-full"
-                                    onClick={() => addToCart(plant)}
-                                    disabled={!plant.isAvailable || isInCart}
-                                >
-                                    <ShoppingCart className="w-5 h-5 mr-2" />
-                                    {isInCart ? "In Cart" : "Add to Cart"}
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                     <div className="flex items-center rounded-md border">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-11 w-11"
+                                            onClick={() => setPurchaseQuantity(q => Math.max(1, q - 1))}
+                                            disabled={purchaseQuantity <= 1}
+                                        >
+                                            <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <Input
+                                            type="number"
+                                            className="h-11 w-16 text-center border-x border-y-0 rounded-none focus-visible:ring-0"
+                                            value={purchaseQuantity}
+                                            onChange={(e) => {
+                                                const val = e.target.valueAsNumber;
+                                                if (isNaN(val) || val < 1) setPurchaseQuantity(1);
+                                                else if (val > maxPurchaseQuantity) setPurchaseQuantity(maxPurchaseQuantity);
+                                                else setPurchaseQuantity(val);
+                                            }}
+                                            min={1}
+                                            max={maxPurchaseQuantity}
+                                        />
+                                         <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-11 w-11"
+                                            onClick={() => setPurchaseQuantity(q => Math.min(maxPurchaseQuantity, q + 1))}
+                                            disabled={purchaseQuantity >= maxPurchaseQuantity}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        className="w-full"
+                                        onClick={() => addToCart(plant, purchaseQuantity)}
+                                        disabled={!plant.isAvailable || maxPurchaseQuantity <= 0}
+                                    >
+                                        <ShoppingCart className="w-5 h-5 mr-2" />
+                                        {isInCart ? "Add More" : "Add to Cart"}
+                                    </Button>
+                                </div>
                             )}
                             <div className="flex w-full items-center gap-2">
                                 <Button
