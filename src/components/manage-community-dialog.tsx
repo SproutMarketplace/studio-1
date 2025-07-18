@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 
@@ -391,4 +392,5 @@ export function ManageCommunityDialog({ forum, children, onUpdate, onDelete }: M
       </DialogContent>
     </Dialog>
     )
-}
+
+    
