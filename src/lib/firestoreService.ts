@@ -661,6 +661,11 @@ export const addCommentToPost = async (forumId: string, postId: string, comment:
     return newCommentRef.id;
 };
 
+export const updateComment = async (forumId: string, postId: string, commentId: string, data: Partial<Comment>): Promise<void> => {
+    if (!db) return;
+    const commentRef = doc(db, 'forums', forumId, 'posts', postId, 'comments', commentId);
+    await updateDoc(commentRef, data);
+};
 
 export const getCommentsForPost = async (forumId: string, postId: string): Promise<Comment[]> => {
     if (!db) return [];

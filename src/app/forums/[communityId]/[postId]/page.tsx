@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { getPostById, getCommentsForPost, addCommentToPost, togglePostVote, deleteComment } from "@/lib/firestoreService";
+import { getPostById, getCommentsForPost, addCommentToPost, togglePostVote, deleteComment, updateComment } from "@/lib/firestoreService";
 import type { Post, Comment } from "@/models";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +23,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft, CornerDownRight, Trash2 } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft, CornerDownRight, Trash2, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,22 +46,26 @@ function CommentForm({
     isSubmitting,
     onCancel,
     placeholder = "Add your comment...",
-    buttonText = "Post Comment"
+    buttonText = "Post Comment",
+    initialContent = ""
 }: {
     onSubmit: (data: CommentFormValues) => Promise<void>;
     isSubmitting: boolean;
     onCancel?: () => void;
     placeholder?: string;
     buttonText?: string;
+    initialContent?: string;
 }) {
     const form = useForm<CommentFormValues>({
         resolver: zodResolver(commentSchema),
-        defaultValues: { content: "" },
+        defaultValues: { content: initialContent || "" },
     });
 
     const handleSubmit = async (data: CommentFormValues) => {
         await onSubmit(data);
-        form.reset();
+        if (!initialContent) { // Only reset if it's a new comment form
+            form.reset();
+        }
     };
 
     return (
@@ -98,18 +102,21 @@ function CommentForm({
 
 function CommentComponent({ 
     comment, 
-    onReply, 
+    onReply,
+    onEdit,
     replies,
     onDeleteInitiate
 }: { 
     comment: Comment, 
-    onReply: (data: CommentFormValues, parentId: string) => Promise<void>, 
+    onReply: (data: CommentFormValues, parentId: string) => Promise<void>,
+    onEdit: (commentId: string, data: CommentFormValues) => Promise<void>,
     replies: Comment[],
     onDeleteInitiate: (comment: Comment) => void;
 }) {
     const { user } = useAuth();
     const [isReplying, setIsReplying] = useState(false);
-    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     const getFormattedDate = (date: Timestamp | Date) => {
         const dateToFormat = date instanceof Timestamp ? date.toDate() : date;
@@ -117,10 +124,17 @@ function CommentComponent({
     };
 
     const handleReplySubmit = async (data: CommentFormValues) => {
-        setIsSubmittingReply(true);
+        setIsSubmitting(true);
         await onReply(data, comment.id);
-        setIsSubmittingReply(false);
+        setIsSubmitting(false);
         setIsReplying(false);
+    };
+
+    const handleEditSubmit = async (data: CommentFormValues) => {
+        setIsSubmitting(true);
+        await onEdit(comment.id, data);
+        setIsSubmitting(false);
+        setIsEditing(false);
     };
 
     return (
@@ -135,28 +149,48 @@ function CommentComponent({
                         <Link href={`/profile/${comment.authorId}`} className="font-semibold hover:underline">{comment.authorUsername}</Link>
                         <span className="text-muted-foreground">&bull; {getFormattedDate(comment.createdAt)}</span>
                     </div>
-                    <p className="text-foreground mt-1 whitespace-pre-wrap">{comment.content}</p>
-                    <div className="mt-1 flex items-center gap-1">
-                       {user && (
-                         <Button variant="ghost" size="sm" onClick={() => setIsReplying(!isReplying)}>
-                            <CornerDownRight className="w-4 h-4 mr-2"/>
-                            Reply
-                         </Button>
-                       )}
-                       {user?.uid === comment.authorId && (
-                         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDeleteInitiate(comment)}>
-                            <Trash2 className="w-4 h-4 mr-2"/>
-                            Delete
-                         </Button>
-                       )}
-                    </div>
+                    {isEditing ? (
+                        <div className="mt-2">
+                            <CommentForm 
+                                onSubmit={handleEditSubmit}
+                                isSubmitting={isSubmitting}
+                                onCancel={() => setIsEditing(false)}
+                                initialContent={comment.content}
+                                buttonText="Save Changes"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <p className="text-foreground mt-1 whitespace-pre-wrap">{comment.content}</p>
+                            <div className="mt-1 flex items-center gap-1">
+                            {user && (
+                                <Button variant="ghost" size="sm" onClick={() => setIsReplying(!isReplying)} disabled={isEditing}>
+                                    <CornerDownRight className="w-4 h-4 mr-2"/>
+                                    Reply
+                                </Button>
+                            )}
+                            {user?.uid === comment.authorId && (
+                                <>
+                                 <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} disabled={isReplying}>
+                                    <Pencil className="w-4 h-4 mr-2"/>
+                                    Edit
+                                 </Button>
+                                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDeleteInitiate(comment)}>
+                                    <Trash2 className="w-4 h-4 mr-2"/>
+                                    Delete
+                                 </Button>
+                                </>
+                            )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="pl-8 pt-4">
                  {isReplying && (
                     <CommentForm
                         onSubmit={handleReplySubmit}
-                        isSubmitting={isSubmittingReply}
+                        isSubmitting={isSubmitting}
                         onCancel={() => setIsReplying(false)}
                         placeholder={`Replying to ${comment.authorUsername}...`}
                         buttonText="Post Reply"
@@ -166,7 +200,8 @@ function CommentComponent({
                     <div key={reply.id} className="mt-4">
                          <CommentComponent 
                             comment={reply} 
-                            onReply={onReply} 
+                            onReply={onReply}
+                            onEdit={onEdit} 
                             replies={[]} 
                             onDeleteInitiate={onDeleteInitiate}
                          />
@@ -301,6 +336,17 @@ export default function PostDetailPage() {
             console.error(error);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleCommentEdit = async (commentId: string, data: CommentFormValues) => {
+        try {
+            await updateComment(communityId, postId, commentId, { content: data.content });
+            setComments(prev => prev.map(c => c.id === commentId ? { ...c, content: data.content } : c));
+            toast({ title: 'Comment updated!' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to update comment.' });
+            console.error(error);
         }
     };
     
@@ -457,6 +503,7 @@ export default function PostDetailPage() {
                             key={comment.id}
                             comment={comment}
                             onReply={handleCommentSubmit}
+                            onEdit={handleCommentEdit}
                             replies={repliesByParentId[comment.id] || []}
                             onDeleteInitiate={handleDeleteInitiate}
                         />
