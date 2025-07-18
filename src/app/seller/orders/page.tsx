@@ -20,7 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Inbox } from "lucide-react";
+import { Loader2, Package, Inbox, Shipping } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function OrdersPage() {
@@ -49,9 +49,11 @@ export default function OrdersPage() {
     }, [user, authLoading]);
 
     const renderOrderItemsForSeller = (items: OrderItem[]) => {
+        const sellerItems = items.filter(item => item.sellerId === user?.uid);
+
         return (
             <div className="space-y-2">
-                {items.map(item => (
+                {sellerItems.map(item => (
                     <div key={item.plantId} className="flex items-center gap-2 text-sm">
                         <Link href={`/plant/${item.plantId}`} className="flex items-center gap-2 text-sm group">
                             <Image
@@ -108,24 +110,37 @@ export default function OrdersPage() {
                                     <TableHead>Items Sold</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {orders.map((order) => (
-                                    <TableRow key={order.id}>
-                                        <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
-                                        <TableCell>{order.buyerUsername}</TableCell>
-                                        <TableCell>
-                                            {renderOrderItemsForSeller(order.items)}
-                                        </TableCell>
-                                        <TableCell className="font-medium">${order.totalAmount.toFixed(2)}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={getStatusVariant(order.status)} className="capitalize">
-                                                {order.status}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {orders.map((order) => {
+                                    const sellerTotal = order.items
+                                        .filter(item => item.sellerId === user?.uid)
+                                        .reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+                                    return (
+                                        <TableRow key={order.id}>
+                                            <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                            <TableCell>{order.buyerUsername}</TableCell>
+                                            <TableCell>
+                                                {renderOrderItemsForSeller(order.items)}
+                                            </TableCell>
+                                            <TableCell className="font-medium">${sellerTotal.toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={getStatusVariant(order.status)} className="capitalize">
+                                                    {order.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                 <Button variant="outline" size="sm" disabled>
+                                                    <Shipping className="mr-2 h-4 w-4" />
+                                                    Create Label
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     ) : (

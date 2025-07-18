@@ -86,7 +86,7 @@ export interface Forum {
     bannerUrl?: string;
     createdAt: Timestamp;
     memberCount?: number; // Denormalized
-    creatorId?: string; // UserID of creator
+    creatorId: string; // UserID of creator
     moderatorIds?: string[]; // Array of UserIDs for moderators
 }
 
