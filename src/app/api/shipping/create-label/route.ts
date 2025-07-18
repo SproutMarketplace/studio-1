@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Find the cheapest rate (e.g., USPS Priority)
-        const rate = shipment.rates.find(r => r.provider === 'USPS' && r.servicelevel.token === 'usps_priority');
+        const rate = shipment.rates.find((r: any) => r.provider === 'USPS' && r.servicelevel.token === 'usps_priority');
         if (!rate) {
              return NextResponse.json({ error: 'Could not find a suitable shipping rate.' }, { status: 400 });
         }
