@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 
 const forumSettingsSchema = z.object({
@@ -393,4 +394,6 @@ export function ManageCommunityDialog({ forum, children, onUpdate, onDelete }: M
     </Dialog>
     )
 
+    
+}
     
