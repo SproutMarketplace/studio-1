@@ -9,12 +9,13 @@ import type { PlantListing } from "@/models";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MapPin, User, Loader2, ShoppingCart, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { Heart, MapPin, User, Loader2, ShoppingCart, ChevronLeft, ChevronRight, MessageSquare, Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { addPlantToWishlist, removePlantFromWishlist, createOrGetChat } from "@/lib/firestoreService";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/contexts/cart-context";
+import { Input } from "@/components/ui/input";
 
 
 export interface PlantCardProps {
@@ -31,10 +32,16 @@ export function PlantCard({ plant }: PlantCardProps) {
   const [isMessaging, setIsMessaging] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
+  const [purchaseQuantity, setPurchaseQuantity] = useState(1);
+
 
   const isOwner = user?.uid === plant.ownerId;
   const isInWishlist = profile?.favoritePlants?.includes(plant.id!);
-  const isInCart = cartItems.some(item => item.id === plant.id);
+  
+  const cartItem = cartItems.find(item => item.id === plant.id);
+  const quantityInCart = cartItem?.quantity || 0;
+  const availableStock = plant.quantity || 1;
+  const maxPurchaseQuantity = availableStock - quantityInCart;
 
   const handleMessageSeller = async (e: React.MouseEvent) => {
     e.stopPropagation(); 
@@ -99,7 +106,7 @@ export function PlantCard({ plant }: PlantCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      addToCart(plant);
+      addToCart(plant, purchaseQuantity);
   }
 
   const handlePrevImage = (e: React.MouseEvent) => {
@@ -115,17 +122,6 @@ export function PlantCard({ plant }: PlantCardProps) {
     setCurrentImageIndex(prev => (prev + 1) % plant.imageUrls.length);
     setImageError(false); // Reset error on image change
   }
-
-  const getTagColor = (tag: string) => {
-    switch (tag.toLowerCase()) {
-      case "for sale":
-        return "bg-primary text-primary-foreground hover:bg-primary/90";
-      case "for trade":
-        return "bg-secondary text-secondary-foreground hover:bg-secondary/80"; 
-      default:
-        return "bg-muted text-muted-foreground hover:bg-muted/80"; 
-    }
-  };
   
   const placeholderImageUrl = "https://placehold.co/600x400.png";
   const displayImageUrl = plant.imageUrls && plant.imageUrls.length > 0 && !imageError
@@ -151,7 +147,7 @@ export function PlantCard({ plant }: PlantCardProps) {
             </Link>
             {!plant.isAvailable && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <span className="text-white text-xl font-bold uppercase tracking-wider">Sold</span>
+                <span className="text-white text-xl font-bold uppercase tracking-wider">Sold Out</span>
               </div>
             )}
             {plant.imageUrls && plant.imageUrls.length > 1 && (
@@ -166,7 +162,7 @@ export function PlantCard({ plant }: PlantCardProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-4 flex-grow">
+        <CardContent className="p-4 flex-grow flex flex-col">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
             <Link href={`/plant/${plant.id!}`} className="hover:underline">
@@ -190,24 +186,26 @@ export function PlantCard({ plant }: PlantCardProps) {
              <Badge variant="secondary">For Trade</Badge>
           ) : (
             <>
-              <Badge>For Sale</Badge>
-              {plant.price === undefined || plant.price === null ? null : (
-                 <Badge variant="secondary">For Trade</Badge>
-              )}
+              {!plant.price && <Badge>Free</Badge>}
+              {(plant.price || 0) > 0 && <Badge>For Sale</Badge>}
             </>
           )}
-
-          {plant.tags?.slice(0, 2).map(tag => (
-            <Badge key={tag} variant="outline">
-              {tag}
-            </Badge>
-          ))}
         </div>
 
-        <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-3 h-[3.75rem]">
+        <CardDescription className="text-sm text-muted-foreground mb-3 line-clamp-2 h-[2.5rem] flex-grow">
           {plant.description}
         </CardDescription>
-        <div className="text-xs text-muted-foreground space-y-1">
+
+        <div className="flex justify-between items-center text-sm font-semibold mt-auto">
+            {plant.quantity && plant.quantity > 0 ? (
+                <p className="text-green-600">{plant.quantity} in stock</p>
+            ) : (
+                <p className="text-destructive">Out of stock</p>
+            )}
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 border-t flex flex-col gap-2 items-start">
+         <div className="w-full text-xs text-muted-foreground space-y-1 mb-2">
           <div className="flex items-center">
             <Link href={`/profile/${plant.ownerId}`} className="flex items-center hover:underline" onClick={(e) => e.stopPropagation()}>
               {plant.ownerAvatarUrl ? (
@@ -222,19 +220,18 @@ export function PlantCard({ plant }: PlantCardProps) {
             <div className="flex items-center">
               <MapPin className="w-3 h-3 mr-1.5" /> {plant.location}
             </div>
-
           )}
         </div>
-      </CardContent>
-      <CardFooter className="p-4 border-t flex gap-2">
+
          {!isOwner && plant.isAvailable && (
-          <>
+          <div className="w-full flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 
-              className="group/button" 
+              className="group/button px-2.5" 
               onClick={handleWishlistToggle}
               disabled={authLoading || isWishlistLoading}
+              aria-label={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
             >
               {isWishlistLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -259,22 +256,43 @@ export function PlantCard({ plant }: PlantCardProps) {
                 Message Seller
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full group/button"
-                onClick={handleAddToCart}
-                disabled={isInCart}
-              >
-                <ShoppingCart className={cn("w-4 h-4 mr-2 transition-colors", isInCart && "text-primary")} />
-                {isInCart ? "In Cart" : "Add to Cart"}
-              </Button>
+              <div className="w-full flex items-center gap-2">
+                <div className="flex items-center rounded-md border">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={(e) => { e.stopPropagation(); setPurchaseQuantity(q => Math.max(1, q - 1)); }}
+                        disabled={purchaseQuantity <= 1}
+                    >
+                        <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center text-sm font-medium">{purchaseQuantity}</span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={(e) => { e.stopPropagation(); setPurchaseQuantity(q => Math.min(maxPurchaseQuantity, q + 1)); }}
+                        disabled={purchaseQuantity >= maxPurchaseQuantity}
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full group/button"
+                    onClick={handleAddToCart}
+                    disabled={maxPurchaseQuantity <= 0}
+                >
+                    <ShoppingCart className="w-4 h-4 mr-2"/>
+                    {maxPurchaseQuantity <= 0 ? "Out of Stock" : "Add"}
+                </Button>
+              </div>
             )}
-          </>
+          </div>
         )}
       </CardFooter>
     </Card>
   );
 }
-
-    

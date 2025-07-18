@@ -13,7 +13,7 @@ interface CartItem extends PlantListing {
 
 interface CartContextType {
     items: CartItem[];
-    addToCart: (plant: PlantListing, quantity: number) => void;
+    addToCart: (plant: PlantListing, quantity: number, options?: { showToast?: boolean }) => void;
     removeFromCart: (plantId: string) => void;
     updateQuantity: (plantId: string, quantity: number) => void;
     clearCart: () => void;
@@ -42,9 +42,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
     }, [user]);
 
-    const addToCart = useCallback((plant: PlantListing, quantity: number) => {
+    const addToCart = useCallback((plant: PlantListing, quantity: number, options: { showToast?: boolean } = { showToast: true }) => {
         if (!plant.id) return;
     
+        let itemAdded = false;
+        let quantityUpdated = false;
+        let finalQuantity = 0;
+
         setItems(prevItems => {
             const existingItem = prevItems.find(item => item.id === plant.id);
             const availableStock = plant.quantity || 1;
@@ -52,37 +56,51 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (existingItem) {
                 const newQuantity = existingItem.quantity + quantity;
                 if (newQuantity > availableStock) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Stock Limit Reached',
-                        description: `You can't add more than ${availableStock} of ${plant.name} to your cart.`,
-                    });
-                    return prevItems; // Return previous state if invalid
+                    if (options.showToast) {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Stock Limit Reached',
+                            description: `You can't add more than ${availableStock} of ${plant.name} to your cart.`,
+                        });
+                    }
+                    return prevItems;
                 }
-                toast({
-                    title: 'Cart Updated',
-                    description: `Increased ${plant.name} quantity to ${newQuantity}.`,
-                });
+                quantityUpdated = true;
+                finalQuantity = newQuantity;
                 return prevItems.map(item =>
                     item.id === plant.id ? { ...item, quantity: newQuantity } : item
                 );
             } else {
                 if (quantity > availableStock) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Stock Limit Reached',
-                        description: `Only ${availableStock} of ${plant.name} are available.`,
-                    });
-                    return prevItems; // Return previous state if invalid
+                     if (options.showToast) {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Stock Limit Reached',
+                            description: `Only ${availableStock} of ${plant.name} are available.`,
+                        });
+                    }
+                    return prevItems;
                 }
-                toast({
-                    title: 'Added to Cart',
-                    description: `Added ${quantity} of ${plant.name} to your cart.`,
-                });
+                itemAdded = true;
+                finalQuantity = quantity;
                 return [...prevItems, { ...plant, quantity, stockQuantity: availableStock }];
             }
         });
-    }, []);
+
+        if (options.showToast) {
+             if (quantityUpdated) {
+                toast({
+                    title: 'Cart Updated',
+                    description: `Increased ${plant.name} quantity to ${finalQuantity}.`,
+                });
+            } else if (itemAdded) {
+                toast({
+                    title: 'Added to Cart',
+                    description: `Added ${finalQuantity} of ${plant.name} to your cart.`,
+                });
+            }
+        }
+    }, [toast]);
 
     const removeFromCart = useCallback((plantId: string) => {
         setItems(prevItems => prevItems.filter(item => item.id !== plantId));
@@ -115,7 +133,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 );
             }
         });
-    }, []);
+    }, [toast]);
 
     const clearCart = useCallback(() => {
         setItems([]);
