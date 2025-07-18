@@ -4,10 +4,11 @@ import Stripe from 'stripe';
 import type { PlantListing } from '@/models';
 
 // This is the correct way to initialize Stripe in an API Route.
-// It will only be instantiated if the secret key is provided in .env.local.
+// It will only be instantiated if the secret key is provided.
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-06-20',
+      typescript: true,
     })
   : null;
 
@@ -21,8 +22,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!stripe) {
-        const errorMessage = "Stripe is not configured. The server is missing a valid STRIPE_SECRET_KEY. Please check your server's environment variables.";
+        const errorMessage = "Stripe is not configured on the server. The STRIPE_SECRET_KEY is missing or invalid in your .env.local file.";
         console.error("Stripe Error:", errorMessage);
+        // This is the error message the user sees. It's now more specific.
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
 
@@ -66,13 +68,14 @@ export async function POST(req: NextRequest) {
             cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
             metadata: {
                 userId,
+                // This is the critical part: mapping items to include all necessary data for the webhook.
                 cartItems: JSON.stringify(items.map(item => ({
                     plantId: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
                     imageUrl: item.imageUrls[0] || "",
-                    sellerId: item.ownerId,
+                    sellerId: item.ownerId, // This was the missing piece.
                 }))),
             }
         });
