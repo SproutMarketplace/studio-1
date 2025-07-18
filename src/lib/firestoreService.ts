@@ -837,6 +837,10 @@ export const createOrder = async (
                 `sold one of your plants to ${buyerProfile.username}!`,
                 '/seller/orders'
             );
+
+            // 5. Award points to the seller
+            await awardRewardPoints(sellerId, 25, "Completed a sale");
+
         } catch (error) {
             console.error(`Failed to process order for seller ${sellerId}:`, error);
             // Decide if you want to continue or stop if one seller fails.
