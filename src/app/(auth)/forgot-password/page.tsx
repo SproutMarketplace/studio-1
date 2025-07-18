@@ -85,15 +85,13 @@ export default function ForgotPasswordPage() {
 
   return (
      <>
-        <div className="grid text-center">
+        <div className="grid text-center gap-2">
             <div className="flex justify-center">
                 <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
             </div>
-            <div className="bg-primary p-3 rounded-lg -mt-4 shadow-inner">
-                 <p className="text-sm font-medium text-center text-primary-foreground">
-                    Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
-                </p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+                Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
+            </p>
         </div>
       
         <Form {...form}>
