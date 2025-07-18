@@ -834,7 +834,7 @@ export const createOrder = async (
                 sellerId,
                 buyerId,
                 'newSale',
-                `sold one of your plants to ${buyerProfile.username}!`,
+                `bought one of your listings!`,
                 '/seller/orders'
             );
 
