@@ -36,7 +36,7 @@ function SellerSidebar() {
 
     return (
         <aside className="hidden md:flex flex-col w-64 bg-background border-r">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex flex-col items-center">
                 <Link href="/catalog">
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} />
                 </Link>
