@@ -172,7 +172,6 @@ export default function CommunityPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
-    const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
     
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [postToDelete, setPostToDelete] = useState<Post | null>(null);
