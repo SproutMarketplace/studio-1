@@ -1,9 +1,10 @@
 
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useCallback, useEffect } from 'react';
 import { PlantListing } from '@/models';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './auth-context';
 
 interface CartItem extends PlantListing {
     quantity: number; // Quantity in cart
@@ -33,84 +34,88 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
     const { toast } = useToast();
+    const { user } = useAuth(); // Get the current user from the auth context
+
+    // This effect will run whenever the user changes (login/logout).
+    // It clears the cart to ensure it's user-specific.
+    useEffect(() => {
+        setItems([]);
+    }, [user]);
 
     const addToCart = useCallback((plant: PlantListing, quantity: number) => {
         if (!plant.id) return;
     
-        const existingItem = items.find(item => item.id === plant.id);
-        const availableStock = plant.quantity || 1;
-    
-        if (existingItem) {
-            const newQuantity = existingItem.quantity + quantity;
-            if (newQuantity > availableStock) {
+        setItems(prevItems => {
+            const existingItem = prevItems.find(item => item.id === plant.id);
+            const availableStock = plant.quantity || 1;
+        
+            if (existingItem) {
+                const newQuantity = existingItem.quantity + quantity;
+                if (newQuantity > availableStock) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Stock Limit Reached',
+                        description: `You can't add more than ${availableStock} of ${plant.name} to your cart.`,
+                    });
+                    return prevItems; // Return previous state if invalid
+                }
                 toast({
-                    variant: 'destructive',
-                    title: 'Stock Limit Reached',
-                    description: `You can't add more than ${availableStock} of ${plant.name} to your cart.`,
+                    title: 'Cart Updated',
+                    description: `Increased ${plant.name} quantity to ${newQuantity}.`,
                 });
-                return;
-            }
-            setItems(prevItems =>
-                prevItems.map(item =>
+                return prevItems.map(item =>
                     item.id === plant.id ? { ...item, quantity: newQuantity } : item
-                )
-            );
-            toast({
-                title: 'Cart Updated',
-                description: `Increased ${plant.name} quantity to ${newQuantity}.`,
-            });
-        } else {
-            if (quantity > availableStock) {
+                );
+            } else {
+                if (quantity > availableStock) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Stock Limit Reached',
+                        description: `Only ${availableStock} of ${plant.name} are available.`,
+                    });
+                    return prevItems; // Return previous state if invalid
+                }
                 toast({
-                    variant: 'destructive',
-                    title: 'Stock Limit Reached',
-                    description: `Only ${availableStock} of ${plant.name} are available.`,
+                    title: 'Added to Cart',
+                    description: `Added ${quantity} of ${plant.name} to your cart.`,
                 });
-                return;
+                return [...prevItems, { ...plant, quantity, stockQuantity: availableStock }];
             }
-            setItems(prevItems => [...prevItems, { ...plant, quantity, stockQuantity: availableStock }]);
-            toast({
-                title: 'Added to Cart',
-                description: `Added ${quantity} of ${plant.name} to your cart.`,
-            });
-        }
-    }, [items]);
+        });
+    }, []);
 
     const removeFromCart = useCallback((plantId: string) => {
         setItems(prevItems => prevItems.filter(item => item.id !== plantId));
     }, []);
     
     const updateQuantity = useCallback((plantId: string, quantity: number) => {
-        const itemToUpdate = items.find(item => item.id === plantId);
-        if (!itemToUpdate) return;
-        
-        const stock = itemToUpdate.stockQuantity || 1;
+        setItems(prevItems => {
+            const itemToUpdate = prevItems.find(item => item.id === plantId);
+            if (!itemToUpdate) return prevItems;
+            
+            const stock = itemToUpdate.stockQuantity || 1;
 
-        if (quantity < 1) {
-            // Remove if quantity is less than 1
-            removeFromCart(plantId);
-            return;
-        }
+            if (quantity < 1) {
+                // Remove if quantity is less than 1
+                return prevItems.filter(item => item.id !== plantId);
+            }
 
-        if (quantity > stock) {
-            toast({
-                variant: 'destructive',
-                title: 'Stock Limit Reached',
-                description: `Only ${stock} available.`
-            });
-            setItems(prevItems =>
-                prevItems.map(item =>
+            if (quantity > stock) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Stock Limit Reached',
+                    description: `Only ${stock} available.`
+                });
+                return prevItems.map(item =>
                     item.id === plantId ? { ...item, quantity: stock } : item
-                )
-            );
-        } else {
-             setItems(prevItems =>
-                prevItems.map(item =>
+                );
+            } else {
+                 return prevItems.map(item =>
                     item.id === plantId ? { ...item, quantity: quantity } : item
-                )
-            );
-        }
-    }, [items, removeFromCart]);
+                );
+            }
+        });
+    }, []);
 
     const clearCart = useCallback(() => {
         setItems([]);
