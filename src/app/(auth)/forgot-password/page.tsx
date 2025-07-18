@@ -85,13 +85,10 @@ export default function ForgotPasswordPage() {
 
   return (
      <>
-        <div className="grid text-center gap-2">
+        <div className="grid text-center gap-2 mb-4">
             <div className="flex justify-center">
                 <Image src="/logo.png" alt="Sprout Logo" width={240} height={68} priority />
             </div>
-            <p className="text-sm text-muted-foreground font-semibold">
-                Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
-            </p>
         </div>
       
         <Form {...form}>
@@ -115,7 +112,7 @@ export default function ForgotPasswordPage() {
           </form>
         </Form>
       
-        <div className="mt-2 text-center text-sm">
+        <div className="mt-4 text-center text-sm">
           Remembered your password?{" "}
           <Link href="/login" className="underline">
             Sign in

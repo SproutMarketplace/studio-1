@@ -13,6 +13,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           className="object-cover"
           priority
         />
+        <div className="absolute bottom-0 left-0 p-8">
+            <p className="text-xl text-white font-semibold drop-shadow-md">
+                Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
+            </p>
+        </div>
       </div>
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[350px] gap-6">
