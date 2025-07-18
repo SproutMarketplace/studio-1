@@ -485,12 +485,9 @@ export const deleteForum = async (forumId: string, bannerUrl?: string): Promise<
 
     if (bannerUrl && storage) {
         try {
-            const bannerRef = ref(storage, bannerUrl);
-            await deleteObject(bannerRef);
+            await deleteForumBanner(bannerUrl);
         } catch (error: any) {
-            if (error.code !== 'storage/object-not-found') {
-                console.error(`Failed to delete banner for forum ${forumId}:`, error);
-            }
+             console.error(`Failed to delete banner for forum ${forumId}:`, error);
         }
     }
 
@@ -505,6 +502,20 @@ export const uploadForumBanner = async (forumId: string, file: File): Promise<st
     const imageRef = ref(storage, `forum_banners/${forumId}/${Date.now()}_${file.name}`);
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
+};
+
+export const deleteForumBanner = async (bannerUrl: string): Promise<void> => {
+    if (!storage) return;
+    try {
+        const bannerRef = ref(storage, bannerUrl);
+        await deleteObject(bannerRef);
+    } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') {
+            console.error(`Failed to delete banner at ${bannerUrl}:`, error);
+            throw error; // Re-throw if it's not a "not found" error
+        }
+        // If it's not found, we can just ignore it.
+    }
 };
 
 export const addModeratorToForum = async (forumId: string, userId: string): Promise<void> => {
