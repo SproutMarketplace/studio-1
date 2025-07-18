@@ -115,7 +115,7 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
     const userDocRef = doc(db, 'users', userId);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...doc.data() } as User;
+        return { id: docSnap.id, ...docSnap.data() } as User;
     }
     return null;
 };
