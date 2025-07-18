@@ -120,6 +120,20 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
     return null;
 };
 
+// REQUIRED FIRESTORE INDEX:
+// Collection: 'users'
+// Fields: 1. username (Ascending)
+export const getUserByUsername = async (username: string): Promise<User | null> => {
+    if (!db) return null;
+    const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        return { id: userDoc.id, ...userDoc.data() } as User;
+    }
+    return null;
+};
+
 export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): Promise<void> => {
     if (!db) return;
     const userRef = doc(db, 'users', user.userId); // Use userId as doc ID
@@ -428,12 +442,13 @@ export const getUserChats = async (userId: string): Promise<Chat[]> => {
 
 
 // --- Forum Functions (Forums Pages: /forums, /forums/[communityId]) ---
-export const createForum = async (forumData: Omit<Forum, 'id' | 'createdAt' | 'memberCount'>): Promise<string> => {
+export const createForum = async (forumData: Omit<Forum, 'id' | 'createdAt' | 'memberCount' | 'moderatorIds'>): Promise<string> => {
     if (!db) throw new Error("Firebase Firestore is not configured.");
     const docRef = await addDoc(collection(db, 'forums'), {
         ...forumData,
         createdAt: serverTimestamp(),
         memberCount: 1, // Start with the creator as a member
+        moderatorIds: [],
     });
     return docRef.id;
 };
@@ -465,11 +480,43 @@ export const updateForum = async (forumId: string, data: Partial<Forum>): Promis
     await updateDoc(forumRef, data);
 };
 
+export const deleteForum = async (forumId: string, bannerUrl?: string): Promise<void> => {
+    if (!db) throw new Error("Firestore is not configured.");
+
+    if (bannerUrl && storage) {
+        try {
+            const bannerRef = ref(storage, bannerUrl);
+            await deleteObject(bannerRef);
+        } catch (error: any) {
+            if (error.code !== 'storage/object-not-found') {
+                console.error(`Failed to delete banner for forum ${forumId}:`, error);
+            }
+        }
+    }
+
+    // This only deletes the forum document. A robust solution for deleting all posts and comments
+    // would require a Cloud Function to handle cascading deletes.
+    await deleteDoc(doc(db, 'forums', forumId));
+};
+
 export const uploadForumBanner = async (forumId: string, file: File): Promise<string> => {
     if (!storage) throw new Error("Firebase Storage is not configured.");
-    const imageRef = ref(storage, `forum_banners/${forumId}/${file.name}`);
+    // Add a timestamp to the filename to prevent caching issues on re-upload
+    const imageRef = ref(storage, `forum_banners/${forumId}/${Date.now()}_${file.name}`);
     const snapshot = await uploadBytes(imageRef, file);
     return await getDownloadURL(snapshot.ref);
+};
+
+export const addModeratorToForum = async (forumId: string, userId: string): Promise<void> => {
+    if (!db) return;
+    const forumRef = doc(db, 'forums', forumId);
+    await updateDoc(forumRef, { moderatorIds: arrayUnion(userId) });
+};
+
+export const removeModeratorFromForum = async (forumId: string, userId: string): Promise<void> => {
+    if (!db) return;
+    const forumRef = doc(db, 'forums', forumId);
+    await updateDoc(forumRef, { moderatorIds: arrayRemove(userId) });
 };
 
 export const addForumPost = async (post: Omit<Post, 'id' | 'createdAt' | 'upvotes' | 'downvotes' | 'commentCount'>): Promise<string> => {

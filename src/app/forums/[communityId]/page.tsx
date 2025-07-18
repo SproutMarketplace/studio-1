@@ -5,7 +5,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, UserPlus, MessagesSquare, Loader2, UploadCloud, X, ChevronLeft, ChevronRight, MessageCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { PlusCircle, UserPlus, MessagesSquare, Loader2, UploadCloud, X, ChevronLeft, ChevronRight, MessageCircle, MoreHorizontal, Pencil, Trash2, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
@@ -37,8 +37,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ManageCommunityDialog } from "@/components/manage-community-dialog";
 
 const postSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters.").max(100, "Title cannot exceed 100 characters."),
@@ -162,6 +162,7 @@ function PostCard({
 
 export default function CommunityPage() {
     const params = useParams();
+    const router = useRouter();
     const { toast } = useToast();
     const communityId = params.communityId as string;
     const { user, profile, loading: authLoading } = useAuth();
@@ -170,7 +171,8 @@ export default function CommunityPage() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
+    const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
     
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [postToDelete, setPostToDelete] = useState<Post | null>(null);
@@ -186,21 +188,20 @@ export default function CommunityPage() {
     });
     
     useEffect(() => {
-        if (isDialogOpen && editingPost) {
+        if (isPostDialogOpen && editingPost) {
             form.reset({
                 title: editingPost.title,
                 content: editingPost.content,
             });
             setImageFiles([]);
             setImagePreviews([]);
-        } else if (!isDialogOpen) {
-            // Reset everything when dialog is closed, regardless of mode
+        } else if (!isPostDialogOpen) {
             form.reset({ title: "", content: "" });
             setImageFiles([]);
             setImagePreviews([]);
             setEditingPost(null);
         }
-    }, [isDialogOpen, editingPost, form]);
+    }, [isPostDialogOpen, editingPost, form]);
 
 
     useEffect(() => {
@@ -281,7 +282,7 @@ export default function CommunityPage() {
     
     const handleEditPost = (post: Post) => {
         setEditingPost(post);
-        setIsDialogOpen(true);
+        setIsPostDialogOpen(true);
     };
 
     const handleDeleteInitiate = (post: Post) => {
@@ -324,10 +325,9 @@ export default function CommunityPage() {
             };
             await updateForumPost(communityId, editingPost.id, updatedData);
             
-            // Optimistic update
             setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, ...updatedData } : p));
             toast({ title: "Post Updated!", description: "Your changes have been saved." });
-            setIsDialogOpen(false);
+            setIsPostDialogOpen(false);
         } catch(e) {
              toast({ variant: "destructive", title: "Update Failed", description: "Could not save your changes." });
         }
@@ -349,7 +349,6 @@ export default function CommunityPage() {
         let postId = "";
 
         try {
-            // 1. Create the post document to get an ID
             const newPost = {
                 forumId: communityId,
                 title: data.title,
@@ -357,27 +356,24 @@ export default function CommunityPage() {
                 authorId: user.uid,
                 authorUsername: username,
                 authorAvatarUrl: profile?.avatarUrl || user.photoURL || "",
-                imageUrls: [], // Start with empty array
+                imageUrls: [],
             };
             postId = await addForumPost(newPost);
 
 
-            // 2. Upload images if they exist
             let imageUrls: string[] = [];
             if (imageFiles.length > 0) {
                 imageUrls = await Promise.all(
                     imageFiles.map((file, index) => uploadPostImage(communityId, postId, file, index))
                 );
-                // 3. Update the post document with the image URLs
                 await updateForumPost(communityId, postId, { imageUrls });
             }
 
-            // 4. Optimistically update the UI
             const newPostForState: Post = {
                 id: postId,
                 ...newPost,
                 imageUrls,
-                createdAt: new Date(), // Use JS Date for optimistic update
+                createdAt: new Date(),
                 upvotes: [],
                 downvotes: [],
                 commentCount: 0,
@@ -390,8 +386,7 @@ export default function CommunityPage() {
                 description: "Your post is now live in the community.",
             });
 
-            // 5. Reset form and close dialog
-            setIsDialogOpen(false);
+            setIsPostDialogOpen(false);
         } catch (error) {
             console.error("Error creating post:", error);
             toast({
@@ -401,6 +396,15 @@ export default function CommunityPage() {
             });
         }
     };
+    
+    // Callback to refresh community data from the management dialog
+    const onCommunityUpdate = (updatedForum: Forum) => {
+        setCommunity(updatedForum);
+    }
+    
+    const onCommunityDelete = () => {
+        router.push('/forums');
+    }
 
 
     if (isLoading) {
@@ -448,6 +452,7 @@ export default function CommunityPage() {
     }
     
     const isPostButtonDisabled = form.formState.isSubmitting;
+    const isCreator = user?.uid === community.creatorId;
 
 
     return (
@@ -470,16 +475,30 @@ export default function CommunityPage() {
                             <CardTitle className="text-3xl font-bold text-primary">{community.name}</CardTitle>
                             <CardDescription className="text-lg text-muted-foreground">{community.description}</CardDescription>
                         </div>
-                        <Button onClick={handleJoinCommunity} className="text-base py-2 h-auto shrink-0">
-                            <UserPlus className="mr-2 h-5 w-5" />
-                            Join Community
-                        </Button>
+                        <div className="flex gap-2">
+                             {isCreator && (
+                                <ManageCommunityDialog
+                                    forum={community}
+                                    onUpdate={onCommunityUpdate}
+                                    onDelete={onCommunityDelete}
+                                >
+                                    <Button variant="outline" className="text-base py-2 h-auto shrink-0">
+                                        <Settings className="mr-2 h-5 w-5" />
+                                        Manage
+                                    </Button>
+                                </ManageCommunityDialog>
+                            )}
+                            <Button onClick={handleJoinCommunity} className="text-base py-2 h-auto shrink-0">
+                                <UserPlus className="mr-2 h-5 w-5" />
+                                Join Community
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
             </Card>
 
             <div className="mb-6 flex justify-end">
-                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                 <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
                     <DialogTrigger asChild>
                         <Button className="text-base">
                             <PlusCircle className="mr-2 h-5 w-5" />
@@ -549,7 +568,7 @@ export default function CommunityPage() {
                                     </FormItem>
                                 )}
                                 <DialogFooter>
-                                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                                    <Button type="button" variant="ghost" onClick={() => setIsPostDialogOpen(false)}>Cancel</Button>
                                     <Button type="submit" disabled={isPostButtonDisabled}>
                                         {form.formState.isSubmitting ? (
                                             <>

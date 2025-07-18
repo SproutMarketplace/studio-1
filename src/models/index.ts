@@ -87,6 +87,7 @@ export interface Forum {
     createdAt: Timestamp;
     memberCount?: number; // Denormalized
     creatorId?: string; // UserID of creator
+    moderatorIds?: string[]; // Array of UserIDs for moderators
 }
 
 // Replaces the old ForumPost interface
