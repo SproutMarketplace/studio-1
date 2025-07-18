@@ -20,7 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Package, Inbox, Shipping } from "lucide-react";
+import { Loader2, Package, Inbox, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function OrdersPage() {
@@ -134,7 +134,7 @@ export default function OrdersPage() {
                                             </TableCell>
                                             <TableCell>
                                                  <Button variant="outline" size="sm" disabled>
-                                                    <Shipping className="mr-2 h-4 w-4" />
+                                                    <Truck className="mr-2 h-4 w-4" />
                                                     Create Label
                                                 </Button>
                                             </TableCell>
