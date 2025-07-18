@@ -673,6 +673,26 @@ export const getCommentsForPost = async (forumId: string, postId: string): Promi
     return comments;
 };
 
+export const deleteComment = async (forumId: string, postId: string, commentId: string, parentId?: string | null): Promise<void> => {
+    if (!db) throw new Error("Firebase Firestore is not configured.");
+    
+    const batch = writeBatch(db);
+
+    const commentRef = doc(db, 'forums', forumId, 'posts', postId, 'comments', commentId);
+    batch.delete(commentRef);
+
+    const postRef = doc(db, 'forums', forumId, 'posts', postId);
+    batch.update(postRef, { commentCount: increment(-1) });
+
+    if (parentId) {
+        const parentCommentRef = doc(db, 'forums', forumId, 'posts', postId, 'comments', parentId);
+        batch.update(parentCommentRef, { replyCount: increment(-1) });
+    }
+    
+    await batch.commit();
+};
+
+
 export const togglePostVote = async (forumId: string, postId: string, userId: string, voteType: 'upvote' | 'downvote'): Promise<void> => {
     if (!db) return;
     const postRef = doc(db, 'forums', forumId, 'posts', postId);

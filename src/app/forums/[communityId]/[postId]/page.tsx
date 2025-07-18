@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { getPostById, getCommentsForPost, addCommentToPost, togglePostVote } from "@/lib/firestoreService";
+import { getPostById, getCommentsForPost, addCommentToPost, togglePostVote, deleteComment } from "@/lib/firestoreService";
 import type { Post, Comment } from "@/models";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +23,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft, CornerDownRight } from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown, MessageCircle, Send, User as UserIcon, ChevronLeft, ChevronRight, ArrowLeft, CornerDownRight, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const commentSchema = z.object({
@@ -86,7 +96,17 @@ function CommentForm({
     );
 }
 
-function CommentComponent({ comment, onReply, replies }: { comment: Comment, onReply: (data: CommentFormValues, parentId: string) => Promise<void>, replies: Comment[] }) {
+function CommentComponent({ 
+    comment, 
+    onReply, 
+    replies,
+    onDeleteInitiate
+}: { 
+    comment: Comment, 
+    onReply: (data: CommentFormValues, parentId: string) => Promise<void>, 
+    replies: Comment[],
+    onDeleteInitiate: (comment: Comment) => void;
+}) {
     const { user } = useAuth();
     const [isReplying, setIsReplying] = useState(false);
     const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -116,11 +136,17 @@ function CommentComponent({ comment, onReply, replies }: { comment: Comment, onR
                         <span className="text-muted-foreground">&bull; {getFormattedDate(comment.createdAt)}</span>
                     </div>
                     <p className="text-foreground mt-1 whitespace-pre-wrap">{comment.content}</p>
-                    <div className="mt-1">
+                    <div className="mt-1 flex items-center gap-1">
                        {user && (
                          <Button variant="ghost" size="sm" onClick={() => setIsReplying(!isReplying)}>
                             <CornerDownRight className="w-4 h-4 mr-2"/>
                             Reply
+                         </Button>
+                       )}
+                       {user?.uid === comment.authorId && (
+                         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDeleteInitiate(comment)}>
+                            <Trash2 className="w-4 h-4 mr-2"/>
+                            Delete
                          </Button>
                        )}
                     </div>
@@ -138,7 +164,12 @@ function CommentComponent({ comment, onReply, replies }: { comment: Comment, onR
                  )}
                  {replies.map(reply => (
                     <div key={reply.id} className="mt-4">
-                         <CommentComponent comment={reply} onReply={onReply} replies={[]} />
+                         <CommentComponent 
+                            comment={reply} 
+                            onReply={onReply} 
+                            replies={[]} 
+                            onDeleteInitiate={onDeleteInitiate}
+                         />
                     </div>
                  ))}
             </div>
@@ -164,6 +195,10 @@ export default function PostDetailPage() {
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [voteLoading, setVoteLoading] = useState<null | 'up' | 'down'>(null);
+
+    const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
 
     useEffect(() => {
@@ -266,6 +301,31 @@ export default function PostDetailPage() {
             console.error(error);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+    
+    const handleDeleteInitiate = (comment: Comment) => {
+        setCommentToDelete(comment);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDeleteComment = async () => {
+        if (!commentToDelete || !commentToDelete.id) return;
+        setIsDeleting(true);
+        try {
+            await deleteComment(communityId, postId, commentToDelete.id, commentToDelete.parentId);
+            setComments(prev => prev.filter(c => c.id !== commentToDelete.id));
+            setPost(p => p ? ({...p, commentCount: p.commentCount - 1}) : null);
+             if (commentToDelete.parentId) {
+                setComments(prev => prev.map(c => c.id === commentToDelete.parentId ? { ...c, replyCount: (c.replyCount || 1) - 1 } : c));
+            }
+            toast({ title: "Comment Deleted", description: "Your comment has been removed." });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "Failed to delete comment." });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteAlertOpen(false);
+            setCommentToDelete(null);
         }
     };
 
@@ -398,6 +458,7 @@ export default function PostDetailPage() {
                             comment={comment}
                             onReply={handleCommentSubmit}
                             replies={repliesByParentId[comment.id] || []}
+                            onDeleteInitiate={handleDeleteInitiate}
                         />
                     ))}
                     {comments.length === 0 && (
@@ -405,6 +466,24 @@ export default function PostDetailPage() {
                     )}
                 </div>
             </section>
+            
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete your comment. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteComment} disabled={isDeleting} className={cn(isDeleting && "bg-destructive/80")}>
+                           {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                           {isDeleting ? 'Deleting...' : 'Yes, delete'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
