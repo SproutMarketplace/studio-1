@@ -1,3 +1,4 @@
+
 // src/app/shipping-guide/page.tsx
 "use client";
 
@@ -76,8 +77,8 @@ export default function ShippingGuidePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end p-4 border rounded-lg bg-muted/50 mb-8">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/50 mb-8">
+            <div className="w-full">
               <label htmlFor="from-country" className="text-sm font-medium">Shipping From</label>
               <Select onValueChange={setFromCountry} value={fromCountry}>
                 <SelectTrigger id="from-country"><SelectValue placeholder="Select Country" /></SelectTrigger>
@@ -88,7 +89,7 @@ export default function ShippingGuidePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2">
+            <div className="w-full">
               <label htmlFor="to-country" className="text-sm font-medium">Shipping To</label>
               <Select onValueChange={setToCountry} value={toCountry}>
                 <SelectTrigger id="to-country"><SelectValue placeholder="Select Country" /></SelectTrigger>
@@ -99,7 +100,7 @@ export default function ShippingGuidePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-5">
+            <div className="md:col-span-2">
               <label htmlFor="plant-species" className="text-sm font-medium">Plant Species (Scientific Name)</label>
               <Input
                 id="plant-species"
@@ -108,7 +109,7 @@ export default function ShippingGuidePage() {
                 onChange={(e) => setPlantSpecies(e.target.value)}
               />
             </div>
-            <div className="md:col-span-5">
+            <div className="md:col-span-2">
                 <Button onClick={handleSearch} className="w-full text-lg" disabled={!fromCountry || !toCountry || !plantSpecies}>
                     <Search className="mr-2 h-5 w-5" />
                     Get Requirements
