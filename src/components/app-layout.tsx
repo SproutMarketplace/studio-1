@@ -64,6 +64,7 @@ const mainNavItems: NavItem[] = [
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
     { href: "/wishlist", icon: Heart, label: "Wishlist" },
     { href: "/rewards", icon: Award, label: "Rewards" },
+    { href: "/shipping-guide", icon: Globe, label: "Shipping Guide" },
 ];
 
 function AppSidebar() {
