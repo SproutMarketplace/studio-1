@@ -10,7 +10,7 @@ import {
     Award,
     Heart,
     Bell,
-    MessagesSquare,
+    Users, // Changed from MessagesSquare
     PanelLeft,
     PlusSquare,
     ShoppingBag,
@@ -21,6 +21,7 @@ import {
     X,
     ShoppingCart,
     Globe,
+    MessagesSquare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
     { href: "/catalog", icon: ShoppingBag, label: "Plant Catalog" },
     { href: "/list-plant", icon: PlusSquare, label: "List a Plant" },
-    { href: "/forums", icon: MessagesSquare, label: "Community Forums" },
+    { href: "/forums", icon: Users, label: "Community Forums" },
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
     { href: "/shipping-guide", icon: Globe, label: "Shipping Guide" },
     { href: "/wishlist", icon: Heart, label: "Wishlist" },
