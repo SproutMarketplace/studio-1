@@ -1,7 +1,10 @@
 
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Megaphone, Star, Tag, Share2 } from "lucide-react";
+import Link from "next/link";
 
 export default function MarketingPage() {
     return (
@@ -12,9 +15,25 @@ export default function MarketingPage() {
             <p className="text-muted-foreground mb-6">Promote your listings and grow your reach with these powerful tools. More features are coming soon!</p>
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
+                <Card className="col-span-1 md:col-span-2">
                     <CardHeader>
                         <div className="flex items-center gap-3">
+                            <Tag className="h-6 w-6 text-primary" />
+                            <CardTitle>AI Pricing Insights</CardTitle>
+                        </div>
+                        <CardDescription>Get data-driven pricing recommendations to stay competitive.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col h-full">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Analyze recent sales data for any plant based on its species, size, age, and condition. Use our powerful AI tool to determine the best price for your listings and maximize your sales potential. This is a key tool for competitive selling.</p>
+                        <Button asChild className="mt-auto">
+                            <Link href="/seller/pricing-tool">Use Pricing Tool</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
                             <Star className="h-6 w-6 text-primary" />
                             <CardTitle>Featured Listings</CardTitle>
                         </div>
@@ -23,20 +42,6 @@ export default function MarketingPage() {
                     <CardContent className="flex flex-col h-full">
                         <p className="mb-4 text-sm text-muted-foreground flex-grow">Make your plant appear at the top of search results and on the homepage. This will be part of a future Sprout Pro subscription.</p>
                         <Button disabled>Feature a Listing (Coming Soon)</Button>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                         <div className="flex items-center gap-3">
-                            <Tag className="h-6 w-6 text-primary" />
-                            <CardTitle>Run a Sale</CardTitle>
-                        </div>
-                        <CardDescription>Create custom discount campaigns.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col h-full">
-                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Offer discounts on specific plants or your entire collection to attract more buyers and drive sales.</p>
-                        <Button disabled>Create a Campaign (Coming Soon)</Button>
                     </CardContent>
                 </Card>
 
