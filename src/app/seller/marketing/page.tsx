@@ -40,7 +40,9 @@ export default function MarketingPage() {
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow">
                         <p className="mb-4 text-sm text-muted-foreground flex-grow">Make your plant appear at the top of search results and on the homepage. The perfect way to get eyes on a rare plant or new arrival.</p>
-                        <Button disabled>Feature a Listing (Coming Soon)</Button>
+                        <Button asChild>
+                            <Link href="/seller/feature-listing">Feature a Listing</Link>
+                        </Button>
                     </CardContent>
                 </Card>
 
