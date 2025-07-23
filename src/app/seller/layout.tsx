@@ -12,7 +12,6 @@ import {
     CircleDollarSign,
     ArrowLeft,
     Tag,
-    Rocket,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -30,7 +29,6 @@ interface NavItem {
 const sellerNavItems: NavItem[] = [
     { href: "/seller/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/seller/orders", icon: Package, label: "Orders" },
-    { href: "/seller/campaigns", icon: Rocket, label: "Campaigns" },
     { href: "/seller/stats", icon: BarChart3, label: "Stats" },
     { href: "/seller/marketing", icon: Megaphone, label: "Marketing" },
     { href: "/seller/pricing-tool", icon: Tag, label: "Pricing Tool" },
