@@ -19,6 +19,7 @@ const PlantPricingInputSchema = z.object({
     ),
   size: z.string().optional().describe("The size of the plant (e.g., Small, Medium, Large, Cutting, Seedling)."),
   age: z.string().optional().describe("The age of the plant (e.g., Seedling, Young, Mature)."),
+  condition: z.string().optional().describe("The condition of the plant (e.g., Pristine, Good, Fair)."),
 });
 export type PlantPricingInput = z.infer<typeof PlantPricingInputSchema>;
 
@@ -40,15 +41,16 @@ const prompt = ai.definePrompt({
   output: {schema: PlantPricingOutputSchema},
   prompt: `You are a plant market data analyst for a large online marketplace. Your role is to provide sellers with pricing insights based on historical sales data.
 
-Given a plant name, and optionally its size and age, you must return the average selling price for that plant over various time periods. The prices should be realistic for the plant specified, reflecting its potential rarity, demand, size, and maturity.
+Given a plant name, and optionally its size, age, and condition, you must return the average selling price for that plant over various time periods. The prices should be realistic for the plant specified, reflecting its potential rarity, demand, and physical attributes.
 
-A larger and more mature plant should have a higher price than a smaller, younger one or a cutting.
+A larger, more mature plant in pristine condition should have a higher price than a smaller, younger one or a cutting, or one in fair condition.
 
 The values should fluctuate reasonably across the time periods. For example, a popular plant might see a slight price increase recently, while a common plant's price might be stable or slightly lower.
 
 Plant to analyze: {{{plantName}}}
 {{#if size}}Size: {{{size}}}{{/if}}
 {{#if age}}Age: {{{age}}}{{/if}}
+{{#if condition}}Condition: {{{condition}}}{{/if}}
 `,
 });
 

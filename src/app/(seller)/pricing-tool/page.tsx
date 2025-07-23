@@ -37,6 +37,7 @@ export default function PricingToolPage() {
     const [plantName, setPlantName] = useState("");
     const [plantSize, setPlantSize] = useState("");
     const [plantAge, setPlantAge] = useState("");
+    const [plantCondition, setPlantCondition] = useState("");
     const [results, setResults] = useState<PlantPricingOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,7 @@ export default function PricingToolPage() {
                 plantName,
                 size: plantSize || undefined,
                 age: plantAge || undefined,
+                condition: plantCondition || undefined,
             });
             setResults(output);
         } catch (err) {
@@ -101,7 +103,7 @@ export default function PricingToolPage() {
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                              <div className="space-y-2">
                                 <label className="text-sm font-medium">Size (Optional)</label>
                                 <Select onValueChange={setPlantSize} value={plantSize} disabled={isLoading}>
@@ -123,6 +125,17 @@ export default function PricingToolPage() {
                                         <SelectItem value="seedling">Seedling</SelectItem>
                                         <SelectItem value="young">Young Plant</SelectItem>
                                         <SelectItem value="mature">Mature Plant</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="space-y-2">
+                                <label className="text-sm font-medium">Condition (Optional)</label>
+                                <Select onValueChange={setPlantCondition} value={plantCondition} disabled={isLoading}>
+                                    <SelectTrigger className="text-base h-11"><SelectValue placeholder="Select condition..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="pristine">Pristine</SelectItem>
+                                        <SelectItem value="good">Good (Minor flaws)</SelectItem>
+                                        <SelectItem value="fair">Fair (Needs TLC)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
