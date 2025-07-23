@@ -19,14 +19,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Rocket, PlusCircle, Loader2, Inbox, Percent } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 const campaignSchema = z.object({
   name: z.string().min(5, "Campaign name must be at least 5 characters long."),
   type: z.enum(["percentage_discount", "fixed_discount", "free_shipping"]),
   value: z.coerce.number().min(0, "Discount value cannot be negative."),
-  appliesTo: z.array(z.string()).min(1, "You must select at least one plant for the campaign."),
+  applicationType: z.enum(["all_plants", "specific_plants"]),
+  appliesTo: z.array(z.string()),
+}).refine(data => {
+    if (data.applicationType === 'specific_plants') {
+        return data.appliesTo.length > 0;
+    }
+    return true;
+}, {
+    message: "You must select at least one plant for the campaign.",
+    path: ["appliesTo"],
 });
+
 
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 
@@ -44,9 +55,12 @@ export default function CampaignsPage() {
             name: "",
             type: "percentage_discount",
             value: 0,
+            applicationType: "all_plants",
             appliesTo: [],
         },
     });
+
+    const applicationType = form.watch("applicationType");
 
     useEffect(() => {
         if (user?.uid) {
@@ -54,7 +68,7 @@ export default function CampaignsPage() {
                 setIsLoading(true);
                 try {
                     const plants = await getUserPlantListings(user.uid);
-                    setUserPlants(plants);
+                    setUserPlants(plants.filter(p => p.isAvailable && !p.tradeOnly)); // Only allow campaigns on available, for-sale plants
                 } catch (error) {
                     console.error("Failed to fetch user plants:", error);
                     toast({ variant: 'destructive', title: 'Could not load your plant listings.' });
@@ -68,7 +82,7 @@ export default function CampaignsPage() {
 
     const plantOptions = userPlants.map(plant => ({
         value: plant.id!,
-        label: plant.name,
+        label: `${plant.name} ($${plant.price?.toFixed(2)})`,
     }));
     
     async function onSubmit(data: CampaignFormValues) {
@@ -170,20 +184,57 @@ export default function CampaignsPage() {
 
                                 <FormField
                                     control={form.control}
-                                    name="appliesTo"
+                                    name="applicationType"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <FormItem className="space-y-3">
                                             <FormLabel>Applies To</FormLabel>
-                                            <MultiSelect
-                                                options={plantOptions}
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                placeholder="Select plants for this campaign..."
-                                            />
+                                            <FormControl>
+                                                <RadioGroup
+                                                    onValueChange={field.onChange}
+                                                    defaultValue={field.value}
+                                                    className="flex flex-col space-y-1"
+                                                >
+                                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <RadioGroupItem value="all_plants" />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            All Plants
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <RadioGroupItem value="specific_plants" />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">
+                                                            Specific Plants
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                </RadioGroup>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
+
+                                {applicationType === 'specific_plants' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="appliesTo"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Select Plants</FormLabel>
+                                                <MultiSelect
+                                                    options={plantOptions}
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    placeholder="Select plants for this campaign..."
+                                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                             </CardContent>
                             <CardFooter className="flex justify-end gap-2">
                                 <Button type="button" variant="ghost" onClick={() => { setShowCreateForm(false); form.reset(); }}>Cancel</Button>
