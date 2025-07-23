@@ -4,6 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Megaphone, Star, Share2, Rocket } from "lucide-react";
+import Link from "next/link";
 
 export default function MarketingPage() {
     return (
@@ -14,6 +15,21 @@ export default function MarketingPage() {
             <p className="text-muted-foreground mb-6">Tools to help your listings get noticed by more buyers. These premium features will be available with a Sprout Pro plan.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <Card className="flex flex-col">
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
+                            <Rocket className="h-6 w-6 text-primary" />
+                            <CardTitle>Promotional Campaigns</CardTitle>
+                        </div>
+                        <CardDescription>Run sales and create discount codes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-grow">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Create excitement and drive sales by running limited-time promotions or offering unique discount codes to your followers.</p>
+                        <Button asChild>
+                            <Link href="/seller/campaigns">Create a Campaign</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
                 <Card className="flex flex-col">
                     <CardHeader>
                          <div className="flex items-center gap-3">
@@ -39,20 +55,6 @@ export default function MarketingPage() {
                     <CardContent className="flex flex-col flex-grow">
                         <p className="mb-4 text-sm text-muted-foreground flex-grow">Easily generate beautiful images and links for sharing your Sprout shop or specific listings on Instagram, Facebook, and more.</p>
                         <Button disabled>Get Sharable Links (Coming Soon)</Button>
-                    </CardContent>
-                </Card>
-
-                <Card className="flex flex-col">
-                    <CardHeader>
-                         <div className="flex items-center gap-3">
-                            <Rocket className="h-6 w-6 text-primary" />
-                            <CardTitle>Promotional Campaigns</CardTitle>
-                        </div>
-                        <CardDescription>Run sales and create discount codes.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col flex-grow">
-                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Create excitement and drive sales by running limited-time promotions or offering unique discount codes to your followers.</p>
-                        <Button disabled>Create a Campaign (Coming Soon)</Button>
                     </CardContent>
                 </Card>
             </div>
