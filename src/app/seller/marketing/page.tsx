@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Star, Share2, Rocket } from "lucide-react";
+import { Megaphone, Star, Share2, Rocket, Ticket } from "lucide-react";
 import Link from "next/link";
 
 export default function MarketingPage() {
@@ -18,15 +18,15 @@ export default function MarketingPage() {
                  <Card className="flex flex-col">
                     <CardHeader>
                          <div className="flex items-center gap-3">
-                            <Rocket className="h-6 w-6 text-primary" />
-                            <CardTitle>Promotional Campaigns</CardTitle>
+                            <Ticket className="h-6 w-6 text-primary" />
+                            <CardTitle>Coupons & Promotions</CardTitle>
                         </div>
-                        <CardDescription>Run sales and create discount codes.</CardDescription>
+                        <CardDescription>Run sales and create unique discount codes.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow">
-                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Create excitement and drive sales by running limited-time promotions or offering unique discount codes to your followers.</p>
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Create excitement by running limited-time sales, offering fixed-amount or percentage discounts, or providing free shipping.</p>
                         <Button asChild>
-                            <Link href="/seller/campaigns">Create a Campaign</Link>
+                            <Link href="/seller/campaigns">Manage Promotions</Link>
                         </Button>
                     </CardContent>
                 </Card>

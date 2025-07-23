@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Rocket, PlusCircle, Loader2, Inbox, Percent } from "lucide-react";
+import { Ticket, PlusCircle, Loader2, Inbox, Percent, DollarSign } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -25,16 +25,26 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const campaignSchema = z.object({
   name: z.string().min(5, "Campaign name must be at least 5 characters long."),
   type: z.enum(["percentage_discount", "fixed_discount", "free_shipping"]),
-  value: z.coerce.number().min(0, "Discount value cannot be negative."),
+  value: z.coerce.number().optional(), // Optional since free shipping has no value
   applicationType: z.enum(["all_plants", "specific_plants"]),
   appliesTo: z.array(z.string()),
 }).refine(data => {
-    if (data.applicationType === 'specific_plants') {
-        return data.appliesTo.length > 0;
+    // Value is required for discounts
+    if ((data.type === 'percentage_discount' || data.type === 'fixed_discount') && (data.value === undefined || data.value <= 0)) {
+        return false;
     }
     return true;
 }, {
-    message: "You must select at least one plant for the campaign.",
+    message: "A discount value greater than 0 is required.",
+    path: ["value"],
+}).refine(data => {
+    // AppliesTo is required for specific plants
+    if (data.applicationType === 'specific_plants' && data.appliesTo.length === 0) {
+        return false;
+    }
+    return true;
+}, {
+    message: "You must select at least one plant for a specific campaign.",
     path: ["appliesTo"],
 });
 
@@ -54,13 +64,14 @@ export default function CampaignsPage() {
         defaultValues: {
             name: "",
             type: "percentage_discount",
-            value: 0,
+            value: undefined,
             applicationType: "all_plants",
             appliesTo: [],
         },
     });
 
     const applicationType = form.watch("applicationType");
+    const campaignType = form.watch("type");
 
     useEffect(() => {
         if (user?.uid) {
@@ -68,7 +79,7 @@ export default function CampaignsPage() {
                 setIsLoading(true);
                 try {
                     const plants = await getUserPlantListings(user.uid);
-                    setUserPlants(plants.filter(p => p.isAvailable && !p.tradeOnly)); // Only allow campaigns on available, for-sale plants
+                    setUserPlants(plants.filter(p => p.isAvailable && !p.tradeOnly));
                 } catch (error) {
                     console.error("Failed to fetch user plants:", error);
                     toast({ variant: 'destructive', title: 'Could not load your plant listings.' });
@@ -88,12 +99,10 @@ export default function CampaignsPage() {
     async function onSubmit(data: CampaignFormValues) {
         setIsSubmitting(true);
         console.log("Campaign Data:", data);
-        // Here you would typically save the campaign data to Firestore
-        // For this example, we'll just simulate it.
         await new Promise(resolve => setTimeout(resolve, 1000));
         toast({
             title: "Campaign Created (Simulated)",
-            description: `Your "${data.name}" campaign has been saved.`,
+            description: `Your "${data.name}" promotion has been saved.`,
         });
         setIsSubmitting(false);
         setShowCreateForm(false);
@@ -104,16 +113,16 @@ export default function CampaignsPage() {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                    <Rocket className="h-8 w-8 text-primary" />
+                    <Ticket className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-3xl font-bold">Promotional Campaigns</h1>
+                        <h1 className="text-3xl font-bold">Coupons & Promotions</h1>
                         <p className="text-muted-foreground">Create and manage sales to attract more buyers.</p>
                     </div>
                 </div>
                 {!showCreateForm && (
                      <Button onClick={() => setShowCreateForm(true)}>
                         <PlusCircle className="mr-2 h-4 w-4"/>
-                        Create New Campaign
+                        Create Promotion
                     </Button>
                 )}
             </div>
@@ -123,7 +132,7 @@ export default function CampaignsPage() {
             {showCreateForm ? (
                  <Card className="max-w-2xl mx-auto">
                     <CardHeader>
-                        <CardTitle>New Campaign Details</CardTitle>
+                        <CardTitle>New Promotion Details</CardTitle>
                         <CardDescription>Set up the rules for your new promotion.</CardDescription>
                     </CardHeader>
                     <Form {...form}>
@@ -134,7 +143,7 @@ export default function CampaignsPage() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Campaign Name</FormLabel>
+                                            <FormLabel>Promotion Name</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="e.g., Summer Succulent Sale" {...field} />
                                             </FormControl>
@@ -143,43 +152,53 @@ export default function CampaignsPage() {
                                     )}
                                 />
 
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <FormField
                                         control={form.control}
                                         name="type"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Campaign Type</FormLabel>
+                                                <FormLabel>Promotion Type</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Select a campaign type" />
+                                                            <SelectValue placeholder="Select a promotion type" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="percentage_discount">Percentage Discount (%)</SelectItem>
-                                                        <SelectItem value="fixed_discount" disabled>Fixed Discount ($) (coming soon)</SelectItem>
-                                                        <SelectItem value="free_shipping" disabled>Free Shipping (coming soon)</SelectItem>
+                                                        <SelectItem value="fixed_discount">Fixed Discount ($)</SelectItem>
+                                                        <SelectItem value="free_shipping">Free Shipping</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-                                    <FormField
-                                        control={form.control}
-                                        name="value"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Discount Value</FormLabel>
-                                                 <div className="relative">
-                                                     <Input type="number" placeholder="e.g., 15" {...field} className="pr-8"/>
-                                                     <Percent className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                 </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    {campaignType !== 'free_shipping' && (
+                                        <FormField
+                                            control={form.control}
+                                            name="value"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Discount Value</FormLabel>
+                                                    <div className="relative">
+                                                        <Input 
+                                                            type="number" 
+                                                            placeholder={campaignType === 'percentage_discount' ? "e.g., 15" : "e.g., 5"} 
+                                                            {...field}
+                                                            className="pr-8"
+                                                            value={field.value ?? ''}
+                                                            onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                                                        />
+                                                        {campaignType === 'percentage_discount' && <Percent className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
+                                                        {campaignType === 'fixed_discount' && <DollarSign className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                  </div>
 
                                 <FormField
@@ -199,7 +218,7 @@ export default function CampaignsPage() {
                                                             <RadioGroupItem value="all_plants" />
                                                         </FormControl>
                                                         <FormLabel className="font-normal">
-                                                            All Plants
+                                                            All Available Plants
                                                         </FormLabel>
                                                     </FormItem>
                                                     <FormItem className="flex items-center space-x-3 space-y-0">
@@ -228,7 +247,8 @@ export default function CampaignsPage() {
                                                     options={plantOptions}
                                                     value={field.value}
                                                     onChange={field.onChange}
-                                                    placeholder="Select plants for this campaign..."
+                                                    placeholder="Select plants for this promotion..."
+                                                    disabled={isLoading || plantOptions.length === 0}
                                                 />
                                                 <FormMessage />
                                             </FormItem>
@@ -240,7 +260,7 @@ export default function CampaignsPage() {
                                 <Button type="button" variant="ghost" onClick={() => { setShowCreateForm(false); form.reset(); }}>Cancel</Button>
                                 <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                    Launch Campaign
+                                    Launch Promotion
                                 </Button>
                             </CardFooter>
                         </form>
@@ -249,16 +269,16 @@ export default function CampaignsPage() {
             ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Your Campaigns</CardTitle>
+                        <CardTitle>Your Promotions</CardTitle>
                         <CardDescription>
-                            A list of your active and past promotional campaigns will appear here.
+                            A list of your active and past promotions will appear here.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                          <div className="text-center py-12">
                             <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
-                            <h3 className="mt-4 text-xl font-semibold">No campaigns yet</h3>
-                            <p className="mt-1 text-muted-foreground">Click "Create New Campaign" to get started.</p>
+                            <h3 className="mt-4 text-xl font-semibold">No promotions yet</h3>
+                            <p className="mt-1 text-muted-foreground">Click "Create New Promotion" to get started.</p>
                         </div>
                     </CardContent>
                 </Card>
