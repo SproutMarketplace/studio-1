@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, TrendingUp, DollarSign } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 function StatCard({ title, value, loading }: { title: string, value: number, loading: boolean }) {
@@ -34,6 +35,8 @@ function StatCard({ title, value, loading }: { title: string, value: number, loa
 export default function PricingToolPage() {
     const { toast } = useToast();
     const [plantName, setPlantName] = useState("");
+    const [plantSize, setPlantSize] = useState("");
+    const [plantAge, setPlantAge] = useState("");
     const [results, setResults] = useState<PlantPricingOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -50,7 +53,11 @@ export default function PricingToolPage() {
         setResults(null);
 
         try {
-            const output = await getPlantPricingInsights({ plantName });
+            const output = await getPlantPricingInsights({ 
+                plantName,
+                size: plantSize || undefined,
+                age: plantAge || undefined,
+            });
             setResults(output);
         } catch (err) {
             console.error("Pricing tool error:", err);
@@ -75,22 +82,53 @@ export default function PricingToolPage() {
                 Enter a plant name to see its average selling price on Sprout over time.
             </p>
 
-            <Card className="max-w-2xl mx-auto shadow-lg">
+            <Card className="max-w-3xl mx-auto shadow-lg">
                 <CardHeader>
                     <CardTitle>Analyze Plant Prices</CardTitle>
                     <CardDescription>This premium tool helps you price your plants competitively.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
-                        <Input
-                            type="text"
-                            placeholder="e.g., Monstera Albo"
-                            value={plantName}
-                            onChange={(e) => setPlantName(e.target.value)}
-                            className="text-lg h-12 flex-grow"
-                            disabled={isLoading}
-                        />
-                        <Button type="submit" className="text-lg h-12" disabled={isLoading || !plantName.trim()}>
+                    <form onSubmit={handleSearch} className="space-y-4">
+                        <div className="space-y-2">
+                             <label className="text-sm font-medium">Plant Name*</label>
+                             <Input
+                                type="text"
+                                placeholder="e.g., Monstera Albo"
+                                value={plantName}
+                                onChange={(e) => setPlantName(e.target.value)}
+                                className="text-base h-11"
+                                disabled={isLoading}
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <label className="text-sm font-medium">Size (Optional)</label>
+                                <Select onValueChange={setPlantSize} value={plantSize} disabled={isLoading}>
+                                    <SelectTrigger className="text-base h-11"><SelectValue placeholder="Select size..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cutting">Cutting</SelectItem>
+                                        <SelectItem value="small">Small (2-4" pot)</SelectItem>
+                                        <SelectItem value="medium">Medium (4-6" pot)</SelectItem>
+                                        <SelectItem value="large">Large (6"+ pot)</SelectItem>
+                                        <SelectItem value="xlarge">Extra Large</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Age (Optional)</label>
+                                <Select onValueChange={setPlantAge} value={plantAge} disabled={isLoading}>
+                                    <SelectTrigger className="text-base h-11"><SelectValue placeholder="Select age..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="seedling">Seedling</SelectItem>
+                                        <SelectItem value="young">Young Plant</SelectItem>
+                                        <SelectItem value="mature">Mature Plant</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <Button type="submit" className="w-full text-lg h-12" disabled={isLoading || !plantName.trim()}>
                             {isLoading ? (
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
@@ -110,7 +148,7 @@ export default function PricingToolPage() {
                     {(isLoading || results) && (
                         <div className="mt-8 space-y-4">
                             <h3 className="text-lg font-semibold text-center">
-                                Average Sales Price for: <span className="text-primary">{plantName}</span>
+                                Average Sales Price for: <span className="text-primary">{plantName} {plantSize && `(${plantSize})`}</span>
                             </h3>
                              <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
                                <StatCard title="Last 7 Days" value={results?.last7days || 0} loading={isLoading} />
