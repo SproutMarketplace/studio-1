@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Star, Inbox, Gem, ExternalLink } from "lucide-react";
+import { Loader2, Star, Inbox, Gem, ExternalLink, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 
 
 export default function FeatureListingPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const { toast } = useToast();
     const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +35,8 @@ export default function FeatureListingPage() {
     
     const [selectedPlant, setSelectedPlant] = useState<PlantListing | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const FEATURE_COST = 100; // Cost in reward points
 
     useEffect(() => {
         if (user?.uid) {
@@ -57,6 +59,14 @@ export default function FeatureListingPage() {
     }, [user, authLoading, toast]);
     
     const handleFeatureClick = (plant: PlantListing) => {
+        if ((profile?.rewardPoints || 0) < FEATURE_COST) {
+            toast({
+                variant: "destructive",
+                title: "Not enough points",
+                description: `You need ${FEATURE_COST} reward points to feature a listing. Keep participating to earn more!`,
+            });
+            return;
+        }
         setSelectedPlant(plant);
         setIsDialogOpen(true);
     };
@@ -65,16 +75,16 @@ export default function FeatureListingPage() {
         if (!selectedPlant) return;
         
         setIsFeaturing(true);
-        // Simulate an API call to feature the listing
+        // Simulate an API call to feature the listing and deduct points
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // In a real app, you would update the plant document in Firestore,
-        // e.g., set `isFeatured: true` and a `featuredUntil: Timestamp`.
-        // await updatePlantListing(selectedPlant.id, { isFeatured: true, ... });
+        // In a real app, you would:
+        // 1. Call a function to deduct reward points: `redeemRewardPoints(user.uid, FEATURE_COST, ...)`
+        // 2. Update the plant document: `updatePlantListing(selectedPlant.id, { isFeatured: true, featuredUntil: ... })`
 
         toast({
             title: "Listing Featured! (Simulated)",
-            description: `Your "${selectedPlant.name}" listing is now featured.`,
+            description: `${FEATURE_COST} points have been redeemed. Your listing is now in the featured rotation.`,
         });
 
         setIsFeaturing(false);
@@ -88,7 +98,7 @@ export default function FeatureListingPage() {
                 <Star className="h-8 w-8 text-primary" />
                 <div>
                     <h1 className="text-3xl font-bold">Feature a Listing</h1>
-                    <p className="text-muted-foreground">Boost your listing's visibility by featuring it.</p>
+                    <p className="text-muted-foreground">Boost your listing's visibility by featuring it in the catalog.</p>
                 </div>
             </div>
 
@@ -96,7 +106,7 @@ export default function FeatureListingPage() {
                 <CardHeader>
                     <CardTitle>Choose a Listing to Feature</CardTitle>
                     <CardDescription>
-                        Select one of your active listings below to promote it. Featured listings appear at the top of search results and on the homepage.
+                        Select one of your active listings to promote it using your Reward Points.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -146,33 +156,41 @@ export default function FeatureListingPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Feature Your Listing</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This is a premium feature available to Sprout Pro subscribers.
+                           Use your reward points to boost this listing's visibility for 7 days.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4 space-y-4">
-                        <p>You are about to feature <span className="font-semibold text-primary">{selectedPlant?.name}</span>.</p>
-                        <div className="p-4 rounded-lg bg-primary/10 flex items-center gap-4">
+                         <div className="p-4 rounded-lg bg-primary/10 flex items-center gap-4">
                             <Gem className="h-8 w-8 text-primary"/>
                             <div>
-                                <p className="font-semibold">This action costs 1 Pro Credit.</p>
+                                <p className="font-semibold">Cost: {FEATURE_COST} Reward Points</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Your listing will be featured for 7 days.
+                                    You have: {profile?.rewardPoints || 0} points
+                                </p>
+                            </div>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted flex items-start gap-4">
+                            <RefreshCw className="h-6 w-6 text-muted-foreground mt-1 shrink-0"/>
+                            <div>
+                                <p className="font-semibold text-sm">How It Works</p>
+                                <p className="text-xs text-muted-foreground">
+                                    To ensure fairness, your item will be added to a rotating pool of featured listings shown to users in the catalog.
                                 </p>
                             </div>
                         </div>
                          <Button asChild variant="link" className="p-0 h-auto">
-                            <Link href="/subscription" target="_blank">Learn more about Sprout Pro <ExternalLink className="ml-2 h-3 w-3"/></Link>
+                            <Link href="/rewards">View Your Rewards <ExternalLink className="ml-2 h-3 w-3"/></Link>
                         </Button>
                     </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isFeaturing}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmFeature} disabled={isFeaturing}>
+                        <AlertDialogAction onClick={handleConfirmFeature} disabled={isFeaturing || (profile?.rewardPoints || 0) < FEATURE_COST}>
                             {isFeaturing ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                             ) : (
                                 <Star className="mr-2 h-4 w-4"/>
                             )}
-                            Confirm and Feature
+                            Confirm and Spend {FEATURE_COST} Points
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
