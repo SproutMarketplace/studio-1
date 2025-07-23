@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getRewardTransactions } from "@/lib/firestoreService";
-import type { RewardTransaction } from "@/models";
+import type { RewardTransaction, User } from "@/models";
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
 
@@ -15,6 +15,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Loader2, Award, Leaf, Gift, PlusSquare, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+
+// Mock data for the challenge leaderboard
+const mockLeaderboard: Partial<User>[] = [
+    { username: "PlantWizard", avatarUrl: "https://placehold.co/40x40.png" },
+    { username: "GreenThumb", avatarUrl: "https://placehold.co/40x40.png" },
+    { username: "CactusJack", avatarUrl: "https://placehold.co/40x40.png" },
+    { username: "FernGully", avatarUrl: "https://placehold.co/40x40.png" },
+    { username: "SoilSage", avatarUrl: "https://placehold.co/40x40.png" },
+];
+
 
 export default function RewardsPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -97,6 +109,31 @@ export default function RewardsPage() {
                     <div className="flex justify-between text-sm text-muted-foreground mt-2">
                         <span>{pointsForCurrentLevel} pts</span>
                         <span>Next level at {pointsForNextLevel} pts</span>
+                    </div>
+                </CardContent>
+            </Card>
+            
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3"><Trophy className="w-6 h-6 text-amber-500" /> Monthly Challenge Leaderboard</CardTitle>
+                    <CardDescription>Challenge: Most Plants Sold! Top seller wins <span className="font-bold text-primary">500 Reward Points!</span></CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        {mockLeaderboard.map((seller, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 rounded-md bg-amber-100/50">
+                                <div className="flex items-center gap-3">
+                                    <span className="font-bold text-lg text-amber-700 w-5 text-center">{index + 1}</span>
+                                    <Avatar className="h-9 w-9 border-2 border-amber-200">
+                                        <AvatarImage src={seller.avatarUrl} alt={seller.username} />
+                                        <AvatarFallback>{seller.username?.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium text-amber-900">{seller.username}</span>
+                                </div>
+                                {/* In a real app, this would show the seller's actual count */}
+                                <span className="text-sm font-semibold text-amber-800">{15 - index * 3} sold</span>
+                            </div>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
