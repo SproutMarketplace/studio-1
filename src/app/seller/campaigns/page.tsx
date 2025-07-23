@@ -21,6 +21,7 @@ import { Ticket, PlusCircle, Loader2, Inbox, Percent, DollarSign, Send, UserPlus
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 const campaignSchema = z.object({
@@ -294,10 +295,10 @@ export default function CampaignsPage() {
                     >
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                                <FormLabel>Enable "Thank You" Coupons</FormLabel>
-                                <FormDescription>Send a coupon after purchase.</FormDescription>
+                                <Label htmlFor="thank-you-switch">Enable "Thank You" Coupons</Label>
+                                <p className="text-sm text-muted-foreground">Send a coupon after purchase.</p>
                             </div>
-                             <Switch disabled/>
+                             <Switch id="thank-you-switch" disabled/>
                         </div>
                     </AutomatedCouponCard>
                     <AutomatedCouponCard
@@ -307,10 +308,10 @@ export default function CampaignsPage() {
                     >
                          <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                                <FormLabel>Enable "New Follower" Coupons</FormLabel>
-                                <FormDescription>Send a coupon upon follow.</FormDescription>
+                                <Label htmlFor="new-follower-switch">Enable "New Follower" Coupons</Label>
+                                <p className="text-sm text-muted-foreground">Send a coupon upon follow.</p>
                             </div>
-                            <Switch disabled />
+                            <Switch id="new-follower-switch" disabled />
                         </div>
                     </AutomatedCouponCard>
                 </div>
