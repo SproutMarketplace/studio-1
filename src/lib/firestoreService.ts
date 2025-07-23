@@ -854,6 +854,19 @@ export const createOrder = async (
 
             // 5. Award points to the seller
             await awardRewardPoints(sellerId, 25, "Completed a sale");
+            
+            // 6. Send "Thank You" coupon if enabled
+            if (sellerProfile.thankYouCoupon?.enabled) {
+                const coupon = sellerProfile.thankYouCoupon;
+                const discount = coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value.toFixed(2)}`;
+                await createNotification(
+                    buyerId,
+                    sellerId,
+                    'newSale', // Re-using 'newSale' type, or could create a 'newCoupon' type
+                    `sent you a ${discount} off coupon for your next purchase!`,
+                    `/profile/${sellerId}`
+                );
+            }
 
         } catch (error) {
             console.error(`Failed to process order for seller ${sellerId}:`, error);
@@ -915,6 +928,7 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
 
     await batch.commit();
 
+    // Create notification for the user who was followed
     await createNotification(
         targetUserId,
         currentUserId,
@@ -922,6 +936,21 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
         `started following you.`,
         `/profile/${currentUserId}`
     );
+
+    // Check if the followed user has a "New Follower" coupon enabled
+    const targetUserProfile = await getUserProfile(targetUserId);
+    if (targetUserProfile?.newFollowerCoupon?.enabled) {
+        const coupon = targetUserProfile.newFollowerCoupon;
+        const discount = coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value.toFixed(2)}`;
+        // Create a notification for the new follower about the coupon
+        await createNotification(
+            currentUserId,
+            targetUserId,
+            'newFollower', // Re-using type, could be 'newCoupon'
+            `sent you a ${discount} off coupon for being a new follower!`,
+            `/profile/${targetUserId}`
+        );
+    }
 };
 
 export const unfollowUser = async (currentUserId: string, targetUserId: string): Promise<void> => {

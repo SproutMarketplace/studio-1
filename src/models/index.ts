@@ -1,6 +1,12 @@
 
 import type { Timestamp, GeoPoint } from "firebase/firestore";
 
+export interface AutomatedCouponSettings {
+    enabled: boolean;
+    type: 'percentage' | 'fixed';
+    value: number;
+}
+
 // Replaces the old UserProfile interface
 export interface User {
     id?: string; // Document ID from Firestore, same as userId
@@ -19,6 +25,8 @@ export interface User {
     following: string[]; // Array of UserIDs
     stripeAccountId?: string; // For Stripe Connect
     stripeDetailsSubmitted?: boolean; // For Stripe Connect
+    thankYouCoupon?: AutomatedCouponSettings;
+    newFollowerCoupon?: AutomatedCouponSettings;
 }
 
 // Replaces the old Plant interface

@@ -7,13 +7,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getUserPlantListings } from "@/lib/firestoreService";
-import type { PlantListing } from "@/models";
+import { getUserPlantListings, updateUserData } from "@/lib/firestoreService";
+import type { PlantListing, AutomatedCouponSettings } from "@/models";
 import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 
-const campaignSchema = z.object({
+const manualCampaignSchema = z.object({
   name: z.string().min(5, "Campaign name must be at least 5 characters long."),
   type: z.enum(["percentage_discount", "fixed_discount", "free_shipping"]),
   value: z.coerce.number().optional(), // Optional since free shipping has no value
@@ -48,8 +48,26 @@ const campaignSchema = z.object({
     path: ["appliesTo"],
 });
 
+type ManualCampaignFormValues = z.infer<typeof manualCampaignSchema>;
 
-type CampaignFormValues = z.infer<typeof campaignSchema>;
+
+const automatedCouponSchema = z.object({
+    enabled: z.boolean(),
+    type: z.enum(["percentage", "fixed"]),
+    value: z.coerce.number().min(0, "Value cannot be negative.")
+}).refine(data => {
+    if (data.enabled && data.value <= 0) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Discount must be greater than 0.",
+    path: ["value"],
+});
+
+
+type AutomatedCouponFormValues = z.infer<typeof automatedCouponSchema>;
+
 
 function ManualPromotionForm({ onCancel }: { onCancel: () => void }) {
     const { user } = useAuth();
@@ -58,8 +76,8 @@ function ManualPromotionForm({ onCancel }: { onCancel: () => void }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-     const form = useForm<CampaignFormValues>({
-        resolver: zodResolver(campaignSchema),
+     const form = useForm<ManualCampaignFormValues>({
+        resolver: zodResolver(manualCampaignSchema),
         defaultValues: {
             name: "",
             type: "percentage_discount",
@@ -95,7 +113,7 @@ function ManualPromotionForm({ onCancel }: { onCancel: () => void }) {
         label: `${plant.name} ($${plant.price?.toFixed(2)})`,
     }));
 
-     async function onSubmit(data: CampaignFormValues) {
+     async function onSubmit(data: ManualCampaignFormValues) {
         setIsSubmitting(true);
         console.log("Campaign Data:", data);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -238,37 +256,131 @@ function ManualPromotionForm({ onCancel }: { onCancel: () => void }) {
     )
 }
 
-function AutomatedCouponCard({
+function AutomatedCouponForm({
     title,
     description,
     icon: Icon,
-    children
+    settings,
+    couponType,
 }: {
     title: string;
     description: string;
     icon: React.ElementType;
-    children: React.ReactNode
+    settings?: AutomatedCouponSettings;
+    couponType: 'thankYouCoupon' | 'newFollowerCoupon';
 }) {
+    const { user, updateUserProfileInContext } = useAuth();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const form = useForm<AutomatedCouponFormValues>({
+        resolver: zodResolver(automatedCouponSchema),
+        defaultValues: {
+            enabled: settings?.enabled || false,
+            type: settings?.type || "percentage",
+            value: settings?.value || 0,
+        },
+    });
+
+    const isEnabled = form.watch("enabled");
+
+    async function onSubmit(data: AutomatedCouponFormValues) {
+        if (!user) return;
+        setIsSubmitting(true);
+        try {
+            await updateUserData(user.uid, { [couponType]: data });
+            updateUserProfileInContext({ [couponType]: data });
+            toast({ title: "Settings Saved!", description: `${title} settings have been updated.` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save your settings.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
     return (
         <Card>
-            <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-                <div className="p-3 bg-primary/10 rounded-full">
-                    <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                    <CardTitle>{title}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {children}
-            </CardContent>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+                        <div className="p-3 bg-primary/10 rounded-full">
+                            <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle>{title}</CardTitle>
+                            <CardDescription>{description}</CardDescription>
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="enabled"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </CardHeader>
+                    {isEnabled && (
+                        <>
+                            <CardContent className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="type"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Discount Type</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                                    <SelectItem value="fixed">Fixed ($)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="value"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Discount Value</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                            <CardFooter className="justify-end">
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Settings
+                                </Button>
+                            </CardFooter>
+                        </>
+                    )}
+                </form>
+            </Form>
         </Card>
-    )
+    );
 }
 
 export default function CampaignsPage() {
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const { profile, loading } = useAuth();
+    
+    if (loading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    }
     
     return (
         <div className="space-y-8">
@@ -288,32 +400,20 @@ export default function CampaignsPage() {
                  <h2 className="text-2xl font-semibold">Automated Coupons</h2>
                  <p className="text-muted-foreground">Reward your customers automatically for their loyalty and engagement. Set them up once and let them run.</p>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <AutomatedCouponCard 
+                    <AutomatedCouponForm
                         title="Thank You Coupon"
                         description="Automatically send a coupon to buyers after they complete a purchase from your shop."
                         icon={Send}
-                    >
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <Label htmlFor="thank-you-switch">Enable "Thank You" Coupons</Label>
-                                <p className="text-sm text-muted-foreground">Send a coupon after purchase.</p>
-                            </div>
-                             <Switch id="thank-you-switch" disabled/>
-                        </div>
-                    </AutomatedCouponCard>
-                    <AutomatedCouponCard
+                        settings={profile?.thankYouCoupon}
+                        couponType="thankYouCoupon"
+                    />
+                    <AutomatedCouponForm
                         title="New Follower Coupon"
                         description="Incentivize users to follow your shop by offering a small discount when they do."
                         icon={UserPlus}
-                    >
-                         <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <Label htmlFor="new-follower-switch">Enable "New Follower" Coupons</Label>
-                                <p className="text-sm text-muted-foreground">Send a coupon upon follow.</p>
-                            </div>
-                            <Switch id="new-follower-switch" disabled />
-                        </div>
-                    </AutomatedCouponCard>
+                        settings={profile?.newFollowerCoupon}
+                        couponType="newFollowerCoupon"
+                    />
                 </div>
             </section>
             
@@ -354,3 +454,5 @@ export default function CampaignsPage() {
         </div>
     )
 }
+
+    
