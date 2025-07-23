@@ -50,13 +50,13 @@ export default function MarketingPage() {
                     <CardHeader>
                          <div className="flex items-center gap-3">
                             <Share2 className="h-6 w-6 text-primary" />
-                            <CardTitle>Social Sharing</CardTitle>
+                            <CardTitle>AI Ad Generator</CardTitle>
                         </div>
-                        <CardDescription>Share your profile with your followers.</CardDescription>
+                        <CardDescription>Create ads for external platforms.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow">
-                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Easily generate beautiful images and links for sharing your Sprout shop or specific listings on Instagram, Facebook, and more.</p>
-                        <Button disabled>Get Sharable Links (Coming Soon)</Button>
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Automatically generate beautiful, shareable ad images for your listings to post on platforms like Instagram, Facebook, and Pinterest.</p>
+                        <Button disabled>Generate Ad (Coming Soon)</Button>
                     </CardContent>
                 </Card>
             </div>
