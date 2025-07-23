@@ -6,4 +6,5 @@ config();
 // The AI Plant Finder flow is no longer part of the application.
 // If you add new Genkit flows, import them here for local development.
 
+import '@/ai/flows/plant-pricing-flow.ts';
     

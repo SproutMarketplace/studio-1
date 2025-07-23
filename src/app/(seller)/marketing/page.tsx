@@ -1,21 +1,62 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Megaphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Megaphone, Star, Tag, Share2 } from "lucide-react";
+import Link from "next/link";
 
 export default function MarketingPage() {
     return (
         <div>
             <h1 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
-                <Megaphone className="h-8 w-8" /> Marketing
+                <Megaphone className="h-8 w-8" /> Marketing Tools
             </h1>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Promote Your Listings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">This feature is coming soon. Access tools to help your plants get noticed by more buyers.</p>
-                </CardContent>
-            </Card>
+            <p className="text-muted-foreground mb-6">Promote your listings and grow your reach with these powerful tools. More features are coming soon!</p>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <Tag className="h-6 w-6 text-primary" />
+                            <CardTitle>Pricing Insights</CardTitle>
+                        </div>
+                        <CardDescription>Get data-driven pricing recommendations.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col h-full">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Analyze recent sales data for any plant to determine the best price for your listings. This is a key tool for competitive selling.</p>
+                        <Button asChild>
+                            <Link href="/seller/pricing-tool">Use Pricing Tool</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
+                            <Star className="h-6 w-6 text-primary" />
+                            <CardTitle>Featured Listings</CardTitle>
+                        </div>
+                        <CardDescription>Boost visibility for your best plants.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col h-full">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Make your plant appear at the top of search results and on the homepage. This will be part of a future Sprout Pro subscription.</p>
+                        <Button disabled>Feature a Listing (Coming Soon)</Button>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
+                            <Share2 className="h-6 w-6 text-primary" />
+                            <CardTitle>Social Sharing Tools</CardTitle>
+                        </div>
+                        <CardDescription>Share your profile with your followers.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col h-full">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Easily share a link to your Sprout shop or specific listings on your social media accounts to bring in external customers.</p>
+                        <Button disabled>Get Sharable Links (Coming Soon)</Button>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
 }
