@@ -8,19 +8,20 @@ import { cn } from "@/lib/utils";
 
 const freeFeatures = [
   "List plants for sale or trade",
-  "Engage in community forums",
-  "Basic seller dashboard",
+  "Engage in public community forums",
+  "Basic seller dashboard & stats",
   "Manage personal plant wishlist",
 ];
 
 const proFeatures = [
   "All features from the Free plan",
-  "Run sales with coupons & promotions",
-  "Automated 'Thank You' & 'New Follower' coupons",
-  "Feature your listings for more visibility",
-  "Advanced sales analytics",
+  "Verified Seller Badge next to your name",
+  "Access to advanced marketing tools (Coupons & Featured Listings)",
+  "Waived platform fees on sales",
+  "Advanced analytics & sales insights",
+  "Access to exclusive plant collections & sales events",
+  "Entry to a private, Pro-only community forum",
   "AI-powered pricing insights tool",
-  "Priority customer support",
 ];
 
 function TierCard({ title, description, price, features, isPro = false }: { title: string, description: string, price: string, features: string[], isPro?: boolean }) {
@@ -42,8 +43,8 @@ function TierCard({ title, description, price, features, isPro = false }: { titl
                 </p>
                 <ul className="space-y-3">
                     {features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-3">
-                            <CheckCircle className="h-5 w-5 text-primary" />
+                        <li key={index} className="flex items-start gap-3">
+                            <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                             <span className="text-sm">{feature}</span>
                         </li>
                     ))}
