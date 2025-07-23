@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData, getUserProfile, followUser, unfollowUser, getOrdersForBuyer } from "@/lib/firestoreService";
+import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData, getUserProfile, followUser, unfollowUser, getOrdersForBuyer, getOrdersForSeller } from "@/lib/firestoreService";
 import type { PlantListing, User, Order } from "@/models";
 import { format } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, CircleDollarSign, Package, BarChart3 } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,26 @@ import { EditProfileForm } from "@/components/edit-profile-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+
+const StatCard = ({ title, value, icon: Icon, isCurrency = false, loading }: { title: string, value: number, icon: React.ElementType, isCurrency?: boolean, loading: boolean}) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+                {title}
+            </CardTitle>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            ) : (
+                <div className="text-2xl font-bold">
+                    {isCurrency ? `$${value.toFixed(2)}` : value}
+                </div>
+            )}
+        </CardContent>
+    </Card>
+);
 
 export default function ProfilePage() {
   const params = useParams();
@@ -35,6 +55,9 @@ export default function ProfilePage() {
   const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
   const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
+  
+  const [sellerStats, setSellerStats] = useState({ revenue: 0, sales: 0, activeListings: 0 });
+  const [sellerStatsLoading, setSellerStatsLoading] = useState(false);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -191,6 +214,33 @@ export default function ProfilePage() {
     }
   };
 
+  const onTabChange = async (tabValue: string) => {
+    if (tabValue === 'seller-dashboard' && isOwner && loggedInUser) {
+        setSellerStatsLoading(true);
+        try {
+            const [userPlants, sellerOrders] = await Promise.all([
+                getUserPlantListings(loggedInUser.uid),
+                getOrdersForSeller(loggedInUser.uid)
+            ]);
+            
+            const activeListings = userPlants.filter(p => p.isAvailable).length;
+            const itemsSoldBySeller = sellerOrders.flatMap(order => 
+                order.items.filter(item => item.sellerId === loggedInUser.uid)
+            );
+            
+            const sales = itemsSoldBySeller.reduce((acc, item) => acc + item.quantity, 0);
+            const revenue = itemsSoldBySeller.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+            setSellerStats({ revenue, sales, activeListings });
+        } catch (error) {
+            console.error("Failed to fetch seller stats:", error);
+            toast({ variant: 'destructive', title: 'Could not load seller stats.' });
+        } finally {
+            setSellerStatsLoading(false);
+        }
+    }
+  };
+
 
   if (authLoading || pageLoading) {
     return (
@@ -308,7 +358,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="listings" className="w-full">
+      <Tabs defaultValue="listings" className="w-full" onValueChange={onTabChange}>
         <TabsList className={cn("grid w-full", isOwner ? "grid-cols-2 md:grid-cols-5" : "grid-cols-1")}>
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />Listings</TabsTrigger>
           {isOwner && <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>}
@@ -436,20 +486,36 @@ export default function ProfilePage() {
                 <TabsContent value="seller-dashboard" className="mt-6">
                     <Card>
                         <CardHeader>
-                        <CardTitle>Seller Dashboard</CardTitle>
-                        <CardDescription>
-                            Access tools and insights to grow your plant business.
-                        </CardDescription>
+                            <CardTitle>Seller Dashboard Overview</CardTitle>
+                            <CardDescription>A quick look at your seller performance.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                        <p className="mb-4 text-sm text-muted-foreground">
-                            Manage your orders, view sales statistics, and track your finances all in one place.
-                        </p>
-                        <Button asChild>
-                            <Link href="/seller/dashboard">
-                            Go to Seller Dashboard
-                            </Link>
-                        </Button>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <StatCard 
+                                    title="Total Revenue" 
+                                    value={sellerStats.revenue}
+                                    icon={CircleDollarSign}
+                                    isCurrency
+                                    loading={sellerStatsLoading}
+                                />
+                                <StatCard 
+                                    title="Total Sales" 
+                                    value={sellerStats.sales}
+                                    icon={Package}
+                                    loading={sellerStatsLoading}
+                                />
+                                <StatCard 
+                                    title="Active Listings" 
+                                    value={sellerStats.activeListings}
+                                    icon={BarChart3}
+                                    loading={sellerStatsLoading}
+                                />
+                            </div>
+                            <Button asChild className="w-full">
+                                <Link href="/seller/dashboard">
+                                Go to Full Seller Dashboard
+                                </Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 </TabsContent>
