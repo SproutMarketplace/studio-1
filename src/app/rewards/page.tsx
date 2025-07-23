@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Award, Leaf, Gift, PlusSquare } from "lucide-react";
+import { Loader2, Award, Leaf, Gift, PlusSquare, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function RewardsPage() {
@@ -162,6 +162,13 @@ export default function RewardsPage() {
                         <div>
                             <p className="font-semibold">Daily Login</p>
                             <p className="text-sm text-muted-foreground">+5 Points</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center">
+                        <Trophy className="w-8 h-8 mr-4 text-accent" />
+                        <div>
+                            <p className="font-semibold">Win a Monthly Challenge</p>
+                            <p className="text-sm text-muted-foreground">Up to 500 Points</p>
                         </div>
                     </div>
                 </CardContent>
