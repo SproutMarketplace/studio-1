@@ -63,7 +63,6 @@ const mainNavItems: NavItem[] = [
     { href: "/list-plant", icon: PlusSquare, label: "List a Plant" },
     { href: "/forums", icon: Users, label: "Community Forums" },
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
-    { href: "/shipping-guide", icon: Globe, label: "Shipping Guide" },
     { href: "/wishlist", icon: Heart, label: "Wishlist" },
     { href: "/rewards", icon: Award, label: "Rewards" },
 ];
