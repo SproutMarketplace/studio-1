@@ -17,6 +17,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
+
 
 interface NavItem {
     href: string;
@@ -38,11 +40,12 @@ function SellerSidebar() {
 
     return (
         <aside className="hidden md:flex flex-col w-64 bg-background border-r">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex flex-col items-center text-center gap-4">
                 <Link href="/catalog">
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} />
                 </Link>
-                <p className="text-sm text-muted-foreground mt-1">Seller Dashboard</p>
+                <Separator/>
+                <p className="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Seller Dashboard</p>
             </div>
             <nav className="flex-1 px-2 py-4 space-y-1">
                 {sellerNavItems.map((item) => (
