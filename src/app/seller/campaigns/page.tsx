@@ -17,9 +17,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Ticket, PlusCircle, Loader2, Inbox, Percent, DollarSign } from "lucide-react";
+import { Ticket, PlusCircle, Loader2, Inbox, Percent, DollarSign, Send, UserPlus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 
 const campaignSchema = z.object({
@@ -29,7 +30,6 @@ const campaignSchema = z.object({
   applicationType: z.enum(["all_plants", "specific_plants"]),
   appliesTo: z.array(z.string()),
 }).refine(data => {
-    // Value is required for discounts
     if ((data.type === 'percentage_discount' || data.type === 'fixed_discount') && (data.value === undefined || data.value <= 0)) {
         return false;
     }
@@ -38,7 +38,6 @@ const campaignSchema = z.object({
     message: "A discount value greater than 0 is required.",
     path: ["value"],
 }).refine(data => {
-    // AppliesTo is required for specific plants
     if (data.applicationType === 'specific_plants' && data.appliesTo.length === 0) {
         return false;
     }
@@ -51,15 +50,14 @@ const campaignSchema = z.object({
 
 type CampaignFormValues = z.infer<typeof campaignSchema>;
 
-export default function CampaignsPage() {
+function ManualPromotionForm({ onCancel }: { onCancel: () => void }) {
     const { user } = useAuth();
     const { toast } = useToast();
     const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showCreateForm, setShowCreateForm] = useState(false);
 
-    const form = useForm<CampaignFormValues>({
+     const form = useForm<CampaignFormValues>({
         resolver: zodResolver(campaignSchema),
         defaultValues: {
             name: "",
@@ -73,7 +71,7 @@ export default function CampaignsPage() {
     const applicationType = form.watch("applicationType");
     const campaignType = form.watch("type");
 
-    useEffect(() => {
+     useEffect(() => {
         if (user?.uid) {
             const fetchPlants = async () => {
                 setIsLoading(true);
@@ -95,8 +93,8 @@ export default function CampaignsPage() {
         value: plant.id!,
         label: `${plant.name} ($${plant.price?.toFixed(2)})`,
     }));
-    
-    async function onSubmit(data: CampaignFormValues) {
+
+     async function onSubmit(data: CampaignFormValues) {
         setIsSubmitting(true);
         console.log("Campaign Data:", data);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -105,13 +103,175 @@ export default function CampaignsPage() {
             description: `Your "${data.name}" promotion has been saved.`,
         });
         setIsSubmitting(false);
-        setShowCreateForm(false);
+        onCancel();
         form.reset();
     }
+
+
+    return (
+        <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+                <CardTitle>New Manual Promotion</CardTitle>
+                <CardDescription>Set up the rules for a sale you can run anytime.</CardDescription>
+            </CardHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardContent className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Promotion Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g., Summer Succulent Sale" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                control={form.control}
+                                name="type"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Promotion Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a promotion type" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="percentage_discount">Percentage Discount (%)</SelectItem>
+                                                <SelectItem value="fixed_discount">Fixed Discount ($)</SelectItem>
+                                                <SelectItem value="free_shipping">Free Shipping</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            {campaignType !== 'free_shipping' && (
+                                <FormField
+                                    control={form.control}
+                                    name="value"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Discount Value</FormLabel>
+                                            <div className="relative">
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder={campaignType === 'percentage_discount' ? "e.g., 15" : "e.g., 5"} 
+                                                    {...field}
+                                                    className="pr-8"
+                                                    value={field.value ?? ''}
+                                                    onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                                                />
+                                                {campaignType === 'percentage_discount' && <Percent className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
+                                                {campaignType === 'fixed_discount' && <DollarSign className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                            </div>
+                        <FormField
+                            control={form.control}
+                            name="applicationType"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                    <FormLabel>Applies To</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                            className="flex flex-col space-y-1"
+                                        >
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="all_plants" /></FormControl>
+                                                <FormLabel className="font-normal">All Available Plants</FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                <FormControl><RadioGroupItem value="specific_plants" /></FormControl>
+                                                <FormLabel className="font-normal">Specific Plants</FormLabel>
+                                            </FormItem>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {applicationType === 'specific_plants' && (
+                            <FormField
+                                control={form.control}
+                                name="appliesTo"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Select Plants</FormLabel>
+                                        <MultiSelect
+                                            options={plantOptions}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Select plants for this promotion..."
+                                            disabled={isLoading || plantOptions.length === 0}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                    </CardContent>
+                    <CardFooter className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Launch Promotion
+                        </Button>
+                    </CardFooter>
+                </form>
+            </Form>
+        </Card>
+    )
+}
+
+function AutomatedCouponCard({
+    title,
+    description,
+    icon: Icon,
+    children
+}: {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    children: React.ReactNode
+}) {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+                <div className="p-3 bg-primary/10 rounded-full">
+                    <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {children}
+            </CardContent>
+        </Card>
+    )
+}
+
+export default function CampaignsPage() {
+    const [showCreateForm, setShowCreateForm] = useState(false);
     
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-8">
+            <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <Ticket className="h-8 w-8 text-primary" />
                     <div>
@@ -119,170 +279,79 @@ export default function CampaignsPage() {
                         <p className="text-muted-foreground">Create and manage sales to attract more buyers.</p>
                     </div>
                 </div>
-                {!showCreateForm && (
-                     <Button onClick={() => setShowCreateForm(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4"/>
-                        Create Promotion
-                    </Button>
-                )}
             </div>
             
-            <Separator className="mb-6"/>
-
-            {showCreateForm ? (
-                 <Card className="max-w-2xl mx-auto">
-                    <CardHeader>
-                        <CardTitle>New Promotion Details</CardTitle>
-                        <CardDescription>Set up the rules for your new promotion.</CardDescription>
-                    </CardHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)}>
-                            <CardContent className="space-y-6">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Promotion Name</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="e.g., Summer Succulent Sale" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <FormField
-                                        control={form.control}
-                                        name="type"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Promotion Type</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select a promotion type" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="percentage_discount">Percentage Discount (%)</SelectItem>
-                                                        <SelectItem value="fixed_discount">Fixed Discount ($)</SelectItem>
-                                                        <SelectItem value="free_shipping">Free Shipping</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    {campaignType !== 'free_shipping' && (
-                                        <FormField
-                                            control={form.control}
-                                            name="value"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Discount Value</FormLabel>
-                                                    <div className="relative">
-                                                        <Input 
-                                                            type="number" 
-                                                            placeholder={campaignType === 'percentage_discount' ? "e.g., 15" : "e.g., 5"} 
-                                                            {...field}
-                                                            className="pr-8"
-                                                            value={field.value ?? ''}
-                                                            onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
-                                                        />
-                                                        {campaignType === 'percentage_discount' && <Percent className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
-                                                        {campaignType === 'fixed_discount' && <DollarSign className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />}
-                                                    </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-                                 </div>
-
-                                <FormField
-                                    control={form.control}
-                                    name="applicationType"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-3">
-                                            <FormLabel>Applies To</FormLabel>
-                                            <FormControl>
-                                                <RadioGroup
-                                                    onValueChange={field.onChange}
-                                                    defaultValue={field.value}
-                                                    className="flex flex-col space-y-1"
-                                                >
-                                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <RadioGroupItem value="all_plants" />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">
-                                                            All Available Plants
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <RadioGroupItem value="specific_plants" />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">
-                                                            Specific Plants
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                </RadioGroup>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {applicationType === 'specific_plants' && (
-                                    <FormField
-                                        control={form.control}
-                                        name="appliesTo"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Select Plants</FormLabel>
-                                                <MultiSelect
-                                                    options={plantOptions}
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    placeholder="Select plants for this promotion..."
-                                                    disabled={isLoading || plantOptions.length === 0}
-                                                />
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                )}
-                            </CardContent>
-                            <CardFooter className="flex justify-end gap-2">
-                                <Button type="button" variant="ghost" onClick={() => { setShowCreateForm(false); form.reset(); }}>Cancel</Button>
-                                <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                    Launch Promotion
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </Form>
-                 </Card>
-            ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Your Promotions</CardTitle>
-                        <CardDescription>
-                            A list of your active and past promotions will appear here.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="text-center py-12">
-                            <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
-                            <h3 className="mt-4 text-xl font-semibold">No promotions yet</h3>
-                            <p className="mt-1 text-muted-foreground">Click "Create New Promotion" to get started.</p>
+            <Separator/>
+            
+            <section className="space-y-4">
+                 <h2 className="text-2xl font-semibold">Automated Coupons</h2>
+                 <p className="text-muted-foreground">Reward your customers automatically for their loyalty and engagement. Set them up once and let them run.</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AutomatedCouponCard 
+                        title="Thank You Coupon"
+                        description="Automatically send a coupon to buyers after they complete a purchase from your shop."
+                        icon={Send}
+                    >
+                        <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <FormLabel>Enable "Thank You" Coupons</FormLabel>
+                                <FormDescription>Send a coupon after purchase.</FormDescription>
+                            </div>
+                             <Switch disabled/>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
+                    </AutomatedCouponCard>
+                    <AutomatedCouponCard
+                        title="New Follower Coupon"
+                        description="Incentivize users to follow your shop by offering a small discount when they do."
+                        icon={UserPlus}
+                    >
+                         <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                                <FormLabel>Enable "New Follower" Coupons</FormLabel>
+                                <FormDescription>Send a coupon upon follow.</FormDescription>
+                            </div>
+                            <Switch disabled />
+                        </div>
+                    </AutomatedCouponCard>
+                </div>
+            </section>
+            
+            <Separator/>
+
+            <section className="space-y-4">
+                <div className="flex justify-between items-center">
+                     <div>
+                        <h2 className="text-2xl font-semibold">Manual Promotions</h2>
+                        <p className="text-muted-foreground">Run sales for specific events or to clear out inventory. You control when they are active.</p>
+                    </div>
+                    {!showCreateForm && (
+                        <Button onClick={() => setShowCreateForm(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Create Promotion
+                        </Button>
+                    )}
+                </div>
+
+                 {showCreateForm ? (
+                    <ManualPromotionForm onCancel={() => setShowCreateForm(false)} />
+                 ) : (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Your Promotions</CardTitle>
+                            <CardDescription>A list of your active and past promotions will appear here.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-12">
+                                <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
+                                <h3 className="mt-4 text-xl font-semibold">No promotions yet</h3>
+                                <p className="mt-1 text-muted-foreground">Click "Create Promotion" to get started.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                 )}
+            </section>
         </div>
     )
 }
+
+    
