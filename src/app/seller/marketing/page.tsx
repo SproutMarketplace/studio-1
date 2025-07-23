@@ -3,63 +3,58 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Star, Tag, Share2 } from "lucide-react";
-import Link from "next/link";
+import { Megaphone, Star, Share2, Rocket } from "lucide-react";
 
 export default function MarketingPage() {
     return (
         <div>
             <h1 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
-                <Megaphone className="h-8 w-8" /> Marketing Tools
+                <Megaphone className="h-8 w-8" /> Marketing & Visibility
             </h1>
-            <p className="text-muted-foreground mb-6">Promote your listings and grow your reach with these powerful tools. More features are coming soon!</p>
+            <p className="text-muted-foreground mb-6">Tools to help your listings get noticed by more buyers. These premium features will be available with a Sprout Pro plan.</p>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="flex flex-col">
                     <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <Tag className="h-6 w-6 text-primary" />
-                            <CardTitle>AI Pricing Insights</CardTitle>
+                         <div className="flex items-center gap-3">
+                            <Star className="h-6 w-6 text-primary" />
+                            <CardTitle>Featured Listings</CardTitle>
                         </div>
-                        <CardDescription>Get data-driven pricing recommendations to stay competitive.</CardDescription>
+                        <CardDescription>Boost visibility for your best plants.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow">
-                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Analyze recent sales data for any plant based on its species, size, age, and condition. Use our powerful AI tool to determine the best price for your listings and maximize your sales potential. This is a key tool for competitive selling.</p>
-                        <Button asChild className="mt-auto">
-                            <Link href="/seller/pricing-tool">Use Pricing Tool</Link>
-                        </Button>
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Make your plant appear at the top of search results and on the homepage. The perfect way to get eyes on a rare plant or new arrival.</p>
+                        <Button disabled>Feature a Listing (Coming Soon)</Button>
                     </CardContent>
                 </Card>
 
-                <div className="space-y-6 flex flex-col">
-                    <Card className="flex flex-col flex-1">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <Star className="h-6 w-6 text-primary" />
-                                <CardTitle>Featured Listings</CardTitle>
-                            </div>
-                            <CardDescription>Boost visibility for your best plants.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col flex-grow">
-                            <p className="mb-4 text-sm text-muted-foreground flex-grow">Make your plant appear at the top of search results and on the homepage. This will be part of a future Sprout Pro subscription.</p>
-                            <Button disabled>Feature a Listing (Coming Soon)</Button>
-                        </CardContent>
-                    </Card>
+                <Card className="flex flex-col">
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
+                            <Share2 className="h-6 w-6 text-primary" />
+                            <CardTitle>Social Sharing</CardTitle>
+                        </div>
+                        <CardDescription>Share your profile with your followers.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-grow">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Easily generate beautiful images and links for sharing your Sprout shop or specific listings on Instagram, Facebook, and more.</p>
+                        <Button disabled>Get Sharable Links (Coming Soon)</Button>
+                    </CardContent>
+                </Card>
 
-                    <Card className="flex flex-col flex-1">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
-                                <Share2 className="h-6 w-6 text-primary" />
-                                <CardTitle>Social Sharing Tools</CardTitle>
-                            </div>
-                            <CardDescription>Share your profile with your followers.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col flex-grow">
-                            <p className="mb-4 text-sm text-muted-foreground flex-grow">Easily share a link to your Sprout shop or specific listings on your social media accounts to bring in external customers.</p>
-                            <Button disabled>Get Sharable Links (Coming Soon)</Button>
-                        </CardContent>
-                    </Card>
-                </div>
+                <Card className="flex flex-col">
+                    <CardHeader>
+                         <div className="flex items-center gap-3">
+                            <Rocket className="h-6 w-6 text-primary" />
+                            <CardTitle>Promotional Campaigns</CardTitle>
+                        </div>
+                        <CardDescription>Run sales and create discount codes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col flex-grow">
+                        <p className="mb-4 text-sm text-muted-foreground flex-grow">Create excitement and drive sales by running limited-time promotions or offering unique discount codes to your followers.</p>
+                        <Button disabled>Create a Campaign (Coming Soon)</Button>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
