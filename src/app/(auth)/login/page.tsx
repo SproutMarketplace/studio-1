@@ -107,8 +107,10 @@ export default function LoginPage() {
 
         // Check if a profile exists, if not, create one.
         const existingProfile = await getUserProfile(user.uid);
+        let isNewUser = false;
 
         if (!existingProfile) {
+            isNewUser = true;
             await createUserProfile({
                 userId: user.uid,
                 username: user.displayName || 'Sprout User',
@@ -132,7 +134,11 @@ export default function LoginPage() {
         }
         
         await refreshUserProfile();
-        router.push("/catalog");
+        if (isNewUser) {
+            router.push("/subscription");
+        } else {
+            router.push("/catalog");
+        }
     } catch (error: any) {
         if (error.code !== "auth/popup-closed-by-user") {
             toast({

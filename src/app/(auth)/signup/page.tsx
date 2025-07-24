@@ -69,8 +69,10 @@ export default function SignupPage() {
         const { user } = result;
 
         const existingProfile = await getUserProfile(user.uid);
+        let isNewUser = false;
 
         if (!existingProfile) {
+            isNewUser = true;
             await createUserProfile({
                 userId: user.uid,
                 username: user.displayName || 'Sprout User',
@@ -94,7 +96,11 @@ export default function SignupPage() {
         }
         
         await refreshUserProfile();
-        router.push("/catalog");
+        if (isNewUser) {
+            router.push("/subscription");
+        } else {
+            router.push("/catalog");
+        }
     } catch (error: any) {
         if (error.code !== "auth/popup-closed-by-user") {
             toast({
@@ -113,9 +119,9 @@ export default function SignupPage() {
       await refreshUserProfile();
       toast({
         title: "Welcome to Sprout!",
-        description: "Your account has been created successfully.",
+        description: "Your account has been created successfully. Please choose a plan to continue.",
       });
-      router.push("/catalog");
+      router.push("/subscription");
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";

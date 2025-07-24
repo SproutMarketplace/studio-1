@@ -5,6 +5,9 @@ import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 const freeFeatures = [
   "List plants for sale or trade",
@@ -30,7 +33,7 @@ const eliteFeatures = [
     "Early access to new Sprout features",
 ]
 
-function TierCard({ title, description, price, features, tier, isHighlighted = false }: { title: string, description: string, price: string, features: string[], tier: 'free' | 'pro' | 'elite', isHighlighted?: boolean }) {
+function TierCard({ title, description, price, features, tier, isHighlighted = false, onChoosePlan }: { title: string, description: string, price: string, features: string[], tier: 'free' | 'pro' | 'elite', isHighlighted?: boolean, onChoosePlan: (tier: string) => void }) {
     return (
         <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
             {isHighlighted && (
@@ -57,8 +60,8 @@ function TierCard({ title, description, price, features, tier, isHighlighted = f
                 </ul>
             </CardContent>
             <CardFooter>
-                 <Button className={cn("w-full text-lg", tier === 'free' && "bg-secondary text-secondary-foreground hover:bg-secondary/90")} disabled={tier !== 'pro' && tier !== 'elite'}>
-                    {tier === 'free' ? "Your Current Plan" : `Upgrade to ${title} (Coming Soon)`}
+                 <Button className={cn("w-full text-lg")} onClick={() => onChoosePlan(title)}>
+                    {tier === 'free' ? "Continue with Free" : `Choose ${title}`}
                  </Button>
             </CardFooter>
         </Card>
@@ -66,6 +69,19 @@ function TierCard({ title, description, price, features, tier, isHighlighted = f
 }
 
 export default function SubscriptionPage() {
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const handleChoosePlan = (planName: string) => {
+        // In a real app, this would initiate the Stripe checkout flow for paid plans.
+        // For now, we'll just show a toast and redirect.
+        toast({
+            title: `Welcome to the ${planName} plan!`,
+            description: "You are being redirected to the catalog.",
+        });
+        router.push('/catalog');
+    };
+
   return (
     <div className="container mx-auto py-8">
         <header className="mb-12 text-center">
@@ -84,6 +100,7 @@ export default function SubscriptionPage() {
                 price="$0"
                 features={freeFeatures}
                 tier="free"
+                onChoosePlan={handleChoosePlan}
             />
             <TierCard
                 title="Sprout Pro"
@@ -91,6 +108,7 @@ export default function SubscriptionPage() {
                 price="$10"
                 features={proFeatures}
                 tier="pro"
+                onChoosePlan={handleChoosePlan}
             />
              <TierCard
                 title="Sprout Elite"
@@ -99,6 +117,7 @@ export default function SubscriptionPage() {
                 features={eliteFeatures}
                 tier="elite"
                 isHighlighted
+                onChoosePlan={handleChoosePlan}
             />
         </div>
     </div>
