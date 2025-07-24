@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 const freeFeatures = [
   "List plants for sale or trade",
@@ -33,11 +34,31 @@ const eliteFeatures = [
     "Early access to new Sprout features",
 ]
 
-function TierCard({ title, description, price, features, tier, isHighlighted = false, onChoosePlan }: { title: string, description: string, price: string, features: string[], tier: 'free' | 'pro' | 'elite', isHighlighted?: boolean, onChoosePlan: (tier: string) => void }) {
+function TierCard({ 
+    title, 
+    description, 
+    price, 
+    originalPrice,
+    discount,
+    features, 
+    tier, 
+    isHighlighted = false, 
+    onChoosePlan 
+}: { 
+    title: string, 
+    description: string, 
+    price: string, 
+    originalPrice?: string,
+    discount?: string,
+    features: string[], 
+    tier: 'free' | 'pro' | 'elite', 
+    isHighlighted?: boolean, 
+    onChoosePlan: (tier: string) => void 
+}) {
     return (
         <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
             {isHighlighted && (
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg z-10">
                     BEST VALUE
                 </div>
             )}
@@ -47,10 +68,20 @@ function TierCard({ title, description, price, features, tier, isHighlighted = f
             </CardHeader>
             <CardContent className="flex-grow space-y-6">
                 <div>
-                    <p className="text-4xl font-bold">
-                        {price}
-                        {tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/month</span>}
-                    </p>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-4xl font-bold">
+                            {price}
+                        </p>
+                        {originalPrice && (
+                            <p className="text-xl font-medium text-muted-foreground line-through">
+                                {originalPrice}
+                            </p>
+                        )}
+                        {discount && (
+                            <Badge variant="destructive">{discount}</Badge>
+                        )}
+                    </div>
+                    {tier !== 'free' && <p className="text-sm font-normal text-muted-foreground">/month</p>}
                     {tier !== 'free' && (
                         <p className="text-sm font-semibold text-primary mt-1">Includes a 7-day free trial</p>
                     )}
@@ -118,7 +149,9 @@ export default function SubscriptionPage() {
              <TierCard
                 title="Sprout Elite"
                 description="For top sellers and plant businesses who want every advantage."
-                price="$19.99"
+                price="$14.99"
+                originalPrice="$19.99"
+                discount="25% OFF"
                 features={eliteFeatures}
                 tier="elite"
                 isHighlighted
