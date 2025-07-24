@@ -1,3 +1,4 @@
+
 // src/lib/firestoreService.ts
 import { db, auth, storage } from '@/lib/firebase'; // Your Firebase instances
 import {
@@ -28,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from 'firebase/auth';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 // Import your models for type safety
 import {
@@ -1070,36 +1071,43 @@ export interface LeaderboardUser extends User {
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'orders'
 // Fields: 1. createdAt (Descending)
-// Note: This is a collectionGroup query, which needs to be specified in the rules and indexes.
 export const getMonthlyLeaderboard = async (limitNum: number = 5): Promise<LeaderboardUser[]> => {
     if (!db) return [];
 
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-
+    // 1. Fetch recent orders (e.g., last 100)
     const q = query(
         collection(db, 'orders'),
-        where('createdAt', '>=', start),
-        where('createdAt', '<=', end)
+        orderBy('createdAt', 'desc'),
+        limit(100) // Adjust this limit based on expected volume
     );
-
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return [];
     }
 
+    // 2. Filter orders for the current month in code
+    const now = new Date();
+    const currentMonthInterval = {
+        start: startOfMonth(now),
+        end: endOfMonth(now),
+    };
+    
     const salesBySeller: { [sellerId: string]: number } = {};
     querySnapshot.forEach(doc => {
         const order = doc.data() as Order;
-        const quantity = order.items.reduce((acc, item) => acc + item.quantity, 0);
-        if (salesBySeller[order.sellerId]) {
-            salesBySeller[order.sellerId] += quantity;
-        } else {
-            salesBySeller[order.sellerId] = quantity;
+        const orderDate = (order.createdAt as Timestamp).toDate();
+
+        if (isWithinInterval(orderDate, currentMonthInterval)) {
+            const quantity = order.items.reduce((acc, item) => acc + item.quantity, 0);
+            if (salesBySeller[order.sellerId]) {
+                salesBySeller[order.sellerId] += quantity;
+            } else {
+                salesBySeller[order.sellerId] = quantity;
+            }
         }
     });
 
+    // 3. Sort and slice the results
     const sortedSellers = Object.entries(salesBySeller)
         .sort(([, a], [, b]) => b - a)
         .slice(0, limitNum);
@@ -1108,6 +1116,7 @@ export const getMonthlyLeaderboard = async (limitNum: number = 5): Promise<Leade
         return [];
     }
     
+    // 4. Fetch profiles for the top sellers
     const leaderboardPromises = sortedSellers.map(async ([sellerId, salesCount]) => {
         const userProfile = await getUserProfile(sellerId);
         return {
