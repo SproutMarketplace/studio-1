@@ -1070,6 +1070,7 @@ export interface LeaderboardUser extends User {
 // REQUIRED FIRESTORE INDEX:
 // Collection: 'orders'
 // Fields: 1. createdAt (Descending)
+// Note: This is a collectionGroup query, which needs to be specified in the rules and indexes.
 export const getMonthlyLeaderboard = async (limitNum: number = 5): Promise<LeaderboardUser[]> => {
     if (!db) return [];
 

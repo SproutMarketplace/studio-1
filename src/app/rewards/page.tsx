@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getRewardTransactions, getMonthlyLeaderboard } from "@/lib/firestoreService";
-import type { RewardTransaction, User } from "@/models";
+import type { RewardTransaction } from "@/models";
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
 
@@ -30,22 +30,30 @@ export default function RewardsPage() {
     if (user?.uid) {
       const fetchPageData = async () => {
         setIsLoading(true);
-        setIsLeaderboardLoading(true);
         try {
-          const [fetchedTransactions, fetchedLeaderboard] = await Promise.all([
-            getRewardTransactions(user.uid),
-            getMonthlyLeaderboard(5)
-          ]);
+          const fetchedTransactions = await getRewardTransactions(user.uid);
           setTransactions(fetchedTransactions);
-          setLeaderboard(fetchedLeaderboard);
         } catch (error) {
-          console.error("Failed to fetch rewards page data:", error);
+          console.error("Failed to fetch rewards transactions:", error);
         } finally {
           setIsLoading(false);
-          setIsLeaderboardLoading(false);
         }
       };
+
+      const fetchLeaderboard = async () => {
+          setIsLeaderboardLoading(true);
+          try {
+              const fetchedLeaderboard = await getMonthlyLeaderboard(5);
+              setLeaderboard(fetchedLeaderboard);
+          } catch (error) {
+               console.error("Failed to fetch leaderboard:", error);
+          } finally {
+              setIsLeaderboardLoading(false);
+          }
+      };
+      
       fetchPageData();
+      fetchLeaderboard();
     } else if (!authLoading) {
       setIsLoading(false);
       setIsLeaderboardLoading(false);
