@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth-context";
-import { updateUserData } from "@/lib/firestoreService";
+import { loadStripe } from '@stripe/stripe-js';
 
 const freeFeatures = [
   "List plants for sale or trade",
@@ -37,7 +37,9 @@ const eliteFeatures = [
     "Access to exclusive plant collections & sales events",
     "Priority customer support",
     "Early access to new Sprout features",
-]
+];
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 function TierCard({ 
     title, 
@@ -47,7 +49,8 @@ function TierCard({
     originalPrice,
     discount,
     features, 
-    tier, 
+    tier,
+    priceId,
     isHighlighted = false, 
     onChoosePlan 
 }: { 
@@ -59,9 +62,18 @@ function TierCard({
     discount?: string,
     features: string[], 
     tier: 'free' | 'pro' | 'elite', 
+    priceId: string,
     isHighlighted?: boolean, 
-    onChoosePlan: (tier: 'free' | 'pro' | 'elite') => void 
+    onChoosePlan: (tier: 'free' | 'pro' | 'elite', priceId: string) => Promise<void> 
 }) {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePlanClick = async () => {
+        setIsLoading(true);
+        await onChoosePlan(tier, priceId);
+        setIsLoading(false);
+    };
+
     return (
         <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
             {isHighlighted && discount && (
@@ -103,8 +115,9 @@ function TierCard({
                 </ul>
             </CardContent>
             <CardFooter>
-                 <Button className={cn("w-full text-lg")} onClick={() => onChoosePlan(tier)}>
-                    {tier === 'free' ? "Continue with Free" : `Start 7-Day Free Trial`}
+                 <Button className={cn("w-full text-lg")} onClick={handlePlanClick} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> :
+                     tier === 'free' ? "Continue with Free" : `Start 7-Day Free Trial`}
                  </Button>
             </CardFooter>
         </Card>
@@ -114,30 +127,54 @@ function TierCard({
 export default function SubscriptionPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { user, updateUserProfileInContext } = useAuth();
+    const { user } = useAuth();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-    const handleChoosePlan = async (tier: 'free' | 'pro' | 'elite') => {
-        if (user) {
-            try {
-                await updateUserData(user.uid, { subscriptionTier: tier });
-                updateUserProfileInContext({ subscriptionTier: tier }); // Optimistic update
-            } catch (error) {
-                console.error("Failed to update subscription tier:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Update Failed",
-                    description: "Could not save your subscription choice.",
-                });
-                return;
-            }
+    const handleChoosePlan = async (tier: 'free' | 'pro' | 'elite', priceId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Not Logged In", description: "Please log in to choose a plan." });
+            return;
+        }
+
+        if (tier === 'free') {
+            toast({
+                title: "Welcome to the Free plan!",
+                description: "You are being redirected to the catalog.",
+            });
+            router.push('/catalog');
+            return;
         }
         
-        toast({
-            title: `Welcome to the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan!`,
-            description: "You are being redirected to the catalog.",
-        });
-        router.push('/catalog');
+        // Handle paid plans with Stripe
+        try {
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.uid, priceId, type: 'subscription' }),
+            });
+
+            if (!response.ok) {
+                const { error } = await response.json();
+                throw new Error(error || 'Failed to create checkout session');
+            }
+
+            const { sessionId } = await response.json();
+            const stripe = await stripePromise;
+            if (stripe) {
+                const { error } = await stripe.redirectToCheckout({ sessionId });
+                if (error) {
+                    throw new Error(error.message);
+                }
+            } else {
+                 throw new Error("Stripe.js has not loaded yet.");
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "Subscription Failed",
+                description: error instanceof Error ? error.message : "An unknown error occurred.",
+            });
+        }
     };
 
   return (
@@ -172,6 +209,7 @@ export default function SubscriptionPage() {
                 priceDescription="No cost, ever."
                 features={freeFeatures}
                 tier="free"
+                priceId="free"
                 onChoosePlan={handleChoosePlan}
             />
             <TierCard
@@ -181,6 +219,7 @@ export default function SubscriptionPage() {
                 priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed yearly"}
                 features={proFeatures}
                 tier="pro"
+                priceId={billingCycle === 'monthly' ? "pro-monthly" : "pro-yearly"}
                 onChoosePlan={handleChoosePlan}
             />
              <TierCard
@@ -192,6 +231,7 @@ export default function SubscriptionPage() {
                 priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed yearly"}
                 features={eliteFeatures}
                 tier="elite"
+                priceId={billingCycle === 'monthly' ? "elite-monthly" : "elite-yearly"}
                 isHighlighted={billingCycle === 'yearly'}
                 onChoosePlan={handleChoosePlan}
             />

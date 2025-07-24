@@ -1,10 +1,9 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
-import { createOrder } from '@/lib/firestoreService';
+import { createOrder, updateUserData } from '@/lib/firestoreService';
 import type { OrderItem } from '@/models';
 
-// This is the correct way to initialize Stripe in this file.
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET;
 
@@ -13,12 +12,24 @@ const stripe = new Stripe(stripeSecretKey!, {
     typescript: true,
 });
 
-// This disables the default body parser to allow us to read the raw body, which is required by Stripe.
 export const config = {
     api: {
         bodyParser: false,
     },
 };
+
+const getTierFromPriceId = (priceId: string): 'pro' | 'elite' | null => {
+    switch (priceId) {
+        case process.env.STRIPE_PRO_MONTHLY_PRICE_ID:
+        case process.env.STRIPE_PRO_YEARLY_PRICE_ID:
+            return 'pro';
+        case process.env.STRIPE_ELITE_MONTHLY_PRICE_ID:
+        case process.env.STRIPE_ELITE_YEARLY_PRICE_ID:
+            return 'elite';
+        default:
+            return null;
+    }
+}
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
@@ -26,51 +37,77 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Stripe webhook handler is not configured on the server.' }, { status: 500 });
     }
     
-    // Read the raw request body as a buffer, NOT as text or json.
     const buf = await req.arrayBuffer();
     const sig = req.headers.get('stripe-signature');
 
     if (!sig) {
-        console.error('Webhook Error: No stripe-signature header value was provided.');
         return NextResponse.json({ error: 'No stripe-signature header value was provided.' }, { status: 400 });
     }
 
     let event: Stripe.Event;
 
     try {
-        // Use the buffer for verification, this is the critical step.
         event = stripe.webhooks.constructEvent(Buffer.from(buf), sig, webhookSecret);
     } catch (err: any) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
         return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
     }
 
-    // Handle the checkout.session.completed event
-    if (event.type === 'checkout.session.completed') {
-        // This is the correct way to get the session from the VERIFIED event.
-        const session = event.data.object as Stripe.Checkout.Session;
-
-        try {
-            const { userId, cartItems: cartItemsString } = session.metadata || {};
-            if (!userId || !cartItemsString) {
-                console.error('Webhook Error: Missing metadata in Stripe session.', session.id);
-                return NextResponse.json({ error: 'Missing or invalid metadata in Stripe session.' }, { status: 400 });
+    // Handle different event types
+    switch (event.type) {
+        case 'checkout.session.completed':
+            const session = event.data.object as Stripe.Checkout.Session;
+            const { userId, cartItems: cartItemsString, priceId } = session.metadata || {};
+            
+            if (!userId) {
+                console.error('Webhook Error: Missing userId in Stripe session metadata.', session.id);
+                return NextResponse.json({ error: 'Missing userId in metadata.' }, { status: 400 });
             }
 
-            const items: OrderItem[] = JSON.parse(cartItemsString);
+            if (session.mode === 'subscription' && priceId) {
+                // It's a subscription checkout
+                const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+                const tier = getTierFromPriceId(priceId);
+                
+                if (tier) {
+                     await updateUserData(userId, {
+                        subscriptionTier: tier,
+                        stripeSubscriptionId: subscription.id,
+                        stripeSubscriptionStatus: subscription.status,
+                        stripeCustomerId: subscription.customer as string,
+                    });
+                } else {
+                     console.error(`Webhook Error: Invalid priceId ${priceId} for subscription.`);
+                }
+               
+            } else if (session.mode === 'payment' && cartItemsString) {
+                // It's a one-time purchase
+                const items: OrderItem[] = JSON.parse(cartItemsString);
+                await createOrder(userId, items, session.id);
+            }
+            break;
+            
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted':
+             const subscription = event.data.object as Stripe.Subscription;
+             const customerId = subscription.customer as string;
 
-            // This function contains the logic to update the plant's availability.
-            await createOrder(
-                userId,
-                items,
-                session.id
-            );
-
-        } catch (error) {
-            console.error('Error handling checkout.session.completed event:', error);
-            // Return a 500 so Stripe will retry the webhook for transient errors.
-            return NextResponse.json({ error: 'Error processing order.' }, { status: 500 });
-        }
+             // You need a way to find your user by stripeCustomerId
+             // This assumes you store the stripeCustomerId on your user object
+             const user = null; // FIND USER BY customerId
+             
+             if (user) {
+                //  await updateUserData(user.id, {
+                //      stripeSubscriptionStatus: subscription.status,
+                //      // If deleted, maybe revert their tier to 'free'
+                //      subscriptionTier: subscription.status === 'active' ? 'pro' : 'free', // Add more logic here
+                //  });
+             } else {
+                 console.error(`Webhook Error: No user found with stripeCustomerId ${customerId}`);
+             }
+            break;
+            
+        default:
+            console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });

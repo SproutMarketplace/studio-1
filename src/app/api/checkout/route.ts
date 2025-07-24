@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
 import type { PlantListing } from '@/models';
 
-// This is the correct way to initialize Stripe in an API Route.
-// It will only be instantiated if the secret key is provided.
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-06-20',
@@ -16,6 +14,23 @@ interface CartItem extends PlantListing {
     quantity: number;
 }
 
+interface RequestBody {
+    items?: CartItem[];
+    userId?: string;
+    priceId?: string; // For subscriptions
+    type: 'one-time' | 'subscription';
+}
+
+const getStripePriceId = (priceId: string): string => {
+    switch(priceId) {
+        case 'pro-monthly': return process.env.STRIPE_PRO_MONTHLY_PRICE_ID!;
+        case 'pro-yearly': return process.env.STRIPE_PRO_YEARLY_PRICE_ID!;
+        case 'elite-monthly': return process.env.STRIPE_ELITE_MONTHLY_PRICE_ID!;
+        case 'elite-yearly': return process.env.STRIPE_ELITE_YEARLY_PRICE_ID!;
+        default: throw new Error('Invalid price ID');
+    }
+}
+
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
@@ -23,26 +38,47 @@ export async function POST(req: NextRequest) {
 
     if (!stripe) {
         const errorMessage = "Stripe is not configured on the server. The STRIPE_SECRET_KEY is missing or invalid in your .env.local file.";
-        console.error("Stripe Error:", errorMessage);
-        // This is the error message the user sees. It's now more specific.
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
+    }
+    
+    const { items, userId, priceId, type }: RequestBody = await req.json();
+
+    if (!userId) {
+        return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
     try {
-        const { items, userId }: { items: CartItem[], userId: string } = await req.json();
+        if (type === 'subscription' && priceId) {
+            // Subscription Logic
+            if (!process.env.STRIPE_PRO_MONTHLY_PRICE_ID || !process.env.STRIPE_PRO_YEARLY_PRICE_ID || !process.env.STRIPE_ELITE_MONTHLY_PRICE_ID || !process.env.STRIPE_ELITE_YEARLY_PRICE_ID) {
+                return NextResponse.json({ error: 'Subscription price IDs are not configured on the server.' }, { status: 500 });
+            }
+            const stripePriceId = getStripePriceId(priceId);
 
-        if (!items || items.length === 0) {
-            return NextResponse.json({ error: 'No items in cart' }, { status: 400 });
-        }
-        
-        if (!userId) {
-            return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
-        }
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: [{
+                    price: stripePriceId,
+                    quantity: 1,
+                }],
+                mode: 'subscription',
+                subscription_data: {
+                    trial_period_days: 7,
+                },
+                success_url: `${req.headers.get('origin')}/catalog?subscription_success=true`,
+                cancel_url: `${req.headers.get('origin')}/subscription?canceled=true`,
+                metadata: {
+                    userId,
+                    priceId,
+                }
+            });
+            return NextResponse.json({ sessionId: session.id });
 
-        const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
-            .filter(item => item.price && item.price > 0 && item.isAvailable)
-            .map((item) => {
-                return {
+        } else if (type === 'one-time' && items) {
+            // One-time payment logic (existing)
+            const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
+                .filter(item => item.price && item.price > 0 && item.isAvailable)
+                .map((item) => ({
                     price_data: {
                         currency: 'usd',
                         product_data: {
@@ -50,37 +86,37 @@ export async function POST(req: NextRequest) {
                             description: item.description.substring(0, 100),
                             images: item.imageUrls.length > 0 ? [item.imageUrls[0]] : undefined,
                         },
-                        unit_amount: Math.round(item.price! * 100), // Price in cents
+                        unit_amount: Math.round(item.price! * 100),
                     },
                     quantity: item.quantity,
-                };
-            });
-        
-        if (line_items.length === 0) {
-            return NextResponse.json({ error: 'Your cart contains no items available for purchase.' }, { status: 400 });
-        }
-
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items,
-            mode: 'payment',
-            success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
-            cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
-            metadata: {
-                userId,
-                // This is the critical part: mapping items to include all necessary data for the webhook.
-                cartItems: JSON.stringify(items.map(item => ({
-                    plantId: item.id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                    imageUrl: item.imageUrls[0] || "",
-                    sellerId: item.ownerId, // This was the missing piece.
-                }))),
+                }));
+            
+            if (line_items.length === 0) {
+                return NextResponse.json({ error: 'Your cart contains no items available for purchase.' }, { status: 400 });
             }
-        });
 
-        return NextResponse.json({ sessionId: session.id });
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items,
+                mode: 'payment',
+                success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
+                cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
+                metadata: {
+                    userId,
+                    cartItems: JSON.stringify(items.map(item => ({
+                        plantId: item.id,
+                        name: item.name,
+                        price: item.price,
+                        quantity: item.quantity,
+                        imageUrl: item.imageUrls[0] || "",
+                        sellerId: item.ownerId,
+                    }))),
+                }
+            });
+            return NextResponse.json({ sessionId: session.id });
+        } else {
+             return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        }
 
     } catch (error) {
         console.error('Stripe Error:', error);

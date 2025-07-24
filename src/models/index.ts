@@ -28,6 +28,9 @@ export interface User {
     thankYouCoupon?: AutomatedCouponSettings;
     newFollowerCoupon?: AutomatedCouponSettings;
     subscriptionTier?: 'free' | 'pro' | 'elite';
+    stripeSubscriptionId?: string;
+    stripeCustomerId?: string;
+    stripeSubscriptionStatus?: string;
 }
 
 // Replaces the old Plant interface
