@@ -1,4 +1,3 @@
-
 // src/lib/firestoreService.ts
 import { db, auth, storage } from '@/lib/firebase'; // Your Firebase instances
 import {
@@ -29,6 +28,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from 'firebase/auth';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 // Import your models for type safety
 import {
@@ -1063,4 +1063,60 @@ export const getRewardTransactions = async (userId: string): Promise<RewardTrans
     return transactions;
 };
 
+export interface LeaderboardUser extends User {
+    salesCount: number;
+}
+
+// REQUIRED FIRESTORE INDEX:
+// Collection: 'orders'
+// Fields: 1. createdAt (Descending)
+export const getMonthlyLeaderboard = async (limitNum: number = 5): Promise<LeaderboardUser[]> => {
+    if (!db) return [];
+
+    const now = new Date();
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
+
+    const q = query(
+        collection(db, 'orders'),
+        where('createdAt', '>=', start),
+        where('createdAt', '<=', end)
+    );
+
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return [];
+    }
+
+    const salesBySeller: { [sellerId: string]: number } = {};
+    querySnapshot.forEach(doc => {
+        const order = doc.data() as Order;
+        const quantity = order.items.reduce((acc, item) => acc + item.quantity, 0);
+        if (salesBySeller[order.sellerId]) {
+            salesBySeller[order.sellerId] += quantity;
+        } else {
+            salesBySeller[order.sellerId] = quantity;
+        }
+    });
+
+    const sortedSellers = Object.entries(salesBySeller)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, limitNum);
+
+    if (sortedSellers.length === 0) {
+        return [];
+    }
     
+    const leaderboardPromises = sortedSellers.map(async ([sellerId, salesCount]) => {
+        const userProfile = await getUserProfile(sellerId);
+        return {
+            ...userProfile,
+            salesCount,
+        } as LeaderboardUser;
+    });
+
+    const leaderboard = (await Promise.all(leaderboardPromises))
+        .filter(user => user.id); // Filter out any null profiles
+
+    return leaderboard;
+}

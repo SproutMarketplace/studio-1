@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { getRewardTransactions } from "@/lib/firestoreService";
+import { getRewardTransactions, getMonthlyLeaderboard } from "@/lib/firestoreService";
 import type { RewardTransaction, User } from "@/models";
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
@@ -16,39 +16,39 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Award, Leaf, Gift, PlusSquare, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-
-// Mock data for the challenge leaderboard
-const mockLeaderboard: Partial<User>[] = [
-    { username: "PlantWizard", avatarUrl: "https://placehold.co/40x40.png" },
-    { username: "GreenThumb", avatarUrl: "https://placehold.co/40x40.png" },
-    { username: "CactusJack", avatarUrl: "https://placehold.co/40x40.png" },
-    { username: "FernGully", avatarUrl: "https://placehold.co/40x40.png" },
-    { username: "SoilSage", avatarUrl: "https://placehold.co/40x40.png" },
-];
+import type { LeaderboardUser } from "@/lib/firestoreService";
 
 
 export default function RewardsPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<RewardTransaction[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
 
   useEffect(() => {
     if (user?.uid) {
-      const fetchTransactions = async () => {
+      const fetchPageData = async () => {
         setIsLoading(true);
+        setIsLeaderboardLoading(true);
         try {
-          const fetchedTransactions = await getRewardTransactions(user.uid);
+          const [fetchedTransactions, fetchedLeaderboard] = await Promise.all([
+            getRewardTransactions(user.uid),
+            getMonthlyLeaderboard(5)
+          ]);
           setTransactions(fetchedTransactions);
+          setLeaderboard(fetchedLeaderboard);
         } catch (error) {
-          console.error("Failed to fetch reward transactions:", error);
+          console.error("Failed to fetch rewards page data:", error);
         } finally {
           setIsLoading(false);
+          setIsLeaderboardLoading(false);
         }
       };
-      fetchTransactions();
+      fetchPageData();
     } else if (!authLoading) {
       setIsLoading(false);
+      setIsLeaderboardLoading(false);
     }
   }, [user, authLoading]);
 
@@ -119,21 +119,28 @@ export default function RewardsPage() {
                     <CardDescription>Challenge: Most Plants Sold! Top seller wins <span className="font-bold text-primary">500 Reward Points!</span></CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-2">
-                        {mockLeaderboard.map((seller, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 rounded-md bg-amber-100/50">
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold text-lg text-amber-700 w-5 text-center">{index + 1}</span>
-                                    <Avatar className="h-9 w-9 border-2 border-amber-200">
-                                        <AvatarImage src={seller.avatarUrl} alt={seller.username} />
-                                        <AvatarFallback>{seller.username?.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-medium text-amber-900">{seller.username}</span>
-                                </div>
-                                {/* In a real app, this would show the seller's actual count */}
-                                <span className="text-sm font-semibold text-amber-800">{15 - index * 3} sold</span>
+                     <div className="space-y-2">
+                        {isLeaderboardLoading ? (
+                             <div className="flex justify-center items-center py-10">
+                                <Loader2 className="h-8 w-8 animate-spin text-amber-700"/>
                             </div>
-                        ))}
+                        ) : leaderboard.length > 0 ? (
+                            leaderboard.map((seller, index) => (
+                                <div key={seller.id} className="flex items-center justify-between p-2 rounded-md bg-amber-100/50">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-lg text-amber-700 w-5 text-center">{index + 1}</span>
+                                        <Avatar className="h-9 w-9 border-2 border-amber-200">
+                                            <AvatarImage src={seller.avatarUrl} alt={seller.username} />
+                                            <AvatarFallback>{seller.username?.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm font-medium text-amber-900">{seller.username}</span>
+                                    </div>
+                                    <span className="text-sm font-semibold text-amber-800">{seller.salesCount} sold</span>
+                                </div>
+                            ))
+                        ) : (
+                           <p className="text-sm text-center text-amber-800/90 py-10">No sales data for this month's challenge yet. Be the first!</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>
