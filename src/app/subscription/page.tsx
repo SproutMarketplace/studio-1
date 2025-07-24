@@ -46,10 +46,15 @@ function TierCard({ title, description, price, features, tier, isHighlighted = f
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow space-y-6">
-                <p className="text-4xl font-bold">
-                    {price}
-                    {tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/month</span>}
-                </p>
+                <div>
+                    <p className="text-4xl font-bold">
+                        {price}
+                        {tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/month</span>}
+                    </p>
+                    {tier !== 'free' && (
+                        <p className="text-sm font-semibold text-primary mt-1">Includes a 7-day free trial</p>
+                    )}
+                </div>
                 <ul className="space-y-3">
                     {features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-3">
@@ -61,7 +66,7 @@ function TierCard({ title, description, price, features, tier, isHighlighted = f
             </CardContent>
             <CardFooter>
                  <Button className={cn("w-full text-lg")} onClick={() => onChoosePlan(title)}>
-                    {tier === 'free' ? "Continue with Free" : `Choose ${title}`}
+                    {tier === 'free' ? "Continue with Free" : `Start 7-Day Free Trial`}
                  </Button>
             </CardFooter>
         </Card>
