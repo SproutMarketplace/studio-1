@@ -21,9 +21,14 @@ const stripePromise = !isStripeDisabled ? loadStripe(stripePublishableKey!) : nu
 
 export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void; }) {
     const { items, removeFromCart, updateQuantity, totalPrice, itemCount } = useCart();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const { toast } = useToast();
+    
+    const BUYER_FEE_PERCENTAGE = 0.045; // 4.5%
+    const isElite = profile?.subscriptionTier === 'elite';
+    const platformFee = isElite ? 0 : totalPrice * BUYER_FEE_PERCENTAGE;
+    const finalTotal = totalPrice + platformFee;
 
     async function handleCheckout() {
         if (!user) {
@@ -146,13 +151,28 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                         </ScrollArea>
                         <Separator />
                         <SheetFooter className="px-6 py-4">
-                            <div className="w-full space-y-4">
-                                <div className="flex justify-between text-base font-semibold">
-                                    <p>Subtotal</p>
+                            <div className="w-full space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <p className="text-muted-foreground">Subtotal</p>
                                     <p>${totalPrice.toFixed(2)}</p>
                                 </div>
+                                <div className="flex justify-between">
+                                    <p className="text-muted-foreground">Platform Fee</p>
+                                    <p>{isElite ? <span className="line-through">${(totalPrice * BUYER_FEE_PERCENTAGE).toFixed(2)}</span> : `$${platformFee.toFixed(2)}`}</p>
+                                </div>
+                                {isElite && (
+                                    <div className="flex justify-between text-primary font-semibold">
+                                        <p>Elite Plan Discount</p>
+                                        <p>-${(totalPrice * BUYER_FEE_PERCENTAGE).toFixed(2)}</p>
+                                    </div>
+                                )}
+                                <Separator className="my-2"/>
+                                 <div className="flex justify-between text-base font-semibold">
+                                    <p>Total</p>
+                                    <p>${finalTotal.toFixed(2)}</p>
+                                </div>
                                 <Button
-                                    className="w-full text-lg"
+                                    className="w-full text-lg mt-4"
                                     onClick={handleCheckout}
                                     disabled={isCheckingOut || isStripeDisabled}
                                 >
@@ -179,5 +199,3 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
         </Sheet>
     );
 }
-
-    

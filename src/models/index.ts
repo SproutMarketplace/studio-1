@@ -27,6 +27,7 @@ export interface User {
     stripeDetailsSubmitted?: boolean; // For Stripe Connect
     thankYouCoupon?: AutomatedCouponSettings;
     newFollowerCoupon?: AutomatedCouponSettings;
+    subscriptionTier?: 'free' | 'pro' | 'elite';
 }
 
 // Replaces the old Plant interface
@@ -152,5 +153,3 @@ export interface Notification {
         avatarUrl?: string;
     }
 }
-
-    

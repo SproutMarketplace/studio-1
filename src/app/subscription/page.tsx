@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/auth-context";
+import { updateUserData } from "@/lib/firestoreService";
 
 const freeFeatures = [
   "List plants for sale or trade",
@@ -58,7 +60,7 @@ function TierCard({
     features: string[], 
     tier: 'free' | 'pro' | 'elite', 
     isHighlighted?: boolean, 
-    onChoosePlan: (tier: string) => void 
+    onChoosePlan: (tier: 'free' | 'pro' | 'elite') => void 
 }) {
     return (
         <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
@@ -101,7 +103,7 @@ function TierCard({
                 </ul>
             </CardContent>
             <CardFooter>
-                 <Button className={cn("w-full text-lg")} onClick={() => onChoosePlan(title)}>
+                 <Button className={cn("w-full text-lg")} onClick={() => onChoosePlan(tier)}>
                     {tier === 'free' ? "Continue with Free" : `Start 7-Day Free Trial`}
                  </Button>
             </CardFooter>
@@ -112,13 +114,27 @@ function TierCard({
 export default function SubscriptionPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { user, updateUserProfileInContext } = useAuth();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-    const handleChoosePlan = (planName: string) => {
-        // In a real app, this would initiate the Stripe checkout flow for paid plans.
-        // For now, we'll just show a toast and redirect.
+    const handleChoosePlan = async (tier: 'free' | 'pro' | 'elite') => {
+        if (user) {
+            try {
+                await updateUserData(user.uid, { subscriptionTier: tier });
+                updateUserProfileInContext({ subscriptionTier: tier }); // Optimistic update
+            } catch (error) {
+                console.error("Failed to update subscription tier:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Update Failed",
+                    description: "Could not save your subscription choice.",
+                });
+                return;
+            }
+        }
+        
         toast({
-            title: `Welcome to the ${planName} plan!`,
+            title: `Welcome to the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan!`,
             description: "You are being redirected to the catalog.",
         });
         router.push('/catalog');

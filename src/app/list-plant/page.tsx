@@ -35,6 +35,7 @@ const listPlantSchema = z.object({
 type ListPlantFormValues = z.infer<typeof listPlantSchema>;
 
 const MAX_IMAGES = 5;
+const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 
 export default function ListPlantPage() {
   const { toast } = useToast();
@@ -57,6 +58,11 @@ export default function ListPlantPage() {
       quantity: 1,
     },
   });
+  
+  const isElite = profile?.subscriptionTier === 'elite';
+  const priceValue = form.watch('price');
+  const potentialEarnings = priceValue ? priceValue * (1 - (isElite ? 0 : SELLER_FEE_PERCENTAGE)) : 0;
+
 
   useEffect(() => {
     // Pre-fill location from profile once it's loaded
@@ -260,8 +266,13 @@ export default function ListPlantPage() {
                       <FormControl>
                         <Input type="number" placeholder="e.g., 25.00" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value ?? ''}/>
                       </FormControl>
-                      <FormDescription>
-                        Leave blank or 0 if you are only trading.
+                       <FormDescription>
+                        {isElite ? (
+                            <span className="text-primary">Your Elite plan means 0% platform fees!</span>
+                        ) : (
+                             `After a ${SELLER_FEE_PERCENTAGE * 100}% platform fee, you'll earn ~$${potentialEarnings.toFixed(2)}.`
+                        )}
+                        {' '}Leave blank if trading.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -384,5 +395,3 @@ export default function ListPlantPage() {
     </div>
   );
 }
-
-    
