@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,6 +10,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const freeFeatures = [
   "List plants for sale or trade",
@@ -38,6 +41,7 @@ function TierCard({
     title, 
     description, 
     price, 
+    priceDescription,
     originalPrice,
     discount,
     features, 
@@ -48,6 +52,7 @@ function TierCard({
     title: string, 
     description: string, 
     price: string, 
+    priceDescription: string,
     originalPrice?: string,
     discount?: string,
     features: string[], 
@@ -57,7 +62,7 @@ function TierCard({
 }) {
     return (
         <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
-            {isHighlighted && (
+            {isHighlighted && discount && (
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg z-10">
                     BEST VALUE
                 </div>
@@ -77,11 +82,11 @@ function TierCard({
                                 {originalPrice}
                             </p>
                         )}
-                        {discount && (
-                            <Badge variant="destructive">{discount}</Badge>
-                        )}
                     </div>
-                    {tier !== 'free' && <p className="text-sm font-normal text-muted-foreground">/month</p>}
+                    {discount && !isHighlighted && (
+                        <Badge variant="destructive" className="mt-1">{discount}</Badge>
+                    )}
+                    <p className="text-sm font-normal text-muted-foreground">{priceDescription}</p>
                     {tier !== 'free' && (
                         <p className="text-sm font-semibold text-primary mt-1">Includes a 7-day free trial</p>
                     )}
@@ -107,6 +112,7 @@ function TierCard({
 export default function SubscriptionPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
     const handleChoosePlan = (planName: string) => {
         // In a real app, this would initiate the Stripe checkout flow for paid plans.
@@ -128,12 +134,26 @@ export default function SubscriptionPage() {
                 Unlock powerful tools to grow your plant business and enhance your experience.
             </p>
         </header>
+
+        <div className="flex justify-center items-center gap-4 mb-8">
+            <Label htmlFor="billing-cycle-switch" className={cn(billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground', 'font-semibold transition-colors')}>Monthly</Label>
+            <Switch 
+                id="billing-cycle-switch"
+                checked={billingCycle === 'yearly'}
+                onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
+            />
+             <Label htmlFor="billing-cycle-switch" className={cn(billingCycle === 'yearly' ? 'text-foreground' : 'text-muted-foreground', 'font-semibold transition-colors')}>
+                Yearly
+                <Badge variant="secondary" className="ml-2 bg-amber-200 text-amber-900 hover:bg-amber-200">Save 15%</Badge>
+             </Label>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
             <TierCard
                 title="Free"
                 description="For hobbyists and casual sellers getting started on Sprout."
                 price="$0"
+                priceDescription="No cost, ever."
                 features={freeFeatures}
                 tier="free"
                 onChoosePlan={handleChoosePlan}
@@ -141,7 +161,8 @@ export default function SubscriptionPage() {
             <TierCard
                 title="Sprout Pro"
                 description="For serious sellers looking to boost sales and visibility."
-                price="$10"
+                price={billingCycle === 'monthly' ? "$10" : "$8.50"}
+                priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed yearly"}
                 features={proFeatures}
                 tier="pro"
                 onChoosePlan={handleChoosePlan}
@@ -149,12 +170,13 @@ export default function SubscriptionPage() {
              <TierCard
                 title="Sprout Elite"
                 description="For top sellers and plant businesses who want every advantage."
-                price="$14.99"
-                originalPrice="$19.99"
-                discount="25% OFF"
+                price={billingCycle === 'monthly' ? "$14.99" : "$12.50"}
+                originalPrice={billingCycle === 'monthly' ? "$19.99" : undefined}
+                discount={billingCycle === 'monthly' ? "25% OFF" : undefined}
+                priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed yearly"}
                 features={eliteFeatures}
                 tier="elite"
-                isHighlighted
+                isHighlighted={billingCycle === 'yearly'}
                 onChoosePlan={handleChoosePlan}
             />
         </div>
