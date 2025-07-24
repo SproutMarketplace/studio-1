@@ -16,18 +16,24 @@ const freeFeatures = [
 const proFeatures = [
   "All features from the Free plan",
   "Verified Seller Badge next to your name",
-  "Access to advanced marketing tools (Coupons & Featured Listings)",
-  "Waived platform fees on sales",
-  "Advanced analytics & sales insights",
-  "Access to exclusive plant collections & sales events",
-  "Entry to a private, Pro-only community forum",
+  "Access to Marketing Tools (Coupons & Promotions)",
   "AI-powered pricing insights tool",
+  "Advanced analytics & sales insights",
+  "Entry to a private, Pro-only community forum",
 ];
 
-function TierCard({ title, description, price, features, isPro = false }: { title: string, description: string, price: string, features: string[], isPro?: boolean }) {
+const eliteFeatures = [
+    "All features from the Pro plan",
+    "Waived platform fees on all sales and buys",
+    "Access to exclusive plant collections & sales events",
+    "Priority customer support",
+    "Early access to new Sprout features",
+]
+
+function TierCard({ title, description, price, features, tier, isHighlighted = false }: { title: string, description: string, price: string, features: string[], tier: 'free' | 'pro' | 'elite', isHighlighted?: boolean }) {
     return (
-        <Card className={cn("flex flex-col shadow-lg", isPro && "border-2 border-primary relative overflow-hidden")}>
-            {isPro && (
+        <Card className={cn("flex flex-col shadow-lg", isHighlighted && "border-2 border-primary relative overflow-hidden")}>
+            {isHighlighted && (
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
                     BEST VALUE
                 </div>
@@ -39,7 +45,7 @@ function TierCard({ title, description, price, features, isPro = false }: { titl
             <CardContent className="flex-grow space-y-6">
                 <p className="text-4xl font-bold">
                     {price}
-                    <span className="text-sm font-normal text-muted-foreground">/month</span>
+                    {tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/month</span>}
                 </p>
                 <ul className="space-y-3">
                     {features.map((feature, index) => (
@@ -51,8 +57,8 @@ function TierCard({ title, description, price, features, isPro = false }: { titl
                 </ul>
             </CardContent>
             <CardFooter>
-                 <Button className={cn("w-full text-lg", !isPro && "bg-secondary text-secondary-foreground hover:bg-secondary/90")} disabled={isPro}>
-                    {isPro ? "Upgrade to Pro (Coming Soon)" : "Your Current Plan"}
+                 <Button className={cn("w-full text-lg", tier === 'free' && "bg-secondary text-secondary-foreground hover:bg-secondary/90")} disabled={tier !== 'pro' && tier !== 'elite'}>
+                    {tier === 'free' ? "Your Current Plan" : `Upgrade to ${title} (Coming Soon)`}
                  </Button>
             </CardFooter>
         </Card>
@@ -67,23 +73,32 @@ export default function SubscriptionPage() {
                 Choose Your Plan
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Unlock powerful tools to grow your plant business with Sprout Pro.
+                Unlock powerful tools to grow your plant business and enhance your experience.
             </p>
         </header>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
             <TierCard
                 title="Free"
                 description="For hobbyists and casual sellers getting started on Sprout."
                 price="$0"
                 features={freeFeatures}
+                tier="free"
             />
             <TierCard
                 title="Sprout Pro"
                 description="For serious sellers looking to boost sales and visibility."
                 price="$10"
                 features={proFeatures}
-                isPro
+                tier="pro"
+            />
+             <TierCard
+                title="Sprout Elite"
+                description="For top sellers and plant businesses who want every advantage."
+                price="$19.99"
+                features={eliteFeatures}
+                tier="elite"
+                isHighlighted
             />
         </div>
     </div>
