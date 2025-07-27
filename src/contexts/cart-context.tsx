@@ -68,7 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 quantityUpdated = true;
                 finalQuantity = newQuantity;
                 return prevItems.map(item =>
-                    item.id === plant.id ? { ...item, quantity: newQuantity } : item
+                    item.id === plant.id ? { ...item, quantity: newQuantity, stockQuantity: availableStock } : item
                 );
             } else {
                 if (quantity > availableStock) {
