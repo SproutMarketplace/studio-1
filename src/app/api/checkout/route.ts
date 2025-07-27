@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
             });
             return NextResponse.json({ sessionId: session.id });
 
-        } else if (type === 'one-time' && items && items.length > 0) {
+        } else if (type === 'one-time' && Array.isArray(items) && items.length > 0) {
             // One-time payment logic (existing)
             const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
                 .filter(item => item.price && item.price > 0 && item.isAvailable)
