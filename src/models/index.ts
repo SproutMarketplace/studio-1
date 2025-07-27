@@ -58,6 +58,7 @@ export interface OrderItem {
     quantity: number;
     imageUrl: string;
     sellerId: string;
+    platformFee?: number; // Seller platform fee for this item
 }
 
 export interface Order {
@@ -65,7 +66,7 @@ export interface Order {
     userId: string; // Buyer's ID
     sellerId: string; // The ID of the seller for this specific order
     items: OrderItem[];
-    totalAmount: number;
+    totalAmount: number; // Gross total for the seller's items in this order
     status: 'processing' | 'shipped' | 'delivered' | 'cancelled';
     createdAt: Timestamp;
     stripeSessionId: string;

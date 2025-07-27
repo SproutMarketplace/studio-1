@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getOrdersForSeller } from "@/lib/firestoreService";
-import type { Order } from "@/models";
+import type { Order, OrderItem } from "@/models";
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ interface Transaction {
     date: string;
     type: 'Sale';
     status: Order['status'];
-    amount: number;
+    amount: number; // Net amount after fees
     buyer: string;
 }
 
@@ -64,13 +64,19 @@ export default function FinancesPage() {
                     
                     const saleTransactions = orders.map(order => {
                         const sellerItems = order.items.filter(item => item.sellerId === user.uid);
-                        const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+                        
+                        const sellerNetTotal = sellerItems.reduce((acc, item) => {
+                            const itemTotal = item.price * item.quantity;
+                            const fee = item.platformFee || 0;
+                            return acc + (itemTotal - fee);
+                        }, 0);
+
                         return {
                             id: order.id!,
                             date: format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy"),
                             type: 'Sale' as const,
                             status: order.status,
-                            amount: sellerTotal,
+                            amount: sellerNetTotal,
                             buyer: order.buyerUsername || 'Unknown Buyer'
                         }
                     });
@@ -208,7 +214,7 @@ export default function FinancesPage() {
                 <CardHeader>
                     <CardTitle>Recent Sales</CardTitle>
                     <CardDescription>
-                        A history of your completed sales on Sprout. Payouts will appear here in the future.
+                        A history of your completed sales on Sprout. Earnings are shown net of platform fees.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -222,7 +228,7 @@ export default function FinancesPage() {
                                     <TableHead>Buyer</TableHead>
                                     <TableHead>Type</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead className="text-right">Net Earnings</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

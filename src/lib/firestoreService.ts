@@ -46,6 +46,8 @@ import {
     Notification,
 } from '@/models';
 
+const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
+
 // --- General Utility Functions ---
 export const getTimestamp = () => serverTimestamp() as Timestamp;
 
@@ -765,8 +767,6 @@ export const getWishlistPlants = async (userId: string): Promise<PlantListing[]>
 
 
 // --- Order Functions ---
-
-// Called by the Stripe webhook. Now creates separate orders for each seller.
 export const createOrder = async (
     buyerId: string, 
     items: OrderItem[], 
@@ -802,14 +802,22 @@ export const createOrder = async (
             }
             
             const batch = writeBatch(db);
-            const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    
+            
+            // Calculate seller-specific total and add fee information to items
+            let sellerTotal = 0;
+            const itemsWithFee = sellerItems.map(item => {
+                const itemTotal = item.price * item.quantity;
+                const fee = sellerProfile.subscriptionTier === 'elite' ? 0 : itemTotal * SELLER_FEE_PERCENTAGE;
+                sellerTotal += itemTotal;
+                return { ...item, platformFee: fee };
+            });
+
             // 1. Create one order document per seller
             const orderRef = doc(collection(db, 'orders'));
             batch.set(orderRef, {
                 userId: buyerId,
                 sellerId: sellerId,
-                items: sellerItems,
+                items: itemsWithFee,
                 totalAmount: sellerTotal,
                 status: 'processing',
                 createdAt: serverTimestamp(),

@@ -10,9 +10,10 @@ import { CircleDollarSign, Package, BarChart3, Loader2, Trophy } from "lucide-re
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { LeaderboardUser } from "@/lib/firestoreService";
 
+const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 
 export default function SellerDashboardPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const [stats, setStats] = useState({
         revenue: 0,
         sales: 0,
@@ -23,7 +24,7 @@ export default function SellerDashboardPage() {
     const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
 
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.uid && profile) { // Ensure profile is loaded
             const fetchDashboardData = async () => {
                 setIsLoading(true);
                 try {
@@ -39,9 +40,15 @@ export default function SellerDashboardPage() {
                     );
                     
                     const sales = itemsSoldBySeller.reduce((acc, item) => acc + item.quantity, 0);
-                    const revenue = itemsSoldBySeller.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-                    setStats({ revenue, sales, activeListings });
+                    // Calculate gross revenue first
+                    const grossRevenue = itemsSoldBySeller.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+                    
+                    // Deduct fees only if not an elite member
+                    const fee = profile.subscriptionTier === 'elite' ? 0 : SELLER_FEE_PERCENTAGE;
+                    const netRevenue = grossRevenue * (1 - fee);
+
+                    setStats({ revenue: netRevenue, sales, activeListings });
                 } catch (error) {
                     console.error("Failed to fetch seller stats:", error);
                 } finally {
@@ -67,7 +74,7 @@ export default function SellerDashboardPage() {
             setIsLoading(false);
             setIsLeaderboardLoading(false);
         }
-    }, [user, authLoading]);
+    }, [user, profile, authLoading]);
 
     const StatCard = ({ title, value, icon: Icon, isCurrency = false, loading }: { title: string, value: number, icon: React.ElementType, isCurrency?: boolean, loading: boolean}) => (
         <Card>
@@ -85,7 +92,7 @@ export default function SellerDashboardPage() {
                         {isCurrency ? `$${value.toFixed(2)}` : value}
                     </div>
                 )}
-                 {!loading && isCurrency && <p className="text-xs text-muted-foreground">Based on completed sales</p>}
+                 {!loading && isCurrency && <p className="text-xs text-muted-foreground">Net revenue after fees</p>}
             </CardContent>
         </Card>
     );
