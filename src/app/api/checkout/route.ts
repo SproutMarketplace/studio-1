@@ -19,6 +19,7 @@ interface RequestBody {
     userId?: string;
     priceId?: string; // For subscriptions
     type: 'one-time' | 'subscription';
+    subscriptionTier?: 'free' | 'pro' | 'elite';
 }
 
 const getStripePriceId = (priceId: string): string => {
@@ -31,6 +32,8 @@ const getStripePriceId = (priceId: string): string => {
     }
 }
 
+const BUYER_FEE_PERCENTAGE = 0.045; // 4.5%
+
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
     
-    const { items, userId, type, priceId }: RequestBody = await req.json();
+    const { items, userId, type, priceId, subscriptionTier }: RequestBody = await req.json();
 
     if (!userId) {
         return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
@@ -90,6 +93,24 @@ export async function POST(req: NextRequest) {
                     },
                     quantity: item.quantity,
                 }));
+            
+            // Calculate subtotal and add platform fee if applicable
+            const subtotal = line_items.reduce((acc, item) => acc + (item.price_data!.unit_amount! * item.quantity!), 0);
+            
+            if (subscriptionTier !== 'elite' && subtotal > 0) {
+                const platformFee = Math.round(subtotal * BUYER_FEE_PERCENTAGE);
+                line_items.push({
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'Platform Fee',
+                            description: 'For secure transactions and platform maintenance.',
+                        },
+                        unit_amount: platformFee,
+                    },
+                    quantity: 1,
+                });
+            }
             
             if (line_items.length === 0) {
                 return NextResponse.json({ error: 'Your cart contains no items available for purchase.' }, { status: 400 });
