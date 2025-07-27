@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const appearance = {
+        const appearance: Stripe.Checkout.SessionCreateParams.Appearance = {
             theme: 'stripe' as const,
             variables: {
                 colorPrimary: '#22764e',
