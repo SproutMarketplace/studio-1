@@ -302,6 +302,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <main className="flex-1 p-4 md:p-6 lg:p-8">
                     <AuthGuard>{children}</AuthGuard>
                 </main>
+                <footer className="py-4 px-6 text-center text-xs text-muted-foreground">
+                    &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+                </footer>
             </SidebarInset>
             <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />
             <Toaster />

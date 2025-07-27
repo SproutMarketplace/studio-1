@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full min-h-screen lg:grid lg:grid-cols-2">
+    <div className="w-full min-h-screen lg:grid lg:grid-cols-2 flex flex-col">
       <div className="hidden bg-muted lg:block relative">
         <Image
           src="/plant-images/landing.jpeg"
@@ -19,11 +19,14 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </p>
         </div>
       </div>
-      <div className="flex items-center justify-center py-12 bg-background">
+      <div className="flex flex-col items-center justify-center py-12 bg-background flex-1">
         <div className="mx-auto grid w-[350px] gap-6">
           {children}
         </div>
       </div>
+       <footer className="py-4 px-6 text-center text-xs text-muted-foreground lg:col-span-2">
+           &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+        </footer>
     </div>
   );
 }

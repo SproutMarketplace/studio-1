@@ -87,6 +87,9 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
                         {children}
                     </div>
                 </main>
+                <footer className="py-4 px-6 text-center text-xs text-muted-foreground bg-background border-t">
+                    &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+                </footer>
             </div>
         </div>
     );
