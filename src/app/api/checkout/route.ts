@@ -71,17 +71,6 @@ export async function POST(req: NextRequest) {
                     userId,
                     priceId,
                 },
-                ui_options: {
-                    appearance: {
-                        theme: 'stripe',
-                        variables: {
-                            colorPrimary: '#22764e',
-                            colorBackground: '#f5f5dc',
-                            colorText: '#3c3633',
-                            borderRadius: '0.5rem',
-                        },
-                    },
-                }
             });
             return NextResponse.json({ sessionId: session.id });
 
@@ -123,17 +112,6 @@ export async function POST(req: NextRequest) {
                         sellerId: item.ownerId,
                     }))),
                 },
-                ui_options: {
-                    appearance: {
-                         theme: 'stripe',
-                        variables: {
-                            colorPrimary: '#22764e',
-                            colorBackground: '#f5f5dc',
-                            colorText: '#3c3633',
-                            borderRadius: '0.5rem',
-                        },
-                    }
-                }
             });
             return NextResponse.json({ sessionId: session.id });
         } else {
