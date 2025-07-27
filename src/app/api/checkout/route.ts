@@ -1,7 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
-import type { PlantListing } from '@/models';
+import type { PlantListing, User } from '@/models';
+import { getUserProfile } from '@/lib/firestoreService';
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -33,6 +34,7 @@ const getStripePriceId = (priceId: string): string => {
 }
 
 const BUYER_FEE_PERCENTAGE = 0.045; // 4.5%
+const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
@@ -75,13 +77,52 @@ export async function POST(req: NextRequest) {
                     priceId,
                 },
             });
-            return NextResponse.json({ sessionId: session.id });
+            return NextResponse.json({ sessionIds: [session.id] });
 
         } else if (type === 'one-time' && items && items.length > 0) {
-            // One-time payment logic
-            const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
-                .filter(item => item.price && item.price > 0 && item.isAvailable)
-                .map((item) => ({
+            
+            // --- Logic for Split Payments with Stripe Connect ---
+
+            // 1. Group items by seller
+            const itemsBySeller: { [key: string]: CartItem[] } = items.reduce((acc, item) => {
+                const sellerId = item.ownerId;
+                if (!acc[sellerId]) {
+                    acc[sellerId] = [];
+                }
+                acc[sellerId].push(item);
+                return acc;
+            }, {});
+
+            const sessionIds: string[] = [];
+            
+            // 2. Create a checkout session for each seller
+            for (const sellerId in itemsBySeller) {
+                const sellerItems = itemsBySeller[sellerId];
+                
+                const sellerProfile = await getUserProfile(sellerId);
+                if (!sellerProfile?.stripeAccountId || !sellerProfile?.stripeDetailsSubmitted) {
+                    // This seller can't receive payments, so we skip them for now.
+                    // A more robust solution might show an error to the user in the cart.
+                    console.warn(`Seller ${sellerId} has not completed Stripe onboarding. Skipping their items.`);
+                    continue; 
+                }
+
+                // 3. Calculate fees
+                const isBuyerElite = subscriptionTier === 'elite';
+                const isSellerElite = sellerProfile.subscriptionTier === 'elite';
+
+                const subtotal = sellerItems.reduce((acc, item) => acc + (item.price! * 100 * item.quantity), 0);
+                
+                let totalFee = 0;
+                if (!isBuyerElite) {
+                    totalFee += subtotal * BUYER_FEE_PERCENTAGE;
+                }
+                if (!isSellerElite) {
+                    totalFee += subtotal * SELLER_FEE_PERCENTAGE;
+                }
+                
+                // Add the buyer's fee to the line items
+                const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = sellerItems.map(item => ({
                     price_data: {
                         currency: 'usd',
                         product_data: {
@@ -93,48 +134,55 @@ export async function POST(req: NextRequest) {
                     },
                     quantity: item.quantity,
                 }));
-            
-            // Calculate subtotal and add platform fee if applicable
-            const subtotal = line_items.reduce((acc, item) => acc + (item.price_data!.unit_amount! * item.quantity!), 0);
-            
-            if (subscriptionTier !== 'elite' && subtotal > 0) {
-                const platformFee = Math.round(subtotal * BUYER_FEE_PERCENTAGE);
-                line_items.push({
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: 'Platform Fee',
-                            description: 'For secure transactions and platform maintenance.',
+                
+                if (!isBuyerElite) {
+                     line_items.push({
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: 'Platform Fee',
+                                description: 'For secure transactions and platform maintenance.',
+                            },
+                            unit_amount: Math.round(subtotal * BUYER_FEE_PERCENTAGE),
                         },
-                        unit_amount: platformFee,
+                        quantity: 1,
+                    });
+                }
+
+                // 4. Create the session with application_fee_amount
+                const session = await stripe.checkout.sessions.create({
+                    payment_method_types: ['card'],
+                    line_items,
+                    mode: 'payment',
+                    success_url: `${req.headers.get('origin')}/catalog?checkout_success=true&seller_count=${Object.keys(itemsBySeller).length}`,
+                    cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
+                    payment_intent_data: {
+                        application_fee_amount: Math.round(totalFee),
+                        transfer_data: {
+                            destination: sellerProfile.stripeAccountId,
+                        },
                     },
-                    quantity: 1,
+                    metadata: {
+                        userId,
+                        cartItems: JSON.stringify(sellerItems.map(item => ({
+                            plantId: item.id,
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity,
+                            imageUrl: item.imageUrls[0] || "",
+                            sellerId: item.ownerId,
+                        }))),
+                    },
                 });
-            }
-            
-            if (line_items.length === 0) {
-                return NextResponse.json({ error: 'Your cart contains no items available for purchase.' }, { status: 400 });
+                sessionIds.push(session.id);
             }
 
-            const session = await stripe.checkout.sessions.create({
-                payment_method_types: ['card'],
-                line_items,
-                mode: 'payment',
-                success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
-                cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
-                metadata: {
-                    userId,
-                    cartItems: JSON.stringify(items.map(item => ({
-                        plantId: item.id,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                        imageUrl: item.imageUrls[0] || "",
-                        sellerId: item.ownerId,
-                    }))),
-                },
-            });
-            return NextResponse.json({ sessionId: session.id });
+            if (sessionIds.length === 0) {
+                 return NextResponse.json({ error: 'Could not create a checkout session. The seller may not have completed their payment setup.' }, { status: 400 });
+            }
+
+            return NextResponse.json({ sessionIds });
+
         } else {
              return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
         }

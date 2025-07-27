@@ -30,6 +30,18 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
     const platformFee = isElite ? 0 : totalPrice * BUYER_FEE_PERCENTAGE;
     const finalTotal = totalPrice + platformFee;
 
+    const itemsBySeller = items.reduce((acc, item) => {
+        const sellerId = item.ownerId;
+        if (!acc[sellerId]) {
+            acc[sellerId] = [];
+        }
+        acc[sellerId].push(item);
+        return acc;
+    }, {} as { [key: string]: typeof items });
+    
+    const sellerCount = Object.keys(itemsBySeller).length;
+
+
     async function handleCheckout() {
         if (!user) {
             toast({
@@ -64,19 +76,27 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                 }),
             });
 
+            const result = await response.json();
+
             if (!response.ok) {
-                const errorBody = await response.json();
-                throw new Error(errorBody.error || 'Failed to create checkout session');
+                throw new Error(result.error || 'Failed to create checkout session(s)');
+            }
+            
+            const stripe = await stripePromise;
+            if (!stripe) {
+                throw new Error("Stripe.js has not loaded yet.");
             }
 
-            const { sessionId } = await response.json();
-            const stripe = await stripePromise;
-            if (stripe) {
-                const { error } = await stripe.redirectToCheckout({ sessionId });
-                if (error) {
-                    throw new Error(error.message);
-                }
+            // If there are multiple sessions, redirect to the first one.
+            // The success page will need to handle prompting the user for subsequent checkouts if necessary.
+            const firstSessionId = result.sessionIds[0];
+
+            const { error } = await stripe.redirectToCheckout({ sessionId: firstSessionId });
+
+            if (error) {
+                throw new Error(error.message);
             }
+
         } catch (error) {
             console.error("Checkout error:", error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
@@ -96,7 +116,10 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                 <SheetHeader className="px-6">
                     <SheetTitle>Shopping Cart ({itemCount})</SheetTitle>
                     <SheetDescription>
-                        Review your items below and proceed to checkout.
+                        {sellerCount > 1 
+                            ? `You have items from ${sellerCount} different sellers. You will be guided through checkout for each seller separately.`
+                            : "Review your items below and proceed to checkout."
+                        }
                     </SheetDescription>
                 </SheetHeader>
                 <Separator />

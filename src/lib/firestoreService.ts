@@ -46,6 +46,7 @@ import {
     Notification,
 } from '@/models';
 
+const BUYER_FEE_PERCENTAGE = 0.045; // 4.5%
 const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 
 // --- General Utility Functions ---
@@ -803,21 +804,15 @@ export const createOrder = async (
             
             const batch = writeBatch(db);
             
-            // Calculate seller-specific total and add fee information to items
-            let sellerTotal = 0;
-            const itemsWithFee = sellerItems.map(item => {
-                const itemTotal = item.price * item.quantity;
-                const fee = sellerProfile.subscriptionTier === 'elite' ? 0 : itemTotal * SELLER_FEE_PERCENTAGE;
-                sellerTotal += itemTotal;
-                return { ...item, platformFee: fee };
-            });
-
+            // Calculate seller-specific total. The actual fee calculation is now handled by Stripe.
+            const sellerTotal = sellerItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            
             // 1. Create one order document per seller
             const orderRef = doc(collection(db, 'orders'));
             batch.set(orderRef, {
                 userId: buyerId,
                 sellerId: sellerId,
-                items: itemsWithFee,
+                items: sellerItems,
                 totalAmount: sellerTotal,
                 status: 'processing',
                 createdAt: serverTimestamp(),
