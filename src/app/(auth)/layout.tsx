@@ -19,14 +19,14 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             </p>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center py-12 bg-background flex-1">
+      <div className="flex flex-col items-center justify-center py-12 bg-background flex-1 relative">
         <div className="mx-auto grid w-[350px] gap-6">
           {children}
         </div>
-      </div>
-       <footer className="py-4 px-6 text-center text-xs text-muted-foreground lg:col-span-2">
+        <footer className="absolute bottom-4 text-center text-xs text-muted-foreground">
            &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
         </footer>
+      </div>
     </div>
   );
 }
