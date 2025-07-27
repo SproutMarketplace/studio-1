@@ -48,15 +48,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const appearance: Stripe.Checkout.SessionCreateParams.Appearance = {
-            theme: 'stripe' as const,
-            variables: {
-                colorPrimary: '#22764e',
-                colorBackground: '#F5F5DC',
-                borderRadius: '0.5rem',
-            }
-        };
-
         if (type === 'subscription' && priceId) {
             // Subscription Logic
             if (!process.env.STRIPE_PRO_MONTHLY_PRICE_ID || !process.env.STRIPE_PRO_YEARLY_PRICE_ID || !process.env.STRIPE_ELITE_MONTHLY_PRICE_ID || !process.env.STRIPE_ELITE_YEARLY_PRICE_ID) {
@@ -71,7 +62,6 @@ export async function POST(req: NextRequest) {
                     quantity: 1,
                 }],
                 mode: 'subscription',
-                appearance,
                 subscription_data: {
                     trial_period_days: 7,
                 },
@@ -109,7 +99,6 @@ export async function POST(req: NextRequest) {
                 payment_method_types: ['card'],
                 line_items,
                 mode: 'payment',
-                appearance,
                 success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
                 cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
                 metadata: {
