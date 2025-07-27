@@ -48,6 +48,14 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        const themeOptions: Stripe.Checkout.SessionCreateParams.Ui['theme'] = {
+            variables: {
+                colorPrimary: '#22764e', // Your app's primary green
+                colorBackground: '#f5f5dc', // Your app's light beige background
+                borderRadius: '0.5rem',
+            }
+        };
+
         if (type === 'subscription' && priceId) {
             // Subscription Logic
             if (!process.env.STRIPE_PRO_MONTHLY_PRICE_ID || !process.env.STRIPE_PRO_YEARLY_PRICE_ID || !process.env.STRIPE_ELITE_MONTHLY_PRICE_ID || !process.env.STRIPE_ELITE_YEARLY_PRICE_ID) {
@@ -71,11 +79,16 @@ export async function POST(req: NextRequest) {
                     userId,
                     priceId,
                 },
+                checkout: {
+                    options: {
+                        ui: { theme: themeOptions }
+                    }
+                }
             });
             return NextResponse.json({ sessionId: session.id });
 
-        } else if (type === 'one-time' && items) {
-            // One-time payment logic (existing)
+        } else if (type === 'one-time' && items && items.length > 0) {
+            // One-time payment logic
             const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items
                 .filter(item => item.price && item.price > 0 && item.isAvailable)
                 .map((item) => ({
@@ -112,6 +125,11 @@ export async function POST(req: NextRequest) {
                         sellerId: item.ownerId,
                     }))),
                 },
+                checkout: {
+                    options: {
+                        ui: { theme: themeOptions }
+                    }
+                }
             });
             return NextResponse.json({ sessionId: session.id });
         } else {
