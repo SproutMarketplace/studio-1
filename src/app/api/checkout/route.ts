@@ -48,10 +48,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const themeOptions: Stripe.Checkout.SessionCreateParams.Ui['theme'] = {
+        const appearance: Stripe.Checkout.SessionCreateParams.Appearance = {
+            theme: 'stripe',
             variables: {
-                colorPrimary: '#22764e', // Your app's primary green
-                colorBackground: '#f5f5dc', // Your app's light beige background
+                colorPrimary: '#A7D1AB', // Soft Green from theme
+                colorBackground: '#F5F5DC', // Light Beige from theme
                 borderRadius: '0.5rem',
             }
         };
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
                     quantity: 1,
                 }],
                 mode: 'subscription',
+                appearance: appearance, // Correct placement
                 subscription_data: {
                     trial_period_days: 7,
                 },
@@ -79,11 +81,6 @@ export async function POST(req: NextRequest) {
                     userId,
                     priceId,
                 },
-                checkout: {
-                    options: {
-                        ui: { theme: themeOptions }
-                    }
-                }
             });
             return NextResponse.json({ sessionId: session.id });
 
@@ -112,6 +109,7 @@ export async function POST(req: NextRequest) {
                 payment_method_types: ['card'],
                 line_items,
                 mode: 'payment',
+                appearance: appearance, // Correct placement
                 success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
                 cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
                 metadata: {
@@ -125,11 +123,6 @@ export async function POST(req: NextRequest) {
                         sellerId: item.ownerId,
                     }))),
                 },
-                checkout: {
-                    options: {
-                        ui: { theme: themeOptions }
-                    }
-                }
             });
             return NextResponse.json({ sessionId: session.id });
         } else {
