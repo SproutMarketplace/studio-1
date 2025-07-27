@@ -56,7 +56,7 @@ export function CartSheet({ open, onOpenChange }: { open: boolean; onOpenChange:
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ items, userId: user.uid }),
+                body: JSON.stringify({ items, userId: user.uid, type: 'one-time' }),
             });
 
             if (!response.ok) {
