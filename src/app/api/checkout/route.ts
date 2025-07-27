@@ -31,17 +31,6 @@ const getStripePriceId = (priceId: string): string => {
     }
 }
 
-// Define the custom appearance for Stripe Checkout
-const stripeAppearance: Stripe.Checkout.SessionCreateParams.UiOptions.Appearance = {
-    theme: 'stripe',
-    variables: {
-        colorPrimary: '#22764e', // Richer Green from your theme
-        colorBackground: '#f5f5dc', // Light beige from your theme
-        colorText: '#3c3633', // Deep Earthy Brown from your theme
-        borderRadius: '0.5rem', // Matches your theme's radius
-    },
-};
-
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
@@ -52,7 +41,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Checkout is currently disabled. Please contact support.' }, { status: 503 });
     }
     
-    const { items, userId, priceId, type }: RequestBody = await req.json();
+    const { items, userId, type, priceId }: RequestBody = await req.json();
 
     if (!userId) {
         return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
@@ -83,7 +72,15 @@ export async function POST(req: NextRequest) {
                     priceId,
                 },
                 ui_options: {
-                    appearance: stripeAppearance,
+                    appearance: {
+                        theme: 'stripe',
+                        variables: {
+                            colorPrimary: '#22764e',
+                            colorBackground: '#f5f5dc',
+                            colorText: '#3c3633',
+                            borderRadius: '0.5rem',
+                        },
+                    },
                 }
             });
             return NextResponse.json({ sessionId: session.id });
@@ -127,7 +124,15 @@ export async function POST(req: NextRequest) {
                     }))),
                 },
                 ui_options: {
-                    appearance: stripeAppearance,
+                    appearance: {
+                         theme: 'stripe',
+                        variables: {
+                            colorPrimary: '#22764e',
+                            colorBackground: '#f5f5dc',
+                            colorText: '#3c3633',
+                            borderRadius: '0.5rem',
+                        },
+                    }
                 }
             });
             return NextResponse.json({ sessionId: session.id });
