@@ -31,6 +31,17 @@ const getStripePriceId = (priceId: string): string => {
     }
 }
 
+// Define the custom appearance for Stripe Checkout
+const stripeAppearance: Stripe.Checkout.SessionCreateParams.UiOptions.Appearance = {
+    theme: 'stripe',
+    variables: {
+        colorPrimary: '#22764e', // Richer Green from your theme
+        colorBackground: '#f5f5dc', // Light beige from your theme
+        colorText: '#3c3633', // Deep Earthy Brown from your theme
+        borderRadius: '0.5rem', // Matches your theme's radius
+    },
+};
+
 export async function POST(req: NextRequest) {
     if (req.method !== 'POST') {
         return NextResponse.json({ message: 'Method Not Allowed' }, { status: 405 });
@@ -70,6 +81,9 @@ export async function POST(req: NextRequest) {
                 metadata: {
                     userId,
                     priceId,
+                },
+                ui_options: {
+                    appearance: stripeAppearance,
                 }
             });
             return NextResponse.json({ sessionId: session.id });
@@ -111,6 +125,9 @@ export async function POST(req: NextRequest) {
                         imageUrl: item.imageUrls[0] || "",
                         sellerId: item.ownerId,
                     }))),
+                },
+                ui_options: {
+                    appearance: stripeAppearance,
                 }
             });
             return NextResponse.json({ sessionId: session.id });
