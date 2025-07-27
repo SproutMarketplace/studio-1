@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
         const appearance: Stripe.Checkout.SessionCreateParams.Appearance = {
             theme: 'stripe',
             variables: {
-                colorPrimary: '#A7D1AB', // Soft Green from theme
-                colorBackground: '#F5F5DC', // Light Beige from theme
+                colorPrimary: '#22764e',
+                colorBackground: '#F5F5DC',
                 borderRadius: '0.5rem',
             }
         };
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
                     quantity: 1,
                 }],
                 mode: 'subscription',
-                appearance: appearance, // Correct placement
+                appearance,
                 subscription_data: {
                     trial_period_days: 7,
                 },
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
                 payment_method_types: ['card'],
                 line_items,
                 mode: 'payment',
-                appearance: appearance, // Correct placement
+                appearance,
                 success_url: `${req.headers.get('origin')}/catalog?checkout_success=true`,
                 cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
                 metadata: {
