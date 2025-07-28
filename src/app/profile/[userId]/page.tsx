@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -94,6 +95,7 @@ export default function ProfilePage() {
             setUserPlants(plants);
             setListingsLoading(false);
             
+            // If the viewer is the owner, fetch all their specific data
             if (loggedInUser?.uid === userId) {
                 setWishlistLoading(true);
                 setOrdersLoading(true);
@@ -478,54 +480,58 @@ export default function ProfilePage() {
                             <CardDescription>A quick summary of your sales activity.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid gap-4 md:grid-cols-2">
-                               <StatCard 
-                                    title="Total Items Sold" 
-                                    value={totalQuantitySold}
-                                    icon={Package}
-                                    loading={sellerOrdersLoading}
-                                />
-                                <div className="flex items-center justify-center">
-                                    <Button asChild className="w-full h-full text-base">
-                                        <Link href="/seller/dashboard">
-                                            Go to Full Seller Dashboard
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
-                             <h3 className="text-lg font-medium">Recent Sales</h3>
-                              {sellerOrdersLoading ? (
+                             {sellerOrdersLoading ? (
                                 <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                            ) : sellerOrders.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Items Sold</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {sellerOrders.slice(0, 5).map((order) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
-                                                <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
-                                                <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
-                                                <TableCell>
-                                                    <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
-                                                        <Truck className="mr-2 h-4 w-4" /> Create Label
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
                             ) : (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    <p>Your recent sales will appear here.</p>
-                                </div>
+                                <>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <StatCard 
+                                                title="Total Items Sold" 
+                                                value={totalQuantitySold}
+                                                icon={Package}
+                                                loading={sellerOrdersLoading}
+                                            />
+                                        <div className="flex items-center justify-center">
+                                            <Button asChild className="w-full h-full text-base">
+                                                <Link href="/seller/dashboard">
+                                                    Go to Full Seller Dashboard
+                                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium">Recent Sales</h3>
+                                    {sellerOrders.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Items Sold</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {sellerOrders.slice(0, 5).map((order) => (
+                                                    <TableRow key={order.id}>
+                                                        <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                                        <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
+                                                        <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
+                                                        <TableCell>
+                                                            <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
+                                                                <Truck className="mr-2 h-4 w-4" /> Create Label
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-12 text-muted-foreground">
+                                            <p>Your recent sales will appear here.</p>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </CardContent>
                     </Card>
