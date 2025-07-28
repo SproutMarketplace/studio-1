@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getUserPlantListings, getWishlistPlants, uploadProfileImage, updateUserData, getUserProfile, followUser, unfollowUser, getOrdersForBuyer, getOrdersForSeller } from "@/lib/firestoreService";
-import type { PlantListing, User, Order } from "@/models";
+import type { PlantListing, User, Order, OrderItem } from "@/models";
 import { format } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
 import Link from "next/link";
@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, CircleDollarSign, Package, BarChart3 } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, CircleDollarSign, Package, BarChart3, Truck } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ import { EditProfileForm } from "@/components/edit-profile-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import { CreateLabelDialog } from "@/components/create-label-dialog";
 
 const StatCard = ({ title, value, icon: Icon, isCurrency = false, loading }: { title: string, value: number, icon: React.ElementType, isCurrency?: boolean, loading: boolean}) => (
     <Card>
@@ -56,8 +57,9 @@ export default function ProfilePage() {
   const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   
-  const [sellerStats, setSellerStats] = useState({ revenue: 0, sales: 0, activeListings: 0 });
-  const [sellerStatsLoading, setSellerStatsLoading] = useState(false);
+  const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
+  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(false);
+  const [totalQuantitySold, setTotalQuantitySold] = useState(0);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -69,7 +71,9 @@ export default function ProfilePage() {
 
   const isOwner = loggedInUser?.uid === userId;
   const isFollowing = loggedInUserProfile?.following?.includes(userId);
-
+  
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isLabelDialogOpen, setIsLabelDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -85,7 +89,6 @@ export default function ProfilePage() {
             }
             setViewedProfile(profileData);
 
-            // If we are viewing our own profile, ensure we use the live data from context
             if (loggedInUser?.uid === userId) {
                 setViewedProfile(loggedInUserProfile);
             }
@@ -156,7 +159,7 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !loggedInUser || !isOwner) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+    if (file.size > 2 * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "Image too large",
@@ -215,30 +218,28 @@ export default function ProfilePage() {
   };
 
   const onTabChange = async (tabValue: string) => {
-    if (tabValue === 'seller-dashboard' && isOwner && loggedInUser) {
-        setSellerStatsLoading(true);
+    if (tabValue === 'seller-dashboard' && isOwner && loggedInUser && sellerOrders.length === 0) {
+        setSellerOrdersLoading(true);
         try {
-            const [userPlants, sellerOrders] = await Promise.all([
-                getUserPlantListings(loggedInUser.uid),
-                getOrdersForSeller(loggedInUser.uid)
-            ]);
-            
-            const activeListings = userPlants.filter(p => p.isAvailable).length;
-            const itemsSoldBySeller = sellerOrders.flatMap(order => 
-                order.items.filter(item => item.sellerId === loggedInUser.uid)
-            );
-            
-            const sales = itemsSoldBySeller.reduce((acc, item) => acc + item.quantity, 0);
-            const revenue = itemsSoldBySeller.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const orders = await getOrdersForSeller(loggedInUser.uid);
+            setSellerOrders(orders);
+            const totalSold = orders.flatMap(o => o.items)
+                                     .filter(item => item.sellerId === loggedInUser.uid)
+                                     .reduce((acc, item) => acc + item.quantity, 0);
+            setTotalQuantitySold(totalSold);
 
-            setSellerStats({ revenue, sales, activeListings });
         } catch (error) {
-            console.error("Failed to fetch seller stats:", error);
-            toast({ variant: 'destructive', title: 'Could not load seller stats.' });
+            console.error("Failed to fetch seller orders:", error);
+            toast({ variant: 'destructive', title: 'Could not load seller orders.' });
         } finally {
-            setSellerStatsLoading(false);
+            setSellerOrdersLoading(false);
         }
     }
+  };
+  
+  const handleOpenLabelDialog = (order: Order) => {
+    setSelectedOrder(order);
+    setIsLabelDialogOpen(true);
   };
 
 
@@ -259,9 +260,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <p>This profile could not be found.</p>
-            <Button asChild className="mt-4">
-              <Link href="/catalog">Go to Catalog</Link>
-            </Button>
+            <Button asChild className="mt-4"><Link href="/catalog">Go to Catalog</Link></Button>
           </CardContent>
         </Card>
       </div>
@@ -279,6 +278,33 @@ export default function ProfilePage() {
         default: return 'default';
     }
   };
+  
+  const renderOrderItemsForSeller = (items: OrderItem[]) => {
+    const sellerItems = items.filter(item => item.sellerId === loggedInUser?.uid);
+
+    return (
+        <div className="space-y-2">
+            {sellerItems.map(item => (
+                <div key={item.plantId} className="flex items-center gap-2 text-sm">
+                    <Link href={`/plant/${item.plantId}`} className="flex items-center gap-2 text-sm group">
+                        <Image
+                            src={item.imageUrl || "https://placehold.co/40x40.png"}
+                            alt={item.name}
+                            width={40}
+                            height={40}
+                            className="rounded-md aspect-square object-cover"
+                        />
+                        <div>
+                            <span className="font-medium group-hover:underline">{item.name}</span>
+                            <p className="text-muted-foreground text-xs">Qty: {item.quantity}</p>
+                        </div>
+                    </Link>
+                </div>
+            ))}
+        </div>
+    );
+  };
+
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -486,44 +512,73 @@ export default function ProfilePage() {
                 <TabsContent value="seller-dashboard" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Seller Dashboard Overview</CardTitle>
-                            <CardDescription>A quick look at your seller performance.</CardDescription>
+                            <CardTitle>Seller Tools</CardTitle>
+                            <CardDescription>A quick summary of your sales activity.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-3">
-                                <StatCard 
-                                    title="Total Revenue" 
-                                    value={sellerStats.revenue}
-                                    icon={CircleDollarSign}
-                                    isCurrency
-                                    loading={sellerStatsLoading}
-                                />
-                                <StatCard 
-                                    title="Total Sales" 
-                                    value={sellerStats.sales}
+                        <CardContent className="space-y-6">
+                            <div className="grid gap-4 md:grid-cols-2">
+                               <StatCard 
+                                    title="Total Items Sold" 
+                                    value={totalQuantitySold}
                                     icon={Package}
-                                    loading={sellerStatsLoading}
+                                    loading={sellerOrdersLoading}
                                 />
-                                <StatCard 
-                                    title="Active Listings" 
-                                    value={sellerStats.activeListings}
-                                    icon={BarChart3}
-                                    loading={sellerStatsLoading}
-                                />
+                                <div className="flex items-center justify-center">
+                                    <Button asChild className="w-full h-full text-base">
+                                        <Link href="/seller/dashboard">
+                                            Go to Full Seller Dashboard
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </div>
                             </div>
-                            <Button asChild className="w-full">
-                                <Link href="/seller/dashboard">
-                                Go to Full Seller Dashboard
-                                </Link>
-                            </Button>
+                            <Separator/>
+                             <h3 className="text-lg font-medium">Recent Sales</h3>
+                              {sellerOrdersLoading ? (
+                                <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                            ) : sellerOrders.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Items Sold</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sellerOrders.slice(0, 5).map((order) => (
+                                            <TableRow key={order.id}>
+                                                <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                                <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
+                                                <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
+                                                <TableCell>
+                                                    <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
+                                                        <Truck className="mr-2 h-4 w-4" /> Create Label
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <p>Your recent sales will appear here.</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
             </>
         )}
       </Tabs>
+
+       <CreateLabelDialog
+            order={selectedOrder}
+            isOpen={isLabelDialogOpen}
+            onOpenChange={setIsLabelDialogOpen}
+        />
     </div>
   );
 }
 
-    
