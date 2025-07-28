@@ -30,6 +30,7 @@ export default function FinancesPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isConnectingStripe, setIsConnectingStripe] = useState(false);
+    const [hasProcessedStripeReturn, setHasProcessedStripeReturn] = useState(false);
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -37,13 +38,14 @@ export default function FinancesPage() {
 
     useEffect(() => {
         const stripeReturn = searchParams.get('stripe_return');
-        if (stripeReturn && profile && !profile.stripeDetailsSubmitted) {
+        if (stripeReturn === 'true' && !hasProcessedStripeReturn) {
+            setHasProcessedStripeReturn(true); // Prevent this from running again
             toast({
                 title: "Welcome back!",
                 description: "Verifying your account with Stripe. This may take a moment...",
             });
-            refreshUserProfile(); // This will trigger a re-fetch of the user profile, which will have the latest Stripe status
-            router.replace('/seller/finances');
+            refreshUserProfile(); 
+            router.replace('/seller/finances', { scroll: false });
         }
 
         const stripeRefresh = searchParams.get('stripe_refresh');
@@ -53,9 +55,9 @@ export default function FinancesPage() {
                 title: "Connection Timed Out",
                 description: "The secure connection to Stripe timed out. Please try again.",
             });
-            router.replace('/seller/finances');
+            router.replace('/seller/finances', { scroll: false });
         }
-    }, [searchParams, profile, refreshUserProfile, router, toast]);
+    }, [searchParams, hasProcessedStripeReturn, refreshUserProfile, router, toast]);
 
 
     useEffect(() => {
