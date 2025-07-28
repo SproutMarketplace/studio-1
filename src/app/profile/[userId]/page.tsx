@@ -480,17 +480,17 @@ export default function ProfilePage() {
                             <CardDescription>A quick summary of your sales activity.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                             {sellerOrdersLoading ? (
+                            {sellerOrdersLoading ? (
                                 <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                             ) : (
                                 <>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <StatCard 
-                                                title="Total Items Sold" 
-                                                value={totalQuantitySold}
-                                                icon={Package}
-                                                loading={sellerOrdersLoading}
-                                            />
+                                            title="Total Items Sold" 
+                                            value={totalQuantitySold}
+                                            icon={Package}
+                                            loading={sellerOrdersLoading}
+                                        />
                                         <div className="flex items-center justify-center">
                                             <Button asChild className="w-full h-full text-base">
                                                 <Link href="/seller/dashboard">
@@ -500,7 +500,9 @@ export default function ProfilePage() {
                                             </Button>
                                         </div>
                                     </div>
+                                    
                                     <h3 className="text-lg font-medium">Recent Sales</h3>
+                                    
                                     {sellerOrders.length > 0 ? (
                                         <Table>
                                             <TableHeader>
