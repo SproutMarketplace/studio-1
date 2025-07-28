@@ -34,13 +34,14 @@ export async function POST(req: NextRequest) {
         // This would be the buyer's address from the order.
         const toAddress = {
             name: "Mr Hippo",
-            street1: "965 Mission St",
+            street1: "965 Mission St #572",
             city: "San Francisco",
             state: "CA",
             zip: "94103",
             country: "US",
             phone: "+1 555 341 9393",
-            email: "hippo@goshippo.com"
+            email: "mrhippo@goshippo.com",
+            validate: false // Use a valid test address from Shippo
         };
         
         // This would come from the seller in the dialog.
