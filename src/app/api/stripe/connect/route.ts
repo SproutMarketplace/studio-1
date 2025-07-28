@@ -46,6 +46,10 @@ export async function POST(req: NextRequest) {
                     card_payments: { requested: true },
                     transfers: { requested: true },
                 },
+                business_profile: {
+                    name: userProfile.username,
+                    url: `${baseUrl}/profile/${userId}`,
+                },
                 metadata: {
                     userId: userId,
                 },
