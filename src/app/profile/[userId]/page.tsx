@@ -55,15 +55,16 @@ export default function ProfilePage() {
   const [userPlants, setUserPlants] = useState<PlantListing[]>([]);
   const [wishlistPlants, setWishlistPlants] = useState<PlantListing[]>([]);
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
-  
   const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
-  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(true);
+  
   const [totalQuantitySold, setTotalQuantitySold] = useState(0);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [wishlistLoading, setWishlistLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(true);
+
   const [isUploading, setIsUploading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +94,7 @@ export default function ProfilePage() {
             setUserPlants(plants);
             setListingsLoading(false);
             
-            // If the viewer is the owner, fetch their private data
+            // If the viewer is the owner, fetch all their private data at once
             if (loggedInUser?.uid === userId) {
                 setWishlistLoading(true);
                 setOrdersLoading(true);
