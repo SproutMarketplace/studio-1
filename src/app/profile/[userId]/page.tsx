@@ -79,7 +79,6 @@ export default function ProfilePage() {
 
     const fetchPageData = async () => {
         setPageLoading(true);
-        setListingsLoading(true);
         try {
             const profileData = await getUserProfile(userId);
             if (!profileData) {
@@ -89,6 +88,7 @@ export default function ProfilePage() {
             }
             setViewedProfile(profileData);
             
+            setListingsLoading(true);
             const plants = await getUserPlantListings(userId);
             setUserPlants(plants);
             setListingsLoading(false);
@@ -542,3 +542,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
