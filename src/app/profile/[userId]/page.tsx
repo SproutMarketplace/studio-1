@@ -94,7 +94,6 @@ export default function ProfilePage() {
             setUserPlants(plants);
             setListingsLoading(false);
             
-            // If the viewer is the owner, fetch all their private data at once
             if (loggedInUser?.uid === userId) {
                 setWishlistLoading(true);
                 setOrdersLoading(true);
