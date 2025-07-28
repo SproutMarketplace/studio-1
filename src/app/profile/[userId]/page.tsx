@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -14,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, CircleDollarSign, Package, BarChart3, Truck, ArrowRight } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -23,7 +22,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { CreateLabelDialog } from "@/components/create-label-dialog";
-import { Separator } from "@/components/ui/separator";
 
 const StatCard = ({ title, value, icon: Icon, isCurrency = false, loading }: { title: string, value: number, icon: React.ElementType, isCurrency?: boolean, loading: boolean}) => (
     <Card>
@@ -81,6 +79,7 @@ export default function ProfilePage() {
 
     const fetchPageData = async () => {
         setPageLoading(true);
+        setListingsLoading(true);
         try {
             const profileData = await getUserProfile(userId);
             if (!profileData) {
@@ -89,12 +88,39 @@ export default function ProfilePage() {
                 return;
             }
             setViewedProfile(profileData);
-
+            
+            const plants = await getUserPlantListings(userId);
+            setUserPlants(plants);
+            setListingsLoading(false);
+            
+            // If the viewer is the owner, fetch their private data
             if (loggedInUser?.uid === userId) {
-                setViewedProfile(loggedInUserProfile);
+                setWishlistLoading(true);
+                setOrdersLoading(true);
+                setSellerOrdersLoading(true);
+
+                const [wishlist, buyerOrders, sellerSales] = await Promise.all([
+                    getWishlistPlants(userId),
+                    getOrdersForBuyer(userId),
+                    getOrdersForSeller(userId)
+                ]);
+
+                setWishlistPlants(wishlist);
+                setOrderHistory(buyerOrders);
+                setSellerOrders(sellerSales);
+                
+                const totalSold = sellerSales.flatMap(o => o.items)
+                                     .filter(item => item.sellerId === loggedInUser.uid)
+                                     .reduce((acc, item) => acc + item.quantity, 0);
+                setTotalQuantitySold(totalSold);
+
+                setWishlistLoading(false);
+                setOrdersLoading(false);
+                setSellerOrdersLoading(false);
             }
+
         } catch (error) {
-            console.error("Failed to fetch user profile:", error);
+            console.error("Failed to fetch user profile data:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load profile.' });
         } finally {
             setPageLoading(false);
@@ -102,72 +128,7 @@ export default function ProfilePage() {
     };
 
     fetchPageData();
-  }, [userId, loggedInUser?.uid, loggedInUserProfile, router, toast]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchUserPlants = async () => {
-      setListingsLoading(true);
-      try {
-        const plants = await getUserPlantListings(userId);
-        setUserPlants(plants);
-      } catch (error) {
-        console.error("Failed to fetch user plants:", error);
-      } finally {
-        setListingsLoading(false);
-      }
-    };
-    fetchUserPlants();
-
-    if (isOwner) {
-        const fetchWishlist = async () => {
-            setWishlistLoading(true);
-            try {
-                const plants = await getWishlistPlants(userId);
-                setWishlistPlants(plants);
-            } catch (error) {
-                console.error("Failed to fetch wishlist:", error);
-            } finally {
-                setWishlistLoading(false);
-            }
-        };
-        fetchWishlist();
-
-        const fetchOrders = async () => {
-            setOrdersLoading(true);
-            try {
-                const orders = await getOrdersForBuyer(userId);
-                setOrderHistory(orders);
-            } catch (error) {
-                console.error("Failed to fetch order history:", error);
-            } finally {
-                setOrdersLoading(false);
-            }
-        };
-        fetchOrders();
-    }
-  }, [userId, isOwner, loggedInUserProfile?.favoritePlants]);
-
-  const fetchSellerDashboardData = async () => {
-      if (isOwner && loggedInUser) {
-        setSellerOrdersLoading(true);
-        try {
-            const orders = await getOrdersForSeller(loggedInUser.uid);
-            setSellerOrders(orders);
-            const totalSold = orders.flatMap(o => o.items)
-                                     .filter(item => item.sellerId === loggedInUser.uid)
-                                     .reduce((acc, item) => acc + item.quantity, 0);
-            setTotalQuantitySold(totalSold);
-
-        } catch (error) {
-            console.error("Failed to fetch seller orders:", error);
-            toast({ variant: 'destructive', title: 'Could not load seller orders.' });
-        } finally {
-            setSellerOrdersLoading(false);
-        }
-      }
-  };
+  }, [userId, loggedInUser?.uid, toast, router]);
 
 
   const handleAvatarClick = () => {
@@ -235,12 +196,6 @@ export default function ProfilePage() {
         toast({ variant: "destructive", title: "Something went wrong", description: "Could not update follow status." });
     } finally {
         setIsFollowLoading(false);
-    }
-  };
-
-  const onTabChange = (tabValue: string) => {
-    if (tabValue === 'seller-dashboard' && sellerOrders.length === 0) {
-        fetchSellerDashboardData();
     }
   };
   
@@ -391,7 +346,7 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="listings" className="w-full" onValueChange={onTabChange}>
+      <Tabs defaultValue="listings" className="w-full">
         <TabsList className={cn("grid w-full", isOwner ? "grid-cols-2 md:grid-cols-5" : "grid-cols-1")}>
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
           {isOwner && <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>}
@@ -539,7 +494,6 @@ export default function ProfilePage() {
                                     </Button>
                                 </div>
                             </div>
-                            <Separator/>
                              <h3 className="text-lg font-medium">Recent Sales</h3>
                               {sellerOrdersLoading ? (
                                 <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
