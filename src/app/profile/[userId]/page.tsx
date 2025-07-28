@@ -369,8 +369,8 @@ export default function ProfilePage() {
         <TabsContent value="listings" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>{isOwner ? "My Plant Listings" : `${viewedProfile.username}'s Listings`}</CardTitle>
-              <CardDescription>{isOwner ? "The plants you have listed for sale or trade." : `Plants listed by ${viewedProfile.username}.`}</CardDescription>
+              <CardTitle>{isOwner ? "My Item Listings" : `${viewedProfile.username}'s Listings`}</CardTitle>
+              <CardDescription>{isOwner ? "The items you have listed for sale or trade." : `Items listed by ${viewedProfile.username}.`}</CardDescription>
             </CardHeader>
             <CardContent>
               {listingsLoading ? (
@@ -385,8 +385,8 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-semibold">{isOwner ? "You haven't listed any plants yet." : "This user hasn't listed any plants yet."}</h3>
-                  {isOwner && <Button asChild className="mt-4"><Link href="/list-plant">List a Plant</Link></Button>}
+                  <h3 className="text-xl font-semibold">{isOwner ? "You haven't listed any items yet." : "This user hasn't listed any items yet."}</h3>
+                  {isOwner && <Button asChild className="mt-4"><Link href="/list-plant">List an Item</Link></Button>}
                 </div>
               )}
             </CardContent>
@@ -398,7 +398,7 @@ export default function ProfilePage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>My Wishlist</CardTitle>
-                            <CardDescription>The plants you've saved for future consideration.</CardDescription>
+                            <CardDescription>The items you've saved for future consideration.</CardDescription>
                         </CardHeader>
                         <CardContent>
                         {wishlistLoading ? (
@@ -414,9 +414,9 @@ export default function ProfilePage() {
                         ) : (
                         <div className="text-center py-12">
                             <h3 className="text-xl font-semibold">Your wishlist is empty.</h3>
-                            <p className="text-muted-foreground mt-2">Browse the catalog to find plants to add.</p>
+                            <p className="text-muted-foreground mt-2">Browse the catalog to find items to add.</p>
                             <Button asChild className="mt-4">
-                            <Link href="/catalog">Find Plants</Link>
+                            <Link href="/catalog">Find Items</Link>
                             </Button>
                         </div>
                         )}
@@ -473,8 +473,8 @@ export default function ProfilePage() {
                             <div className="text-center py-12">
                                 <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
                                 <h3 className="mt-4 text-xl font-semibold">No orders yet</h3>
-                                <p className="mt-1 text-muted-foreground">When you purchase a plant, your order will appear here.</p>
-                                <Button asChild className="mt-4"><Link href="/catalog">Browse Plants</Link></Button>
+                                <p className="mt-1 text-muted-foreground">When you purchase an item, your order will appear here.</p>
+                                <Button asChild className="mt-4"><Link href="/catalog">Browse Items</Link></Button>
                             </div>
                         )}
                     </CardContent>
