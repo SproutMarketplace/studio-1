@@ -4,84 +4,99 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- User Profiles ---
-    // Anyone can read a user's public profile.
-    // Only the authenticated user can write to their own profile.
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of a document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Anyone can create a user profile (on signup)
+      allow create: if true;
+      // Only the authenticated owner can read, update, or delete their own profile
+      allow read, update, delete: if isSignedIn() && isOwner(userId);
 
-        // Notifications are private to the user
-        match /notifications/{notificationId} {
-            allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-    }
-
-    // --- Plant Listings ---
-    // Anyone can read and list plants.
-    // Only authenticated owners can create, update, or delete their own listings.
-    match /plants/{plantId} {
-      allow read, list: if true;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-    }
-
-    // --- Orders ---
-    // Orders are highly restricted.
-    // Only the buyer or the seller can read an order document.
-    // Creation should only be done via secure server-side logic (like a webhook).
-    match /orders/{orderId} {
-      allow create: if false; // Disallow client-side creation
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.uid == resource.data.sellerId);
-      allow update, delete: if false; // Disallow client-side updates/deletes
-    }
-
-    // --- Chats & Messages ---
-    // Only participants of a chat can read or write messages.
-    match /chats/{chatId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
-      
-      match /messages/{messageId} {
-        allow read, write: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      // Rules for user subcollections (e.g., notifications)
+      match /{subcollection}/{docId} {
+        allow read, write: if isSignedIn() && isOwner(userId);
       }
+    }
+
+    // Rules for the 'plants' collection
+    match /plants/{plantId} {
+      // Anyone can read plant listings
+      allow read: if true;
+      // Only authenticated users can create listings
+      allow create: if isSignedIn();
+      // Only the owner can update or delete their own listing
+      allow update, delete: if isSignedIn() && isOwner(resource.data.ownerId);
     }
     
-    // --- Forums & Posts ---
-    match /forums/{forumId} {
-      // Anyone can read forum details.
-      allow read: if true;
-      // Only authenticated users can create forums.
-      allow create: if request.auth != null;
-      // Only the forum creator can update or delete it.
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.creatorId;
-
-      match /posts/{postId} {
-        // Anyone can read posts.
-        allow read: if true;
-        // Authenticated users can create posts.
-        allow create: if request.auth != null;
-        // Only the post author or a forum moderator/creator can update/delete.
-        allow update, delete: if request.auth != null && (
-          resource.data.authorId == request.auth.uid ||
-          request.auth.uid == get(/databases/$(database)/documents/forums/$(forumId)).data.creatorId ||
-          request.auth.uid in get(/databases/$(database)/documents/forums/$(forumId)).data.moderatorIds
-        );
-        
-        match /comments/{commentId} {
-            // Anyone can read comments
-            allow read: if true;
-            // Only authenticated users can create, update, or delete their own comments.
-            allow create: if request.auth != null;
-            allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
-        }
-      }
+    // Rules for the 'orders' collection
+    match /orders/{orderId} {
+      // A user can read an order if they are the buyer (userId) or the seller (sellerId)
+      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isOwner(resource.data.sellerId));
+      // Only authenticated users can create orders
+      allow create: if isSignedIn();
+      // Updates might be needed for status changes, restricted to seller or buyer
+      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isOwner(resource.data.sellerId));
+      // No one can delete orders for record-keeping purposes
+      allow delete: if false;
     }
+    
+    // Rules for the 'chats' collection
+    match /chats/{chatId} {
+        // Users can only read chats they are a part of
+        allow read, write: if isSignedIn() && request.auth.uid in resource.data.participants;
 
-    // --- Rewards Transactions ---
-    // These should only be created by a trusted server environment, not the client.
+        // Rules for the 'messages' subcollection within a chat
+        match /messages/{messageId} {
+             allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+             allow update, delete: if false; // Messages are generally immutable
+        }
+    }
+    
+    // Rules for the 'forums' collection
+    match /forums/{forumId} {
+        // Anyone can read forums
+        allow read: if true;
+        // Only authenticated users can create forums
+        allow create: if isSignedIn();
+        // Only the creator of the forum can update or delete it
+        allow update, delete: if isSignedIn() && isOwner(resource.data.creatorId);
+
+        // Rules for the 'posts' subcollection within a forum
+        match /posts/{postId} {
+            // Anyone can read posts
+            allow read: if true;
+            // Only authenticated users can create posts
+            allow create: if isSignedIn();
+            // Only the author of the post can update or delete it
+            allow update, delete: if isSignedIn() && isOwner(resource.data.authorId);
+
+            // Rules for the 'comments' subcollection within a post
+            match /comments/{commentId} {
+                // Anyone can read comments
+                allow read: if true;
+                // Only authenticated users can create comments
+                allow create: if isSignedIn();
+                // Only the author can update or delete their own comment
+                allow update, delete: if isSignedIn() && isOwner(resource.data.authorId);
+            }
+        }
+    }
+    
+    // Rules for the 'rewardsTransactions' collection
     match /rewardsTransactions/{transactionId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow write: if false; // Client cannot create/update/delete rewards.
+      // Only the user themselves can read their own reward transactions
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      // No one can create, update, or delete transactions directly (handled by backend/cloud functions)
+      allow write: if false;
     }
   }
 }
