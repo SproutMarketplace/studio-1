@@ -360,7 +360,7 @@ export default function ProfilePage() {
       
       <Tabs defaultValue="listings" className="w-full" onValueChange={onTabChange}>
         <TabsList className={cn("grid w-full", isOwner ? "grid-cols-2 md:grid-cols-5" : "grid-cols-1")}>
-          <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />Listings</TabsTrigger>
+          <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
           {isOwner && <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>}
           {isOwner && <TabsTrigger value="order-history"><ClipboardList className="mr-2 h-4 w-4" />Order History</TabsTrigger>}
           {isOwner && <TabsTrigger value="seller-dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Seller Tools</TabsTrigger>}
