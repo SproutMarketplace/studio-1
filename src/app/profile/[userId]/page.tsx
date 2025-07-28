@@ -59,7 +59,7 @@ export default function ProfilePage() {
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   
   const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
-  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(false);
+  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(true);
   const [totalQuantitySold, setTotalQuantitySold] = useState(0);
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -84,7 +84,7 @@ export default function ProfilePage() {
         try {
             const profileData = await getUserProfile(userId);
             if (!profileData) {
-                router.push('/catalog'); // or a 404 page
+                router.push('/catalog');
                 toast({ variant: 'destructive', title: 'User not found' });
                 return;
             }
@@ -148,6 +148,26 @@ export default function ProfilePage() {
         fetchOrders();
     }
   }, [userId, isOwner, loggedInUserProfile?.favoritePlants]);
+
+  const fetchSellerDashboardData = async () => {
+      if (isOwner && loggedInUser) {
+        setSellerOrdersLoading(true);
+        try {
+            const orders = await getOrdersForSeller(loggedInUser.uid);
+            setSellerOrders(orders);
+            const totalSold = orders.flatMap(o => o.items)
+                                     .filter(item => item.sellerId === loggedInUser.uid)
+                                     .reduce((acc, item) => acc + item.quantity, 0);
+            setTotalQuantitySold(totalSold);
+
+        } catch (error) {
+            console.error("Failed to fetch seller orders:", error);
+            toast({ variant: 'destructive', title: 'Could not load seller orders.' });
+        } finally {
+            setSellerOrdersLoading(false);
+        }
+      }
+  };
 
 
   const handleAvatarClick = () => {
@@ -218,23 +238,9 @@ export default function ProfilePage() {
     }
   };
 
-  const onTabChange = async (tabValue: string) => {
-    if (tabValue === 'seller-dashboard' && isOwner && loggedInUser && sellerOrders.length === 0) {
-        setSellerOrdersLoading(true);
-        try {
-            const orders = await getOrdersForSeller(loggedInUser.uid);
-            setSellerOrders(orders);
-            const totalSold = orders.flatMap(o => o.items)
-                                     .filter(item => item.sellerId === loggedInUser.uid)
-                                     .reduce((acc, item) => acc + item.quantity, 0);
-            setTotalQuantitySold(totalSold);
-
-        } catch (error) {
-            console.error("Failed to fetch seller orders:", error);
-            toast({ variant: 'destructive', title: 'Could not load seller orders.' });
-        } finally {
-            setSellerOrdersLoading(false);
-        }
+  const onTabChange = (tabValue: string) => {
+    if (tabValue === 'seller-dashboard' && sellerOrders.length === 0) {
+        fetchSellerDashboardData();
     }
   };
   
