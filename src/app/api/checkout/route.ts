@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
                 }
                 acc[sellerId].push(item);
                 return acc;
-            }, {});
+            }, {} as { [key: string]: CartItem[] });
 
             const sessionIds: string[] = [];
             
@@ -111,17 +111,17 @@ export async function POST(req: NextRequest) {
                 const isBuyerElite = subscriptionTier === 'elite';
                 const isSellerElite = sellerProfile.subscriptionTier === 'elite';
 
-                const subtotal = sellerItems.reduce((acc, item) => acc + (item.price! * 100 * item.quantity), 0);
+                const subtotalInCents = sellerItems.reduce((acc, item) => acc + (item.price! * 100 * item.quantity), 0);
                 
-                let totalFee = 0;
+                let totalFeeInCents = 0;
                 if (!isBuyerElite) {
-                    totalFee += subtotal * BUYER_FEE_PERCENTAGE;
+                    totalFeeInCents += subtotalInCents * BUYER_FEE_PERCENTAGE;
                 }
                 if (!isSellerElite) {
-                    totalFee += subtotal * SELLER_FEE_PERCENTAGE;
+                    totalFeeInCents += subtotalInCents * SELLER_FEE_PERCENTAGE;
                 }
                 
-                // Add the buyer's fee to the line items
+                // Add the buyer's fee to the line items if they are not elite
                 const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = sellerItems.map(item => ({
                     price_data: {
                         currency: 'usd',
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
                                 name: 'Platform Fee',
                                 description: 'For secure transactions and platform maintenance.',
                             },
-                            unit_amount: Math.round(subtotal * BUYER_FEE_PERCENTAGE),
+                            unit_amount: Math.round(subtotalInCents * BUYER_FEE_PERCENTAGE),
                         },
                         quantity: 1,
                     });
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
                     success_url: `${req.headers.get('origin')}/catalog?checkout_success=true&seller_count=${Object.keys(itemsBySeller).length}`,
                     cancel_url: `${req.headers.get('origin')}/catalog?canceled=true`,
                     payment_intent_data: {
-                        application_fee_amount: Math.round(totalFee),
+                        application_fee_amount: Math.round(totalFeeInCents),
                         transfer_data: {
                             destination: sellerProfile.stripeAccountId,
                         },
