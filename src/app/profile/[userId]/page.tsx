@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck, CircleDollarSign } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { CreateLabelDialog } from "@/components/create-label-dialog";
+
+const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 
 const StatCard = ({ title, value, icon: Icon, isCurrency = false, loading }: { title: string, value: number, icon: React.ElementType, isCurrency?: boolean, loading: boolean}) => (
     <Card>
@@ -59,6 +61,7 @@ export default function ProfilePage() {
   const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
   
   const [totalQuantitySold, setTotalQuantitySold] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
 
   const [pageLoading, setPageLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -111,10 +114,16 @@ export default function ProfilePage() {
                 setOrderHistory(buyerOrders);
                 setSellerOrders(sellerSales);
                 
-                const totalSold = sellerSales.flatMap(o => o.items)
-                                     .filter(item => item.sellerId === loggedInUser.uid)
-                                     .reduce((acc, item) => acc + item.quantity, 0);
+                const itemsSold = sellerSales.flatMap(o => o.items)
+                                     .filter(item => item.sellerId === loggedInUser.uid);
+                
+                const totalSold = itemsSold.reduce((acc, item) => acc + item.quantity, 0);
                 setTotalQuantitySold(totalSold);
+                
+                const grossRevenue = itemsSold.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+                const fee = profileData.subscriptionTier === 'elite' ? 0 : SELLER_FEE_PERCENTAGE;
+                const netRevenue = grossRevenue * (1 - fee);
+                setTotalRevenue(netRevenue);
 
                 setWishlistLoading(false);
                 setOrdersLoading(false);
@@ -486,53 +495,61 @@ export default function ProfilePage() {
                                 <>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <StatCard 
+                                            title="Total Net Revenue"
+                                            value={totalRevenue}
+                                            icon={CircleDollarSign}
+                                            isCurrency
+                                            loading={sellerOrdersLoading}
+                                        />
+                                        <StatCard 
                                             title="Total Items Sold" 
                                             value={totalQuantitySold}
                                             icon={Package}
                                             loading={sellerOrdersLoading}
                                         />
-                                        <div className="flex items-center justify-center">
-                                            <Button asChild className="w-full h-full text-base">
-                                                <Link href="/seller/dashboard">
-                                                    Go to Full Seller Dashboard
-                                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
                                     </div>
                                     
-                                    <h3 className="text-lg font-medium">Recent Sales</h3>
-                                    
-                                    {sellerOrders.length > 0 ? (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Items Sold</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead>Actions</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {sellerOrders.slice(0, 5).map((order) => (
-                                                    <TableRow key={order.id}>
-                                                        <TableCell>{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
-                                                        <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
-                                                        <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
-                                                        <TableCell>
-                                                            <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
-                                                                <Truck className="mr-2 h-4 w-4" /> Create Label
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    ) : (
-                                        <div className="text-center py-12 text-muted-foreground">
-                                            <p>Your recent sales will appear here.</p>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <h3 className="text-lg font-medium mb-2">Recent Sales</h3>
+                                        {sellerOrders.length > 0 ? (
+                                            <div className="border rounded-md">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead>Items Sold</TableHead>
+                                                            <TableHead>Status</TableHead>
+                                                            <TableHead className="text-right">Actions</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {sellerOrders.slice(0, 5).map((order) => (
+                                                            <TableRow key={order.id}>
+                                                                <TableCell className="text-xs">{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                                                <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
+                                                                <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
+                                                                        <Truck className="mr-2 h-4 w-4" /> Create Label
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12 text-muted-foreground border rounded-md">
+                                                <p>Your recent sales will appear here.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Button asChild className="w-full">
+                                        <Link href="/seller/dashboard">
+                                            Go to Full Seller Dashboard
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                 </>
                             )}
                         </CardContent>
