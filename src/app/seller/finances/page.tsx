@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getOrdersForSeller } from "@/lib/firestoreService";
 import type { Order, OrderItem } from "@/models";
@@ -30,26 +30,26 @@ export default function FinancesPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isConnectingStripe, setIsConnectingStripe] = useState(false);
-    const [hasProcessedStripeReturn, setHasProcessedStripeReturn] = useState(false);
 
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
 
+    // This useEffect runs only once on mount to handle the redirect from Stripe
     useEffect(() => {
         const stripeReturn = searchParams.get('stripe_return');
-        if (stripeReturn === 'true' && !hasProcessedStripeReturn) {
-            setHasProcessedStripeReturn(true); // Prevent this from running again
+        const stripeRefresh = searchParams.get('stripe_refresh');
+
+        if (stripeReturn === 'true') {
             toast({
                 title: "Welcome back!",
                 description: "Verifying your account with Stripe. This may take a moment...",
             });
-            refreshUserProfile(); 
+            refreshUserProfile();
             router.replace('/seller/finances', { scroll: false });
         }
 
-        const stripeRefresh = searchParams.get('stripe_refresh');
-        if (stripeRefresh) {
+        if (stripeRefresh === 'true') {
             toast({
                 variant: 'destructive',
                 title: "Connection Timed Out",
@@ -57,7 +57,8 @@ export default function FinancesPage() {
             });
             router.replace('/seller/finances', { scroll: false });
         }
-    }, [searchParams, hasProcessedStripeReturn, refreshUserProfile, router, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty dependency array ensures this runs only once
 
 
     useEffect(() => {
