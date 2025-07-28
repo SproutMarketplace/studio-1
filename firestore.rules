@@ -5,98 +5,84 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper function to check if a user is authenticated
-    function isSignedIn() {
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper function to check if the user is the owner of a document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Rules for the 'users' collection
+    // --- User Profiles ---
+    // Anyone can create their own user profile (on signup).
+    // Users can only update or delete their own profile.
+    // Any authenticated user can read public profile data (for viewing profiles, leaderboards).
     match /users/{userId} {
-      // Anyone can create a user profile (on signup)
-      allow create: if true;
-      // Only the authenticated owner can read, update, or delete their own profile
-      allow read, update, delete: if isSignedIn() && isOwner(userId);
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && request.auth.uid == userId;
 
-      // Rules for user subcollections (e.g., notifications)
-      match /{subcollection}/{docId} {
-        allow read, write: if isSignedIn() && isOwner(userId);
+      // Notifications are private to the user
+      match /notifications/{notificationId} {
+        allow read, write, delete: if isAuthenticated() && request.auth.uid == userId;
       }
     }
 
-    // Rules for the 'plants' collection
+    // --- Plant Listings ---
+    // Any authenticated user can create a listing.
+    // Users can only update or delete their own listings.
+    // Any user (even unauthenticated) can read plant listings.
     match /plants/{plantId} {
-      // Anyone can read plant listings
+      allow create: if isAuthenticated();
       allow read: if true;
-      // Only authenticated users can create listings
-      allow create: if isSignedIn();
-      // Only the owner can update or delete their own listing
-      allow update, delete: if isSignedIn() && isOwner(resource.data.ownerId);
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.ownerId;
     }
-    
-    // Rules for the 'orders' collection
+
+    // --- Orders ---
+    // Orders are created via a backend process (Stripe webhook), not directly by clients.
+    // Any authenticated user can read orders (for their own history and for the leaderboard).
     match /orders/{orderId} {
-      // A user can read an order if they are the buyer (userId) or the seller (sellerId)
-      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isOwner(resource.data.sellerId));
-      // Only authenticated users can create orders
-      allow create: if isSignedIn();
-      // Updates might be needed for status changes, restricted to seller or buyer
-      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isOwner(resource.data.sellerId));
-      // No one can delete orders for record-keeping purposes
-      allow delete: if false;
+      allow create: if false; // Should be created by backend only
+      allow read: if isAuthenticated();
+      allow update, delete: if false; // Orders should be immutable once created
     }
-    
-    // Rules for the 'chats' collection
+
+    // --- Chats ---
+    // Users can only read/write to chats they are a participant in.
     match /chats/{chatId} {
-        // Users can only read chats they are a part of
-        allow read, write: if isSignedIn() && request.auth.uid in resource.data.participants;
-
-        // Rules for the 'messages' subcollection within a chat
-        match /messages/{messageId} {
-             allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-             allow update, delete: if false; // Messages are generally immutable
-        }
+      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participants;
+      
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
     }
     
-    // Rules for the 'forums' collection
+    // --- Forums ---
+    // Any authenticated user can create a forum.
+    // Any user can read forums.
+    // Only the creator can update or delete their forum.
     match /forums/{forumId} {
-        // Anyone can read forums
+      allow create: if isAuthenticated();
+      allow read: if true;
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.creatorId;
+
+      // Posts
+      match /posts/{postId} {
+        allow create: if isAuthenticated();
         allow read: if true;
-        // Only authenticated users can create forums
-        allow create: if isSignedIn();
-        // Only the creator of the forum can update or delete it
-        allow update, delete: if isSignedIn() && isOwner(resource.data.creatorId);
+        allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
 
-        // Rules for the 'posts' subcollection within a forum
-        match /posts/{postId} {
-            // Anyone can read posts
-            allow read: if true;
-            // Only authenticated users can create posts
-            allow create: if isSignedIn();
-            // Only the author of the post can update or delete it
-            allow update, delete: if isSignedIn() && isOwner(resource.data.authorId);
-
-            // Rules for the 'comments' subcollection within a post
-            match /comments/{commentId} {
-                // Anyone can read comments
-                allow read: if true;
-                // Only authenticated users can create comments
-                allow create: if isSignedIn();
-                // Only the author can update or delete their own comment
-                allow update, delete: if isSignedIn() && isOwner(resource.data.authorId);
-            }
+        // Comments
+        match /comments/{commentId} {
+           allow create: if isAuthenticated();
+           allow read: if true;
+           allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
         }
+      }
     }
     
-    // Rules for the 'rewardsTransactions' collection
+    // --- Rewards ---
+    // These documents are only created by the backend after certain actions.
     match /rewardsTransactions/{transactionId} {
-      // Only the user themselves can read their own reward transactions
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      // No one can create, update, or delete transactions directly (handled by backend/cloud functions)
-      allow write: if false;
+        allow create: if false; // Backend only
+        allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+        allow update, delete: if false;
     }
   }
 }
