@@ -45,7 +45,7 @@ export default function PricingToolPage() {
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!plantName.trim()) {
-            setError("Please enter a plant name.");
+            setError("Please enter an item name.");
             return;
         }
 
@@ -81,21 +81,21 @@ export default function PricingToolPage() {
                 <TrendingUp className="h-8 w-8" /> Pricing Insights Tool
             </h1>
             <p className="text-muted-foreground mb-6">
-                Enter a plant name to see its average selling price on Sprout over time.
+                Enter an item name to see its average selling price on Sprout over time.
             </p>
 
             <Card className="max-w-3xl mx-auto shadow-lg">
                 <CardHeader>
-                    <CardTitle>Analyze Plant Prices</CardTitle>
-                    <CardDescription>This premium tool helps you price your plants competitively.</CardDescription>
+                    <CardTitle>Analyze Item Prices</CardTitle>
+                    <CardDescription>This premium tool helps you price your items competitively.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSearch} className="space-y-4">
                         <div className="space-y-2">
-                             <label className="text-sm font-medium">Plant Name*</label>
+                             <label className="text-sm font-medium">Item Name*</label>
                              <Input
                                 type="text"
-                                placeholder="e.g., Monstera Albo"
+                                placeholder="e.g., Monstera Albo, Lion's Mane Culture..."
                                 value={plantName}
                                 onChange={(e) => setPlantName(e.target.value)}
                                 className="text-base h-11"
@@ -114,6 +114,8 @@ export default function PricingToolPage() {
                                         <SelectItem value="medium">Medium (4-6" pot)</SelectItem>
                                         <SelectItem value="large">Large (6"+ pot)</SelectItem>
                                         <SelectItem value="xlarge">Extra Large</SelectItem>
+                                        <SelectItem value="culture-plate">Culture Plate</SelectItem>
+                                        <SelectItem value="spore-syringe">Spore Syringe</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -125,6 +127,7 @@ export default function PricingToolPage() {
                                         <SelectItem value="seedling">Seedling</SelectItem>
                                         <SelectItem value="young">Young Plant</SelectItem>
                                         <SelectItem value="mature">Mature Plant</SelectItem>
+                                        <SelectItem value="mycelium">Mycelium</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -136,6 +139,7 @@ export default function PricingToolPage() {
                                         <SelectItem value="pristine">Pristine</SelectItem>
                                         <SelectItem value="good">Good (Minor flaws)</SelectItem>
                                         <SelectItem value="fair">Fair (Needs TLC)</SelectItem>
+                                        <SelectItem value="contaminated">Contaminated</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -173,7 +177,7 @@ export default function PricingToolPage() {
                                 <DollarSign className="h-4 w-4 !text-amber-600"/>
                                 <AlertTitle className="font-semibold !text-amber-800">Disclaimer</AlertTitle>
                                 <AlertDescription className="!text-amber-700">
-                                    This data is for informational purposes only. Market prices can fluctuate. Consider your plant's size, condition, and rarity when setting your final price.
+                                    This data is for informational purposes only. Market prices can fluctuate. Consider your item's size, condition, and rarity when setting your final price.
                                 </AlertDescription>
                             </Alert>
                         </div>

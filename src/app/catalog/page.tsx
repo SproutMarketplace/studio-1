@@ -23,14 +23,15 @@ import { Card } from "@/components/ui/card";
 
 
 const CATEGORY_OPTIONS = [
-  { id: "tropical", label: "Tropical" },
-  { id: "cacti", label: "Cacti" },
-  { id: "succulent", label: "Succulent" },
-  { id: "rare", label: "Rare" },
-  { id: "beginner-friendly", label: "Beginner Friendly" },
+  { id: "tropical", label: "Tropical Plants" },
+  { id: "cacti-succulents", label: "Cacti & Succulents" },
+  { id: "rare-plants", label: "Rare Plants" },
+  { id: "gourmet-cultures", label: "Gourmet Cultures" },
+  { id: "medicinal-cultures", label: "Medicinal Cultures" },
+  { id: "mycology-supplies", label: "Mycology Supplies" },
+  { id: "foraging-gear", label: "Foraging Gear" },
   { id: "pet-friendly", label: "Pet Friendly" },
-  { id: "low-light", label: "Low Light" },
-  { id: "flowering", label: "Flowering" },
+  { id: "beginner-friendly", label: "Beginner Friendly" },
 ];
 
 export default function PlantCatalogPage() {
@@ -93,7 +94,7 @@ export default function PlantCatalogPage() {
             },
             (err) => {
                 console.error("Error fetching plants:", err);
-                setError("Failed to load plants. Please try again later.");
+                setError("Failed to load items. Please try again later.");
                 setIsLoading(false);
             }
         );
@@ -174,14 +175,14 @@ export default function PlantCatalogPage() {
                     alt="A vibrant collection of house plants arranged on shelves"
                     fill
                     className="object-cover"
-                    data-ai-hint="vibrant houseplants"
+                    data-ai-hint="vibrant houseplants fungi"
                 />
                 <div className="relative z-20 flex h-[400px] flex-col items-center justify-center text-center p-6">
                     <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl drop-shadow-lg">
-                        Discover Your Next Plant
+                        Discover Your Next Find
                     </h1>
                     <p className="mt-4 max-w-2xl text-lg text-white/90 drop-shadow-md">
-                        Browse our community's collection of plants for sale or trade.
+                        Browse our community's collection of plants, fungi, and supplies for sale or trade.
                     </p>
                 </div>
             </Card>
@@ -191,7 +192,7 @@ export default function PlantCatalogPage() {
                     <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         type="search"
-                        placeholder="Search by name, description, tags..."
+                        placeholder="Search for plants, fungi, supplies..."
                         className="w-full rounded-lg bg-background pl-10 pr-4 py-2 text-lg"
                         onChange={handleSearchChange}
                         value={searchTerm}
@@ -294,7 +295,7 @@ export default function PlantCatalogPage() {
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <h2 className="text-2xl font-semibold text-muted-foreground">No plants found.</h2>
+                    <h2 className="text-2xl font-semibold text-muted-foreground">No items found.</h2>
                     <p className="mt-2 text-muted-foreground">Try adjusting your search or filters, or check back later.</p>
                 </div>
             )}

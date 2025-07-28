@@ -23,7 +23,7 @@ import { Loader2, PlusSquare, UploadCloud, X, XCircle } from "lucide-react";
 
 // Schema for form validation
 const listPlantSchema = z.object({
-  name: z.string().min(3, { message: "Plant name must be at least 3 characters." }),
+  name: z.string().min(3, { message: "Item name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters long." }),
   price: z.coerce.number().min(0).optional(),
   tradeOnly: z.boolean().default(false),
@@ -107,11 +107,11 @@ export default function ListPlantPage() {
 
   async function onSubmit(data: ListPlantFormValues) {
     if (!user) {
-      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to list a plant." });
+      toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to list an item." });
       return;
     }
     if (imageFiles.length === 0) {
-      toast({ variant: "destructive", title: "No Image", description: "You must upload at least one image of your plant." });
+      toast({ variant: "destructive", title: "No Image", description: "You must upload at least one image of your item." });
       return;
     }
 
@@ -141,7 +141,7 @@ export default function ListPlantPage() {
       router.push(`/plant/${plantId}?new_listing=true`);
 
     } catch (error) {
-      console.error("Failed to list plant:", error);
+      console.error("Failed to list item:", error);
       toast({
         variant: "destructive",
         title: "Listing Failed",
@@ -187,8 +187,8 @@ export default function ListPlantPage() {
               <PlusSquare className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-bold">List a New Plant</CardTitle>
-              <CardDescription>Share your plant with the community. Fill out the details below.</CardDescription>
+              <CardTitle className="text-3xl font-bold">List a New Item</CardTitle>
+              <CardDescription>Share your plant, fungi, or mycology-related item with the community.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -200,9 +200,9 @@ export default function ListPlantPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-lg">Plant Name</FormLabel>
+                    <FormLabel className="text-lg">Item Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Monstera Deliciosa" {...field} />
+                      <Input placeholder="e.g., Monstera Deliciosa, Lion's Mane Culture, etc." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -216,7 +216,7 @@ export default function ListPlantPage() {
                   <FormItem>
                     <FormLabel className="text-lg">Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Describe your plant, its condition, and care tips..." rows={5} {...field} />
+                      <Textarea placeholder="Describe your item, its condition, and any other relevant details..." rows={5} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,7 +224,7 @@ export default function ListPlantPage() {
               />
 
               <FormItem>
-                <FormLabel className="text-lg">Plant Images</FormLabel>
+                <FormLabel className="text-lg">Item Images</FormLabel>
                 <div className="p-4 border-2 border-dashed rounded-lg border-border bg-muted/50">
                     {imagePreviews.length > 0 && (
                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 mb-4 w-full">
@@ -304,7 +304,7 @@ export default function ListPlantPage() {
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                             <FormLabel className="text-lg">Trade Only?</FormLabel>
-                            <FormDescription>If checked, this plant will only be available for trade.</FormDescription>
+                            <FormDescription>If checked, this item will only be available for trade.</FormDescription>
                         </div>
                         <FormControl>
                              <Switch
@@ -326,7 +326,7 @@ export default function ListPlantPage() {
                     <FormControl>
                       <Input placeholder="e.g., San Francisco, CA" {...field} />
                     </FormControl>
-                     <FormDescription>Providing a location can help local buyers find your plant.</FormDescription>
+                     <FormDescription>Providing a location can help local buyers find your item.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -368,7 +368,7 @@ export default function ListPlantPage() {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Add up to 5 custom tags. Tags help others discover your plant.
+                      Add up to 5 custom tags. Tags help others discover your item.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -382,10 +382,10 @@ export default function ListPlantPage() {
                   </>
                 ) : isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Listing Plant...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Listing Item...
                   </>
                 ) : (
-                  "List My Plant"
+                  "List My Item"
                 )}
               </Button>
             </form>

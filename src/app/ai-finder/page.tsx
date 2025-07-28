@@ -58,12 +58,12 @@ export default function AiPlantFinderPage() {
       setResults(output);
       toast({
         title: "Analysis Complete!",
-        description: "Found some plant matches for you.",
+        description: "Found some item matches for you.",
       });
     } catch (err) {
-      console.error("AI Plant Finder error:", err);
+      console.error("AI Finder error:", err);
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-      setError(`Failed to find plants: ${errorMessage}`);
+      setError(`Failed to find items: ${errorMessage}`);
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
@@ -81,9 +81,9 @@ export default function AiPlantFinderPage() {
           <div className="mx-auto mb-4 flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary">
             <Sparkles className="w-8 h-8" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">AI Plant Finder</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">AI Item Finder</CardTitle>
           <CardDescription>
-            Upload a photo of a plant, and our AI will help you find similar types.
+            Upload a photo of a plant or fungus, and our AI will help you find similar types.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -95,7 +95,7 @@ export default function AiPlantFinderPage() {
               >
                 {imagePreview ? (
                   <div className="relative w-full h-full">
-                    <Image src={imagePreview} alt="Plant preview" layout="fill" objectFit="contain" className="rounded-md" />
+                    <Image src={imagePreview} alt="Item preview" layout="fill" objectFit="contain" className="rounded-md" />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
@@ -112,7 +112,7 @@ export default function AiPlantFinderPage() {
                   accept="image/*"
                   onChange={handleFileChange}
                   className="hidden"
-                  aria-label="Upload plant photo"
+                  aria-label="Upload item photo"
                 />
               </label>
             </div>
@@ -134,7 +134,7 @@ export default function AiPlantFinderPage() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Find Similar Plants
+                  Find Similar Items
                 </>
               )}
             </Button>
@@ -142,7 +142,7 @@ export default function AiPlantFinderPage() {
 
           {results && results.matches.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-2xl font-semibold mb-4 text-foreground">Matching Plants:</h3>
+              <h3 className="text-2xl font-semibold mb-4 text-foreground">Matching Items:</h3>
               <ul className="space-y-3">
                 {results.matches.map((plantName, index) => (
                   <li key={index} className="p-4 border rounded-lg bg-background flex items-center shadow-sm">
@@ -165,7 +165,7 @@ export default function AiPlantFinderPage() {
         </CardContent>
         <CardFooter>
             <p className="text-xs text-muted-foreground text-center w-full">
-                AI suggestions are for informational purposes. Always verify plant identification with trusted sources.
+                AI suggestions are for informational purposes. Always verify item identification with trusted sources.
             </p>
         </CardFooter>
       </Card>

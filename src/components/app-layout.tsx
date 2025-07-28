@@ -60,8 +60,8 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-    { href: "/catalog", icon: ShoppingBag, label: "Plant Catalog" },
-    { href: "/list-plant", icon: PlusSquare, label: "List a Plant" },
+    { href: "/catalog", icon: ShoppingBag, label: "Catalog" },
+    { href: "/list-plant", icon: PlusSquare, label: "List an Item" },
     { href: "/forums", icon: Users, label: "Community Forums" },
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
     { href: "/wishlist", icon: Heart, label: "Wishlist" },

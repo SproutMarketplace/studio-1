@@ -8,8 +8,8 @@ import { AppLayout } from "@/components/app-layout";
 import { CartProvider } from "@/contexts/cart-context";
 
 export const metadata: Metadata = {
-  title: "Sprout - Plant Marketplace",
-  description: "Buy, sell, and trade plants with Sprout. Discover your next green companion.",
+  title: "Sprout - Plant, Fungi, and Mycology Marketplace",
+  description: "Buy, sell, and trade plants, fungi, and mycology tools with Sprout. Discover your next green or fungal companion.",
 };
 
 export default function RootLayout({

@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-8">
             <p className="text-2xl text-white font-semibold text-center drop-shadow-md max-w-md">
-                Effortlessly Buy, Sell, &amp; Trade plants with communities that share your interests.
+                Effortlessly Buy, Sell, & Trade plants, fungi, and supplies with communities that share your interests.
             </p>
         </div>
       </div>

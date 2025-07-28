@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview An AI agent that provides pricing insights for plants.
+ * @fileOverview An AI agent that provides pricing insights for plants, fungi, and mycology supplies.
  *
- * - getPlantPricingInsights - A function that returns average sales data for a plant.
+ * - getPlantPricingInsights - A function that returns average sales data for an item.
  * - PlantPricingInput - The input type for the function.
  * - PlantPricingOutput - The return type for the function.
  */
@@ -15,11 +15,11 @@ const PlantPricingInputSchema = z.object({
   plantName: z
     .string()
     .describe(
-      "The common or scientific name of the plant to get pricing data for."
+      "The common or scientific name of the plant, fungus, or mycology item to get pricing data for."
     ),
-  size: z.string().optional().describe("The size of the plant (e.g., Small, Medium, Large, Cutting, Seedling)."),
-  age: z.string().optional().describe("The age of the plant (e.g., Seedling, Young, Mature)."),
-  condition: z.string().optional().describe("The condition of the plant (e.g., Pristine, Good, Fair)."),
+  size: z.string().optional().describe("The size of the item (e.g., Small, Medium, Large, Cutting, Seedling, Culture Plate, Spore Syringe)."),
+  age: z.string().optional().describe("The age of the item (e.g., Seedling, Young, Mature, Mycelium)."),
+  condition: z.string().optional().describe("The condition of the item (e.g., Pristine, Good, Fair, Contaminated)."),
 });
 export type PlantPricingInput = z.infer<typeof PlantPricingInputSchema>;
 
@@ -39,15 +39,15 @@ const prompt = ai.definePrompt({
   name: 'plantPricingPrompt',
   input: {schema: PlantPricingInputSchema},
   output: {schema: PlantPricingOutputSchema},
-  prompt: `You are a plant market data analyst for a large online marketplace. Your role is to provide sellers with pricing insights based on historical sales data.
+  prompt: `You are a market data analyst for a large online marketplace for plants, fungi, and mycology supplies. Your role is to provide sellers with pricing insights based on historical sales data.
 
-Given a plant name, and optionally its size, age, and condition, you must return the average selling price for that plant over various time periods. The prices should be realistic for the plant specified, reflecting its potential rarity, demand, and physical attributes.
+Given an item name, and optionally its size, age, and condition, you must return the average selling price for that item over various time periods. The prices should be realistic for the item specified, reflecting its potential rarity, demand, and physical attributes.
 
-A larger, more mature plant in pristine condition should have a higher price than a smaller, younger one or a cutting, or one in fair condition.
+A larger, more mature plant or a rare fungal culture in pristine condition should have a higher price than a smaller, younger one or a cutting, or one in fair condition. Mycology supplies should be priced based on their typical market value.
 
-The values should fluctuate reasonably across the time periods. For example, a popular plant might see a slight price increase recently, while a common plant's price might be stable or slightly lower.
+The values should fluctuate reasonably across the time periods. For example, a popular item might see a slight price increase recently, while a common item's price might be stable or slightly lower.
 
-Plant to analyze: {{{plantName}}}
+Item to analyze: {{{plantName}}}
 {{#if size}}Size: {{{size}}}{{/if}}
 {{#if age}}Age: {{{age}}}{{/if}}
 {{#if condition}}Condition: {{{condition}}}{{/if}}
