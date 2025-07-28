@@ -36,15 +36,18 @@ export default function FinancesPage() {
     const { toast } = useToast();
 
     useEffect(() => {
-        if (searchParams.get('stripe_return')) {
+        const stripeReturn = searchParams.get('stripe_return');
+        if (stripeReturn && profile && !profile.stripeDetailsSubmitted) {
             toast({
                 title: "Welcome back!",
-                description: "Refreshing your account details...",
+                description: "Verifying your account with Stripe. This may take a moment...",
             });
-            refreshUserProfile();
+            refreshUserProfile(); // This will trigger a re-fetch of the user profile, which will have the latest Stripe status
             router.replace('/seller/finances');
         }
-        if (searchParams.get('stripe_refresh')) {
+
+        const stripeRefresh = searchParams.get('stripe_refresh');
+        if (stripeRefresh) {
             toast({
                 variant: 'destructive',
                 title: "Connection Timed Out",
@@ -52,7 +55,7 @@ export default function FinancesPage() {
             });
             router.replace('/seller/finances');
         }
-    }, [searchParams, router, toast, refreshUserProfile]);
+    }, [searchParams, profile, refreshUserProfile, router, toast]);
 
 
     useEffect(() => {
