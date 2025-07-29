@@ -486,34 +486,22 @@ export default function ProfilePage() {
                 </TabsContent>
                 <TabsContent value="seller-dashboard" className="mt-6">
                     <div className="space-y-6">
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                             <Card className="lg:col-span-2">
-                                <CardHeader>
-                                    <CardTitle>Seller Tools Summary</CardTitle>
-                                    <CardDescription>A quick summary of your sales activity.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {sellerOrdersLoading ? (
-                                        <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                                    ) : (
-                                        <div className="grid gap-6 grid-cols-2">
-                                            <StatCard 
-                                                title="Total Net Revenue"
-                                                value={totalRevenue}
-                                                icon={CircleDollarSign}
-                                                isCurrency
-                                                loading={sellerOrdersLoading}
-                                            />
-                                            <StatCard 
-                                                title="Total Items Sold" 
-                                                value={totalQuantitySold}
-                                                icon={Package}
-                                                loading={sellerOrdersLoading}
-                                            />
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                        <div className="grid gap-6 md:grid-cols-3">
+                             <div className="md:col-span-2 grid gap-6 grid-cols-1 sm:grid-cols-2">
+                                <StatCard 
+                                    title="Total Net Revenue"
+                                    value={totalRevenue}
+                                    icon={CircleDollarSign}
+                                    isCurrency
+                                    loading={sellerOrdersLoading}
+                                />
+                                <StatCard 
+                                    title="Total Items Sold" 
+                                    value={totalQuantitySold}
+                                    icon={Package}
+                                    loading={sellerOrdersLoading}
+                                />
+                             </div>
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Finances</CardTitle>
@@ -573,8 +561,9 @@ export default function ProfilePage() {
                         {isProOrElite ? (
                             <Button asChild className="w-full">
                                 <Link href="/seller/dashboard">
+                                    <Gem className="mr-2 h-4 w-4"/>
                                     Go to Full Seller Dashboard
-                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                    <ArrowRight className="ml-auto h-4 w-4" />
                                 </Link>
                             </Button>
                         ) : (
@@ -600,3 +589,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
