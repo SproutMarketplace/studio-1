@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck, CircleDollarSign } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck, CircleDollarSign, Gem } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -278,6 +278,8 @@ export default function ProfilePage() {
     );
   };
 
+  const isProOrElite = loggedInUserProfile?.subscriptionTier === 'pro' || loggedInUserProfile?.subscriptionTier === 'elite';
+
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -485,7 +487,7 @@ export default function ProfilePage() {
                 <TabsContent value="seller-dashboard" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Seller Tools</CardTitle>
+                            <CardTitle>Seller Tools Summary</CardTitle>
                             <CardDescription>A quick summary of your sales activity.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -544,12 +546,21 @@ export default function ProfilePage() {
                                             </div>
                                         )}
                                     </div>
-                                    <Button asChild className="w-full">
-                                        <Link href="/seller/dashboard">
-                                            Go to Full Seller Dashboard
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
+                                    {isProOrElite ? (
+                                        <Button asChild className="w-full">
+                                            <Link href="/seller/dashboard">
+                                                Go to Full Seller Dashboard
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
+                                            <Link href="/subscription">
+                                                <Gem className="mr-2 h-4 w-4"/>
+                                                Upgrade to Pro to Access Full Dashboard
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </>
                             )}
                         </CardContent>
