@@ -485,86 +485,108 @@ export default function ProfilePage() {
                     <EditProfileForm />
                 </TabsContent>
                 <TabsContent value="seller-dashboard" className="mt-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Seller Tools Summary</CardTitle>
-                            <CardDescription>A quick summary of your sales activity.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {sellerOrdersLoading ? (
-                                <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                            ) : (
-                                <>
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        <StatCard 
-                                            title="Total Net Revenue"
-                                            value={totalRevenue}
-                                            icon={CircleDollarSign}
-                                            isCurrency
-                                            loading={sellerOrdersLoading}
-                                        />
-                                        <StatCard 
-                                            title="Total Items Sold" 
-                                            value={totalQuantitySold}
-                                            icon={Package}
-                                            loading={sellerOrdersLoading}
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <h3 className="text-lg font-medium mb-2">Recent Sales</h3>
-                                        {sellerOrders.length > 0 ? (
-                                            <div className="border rounded-md">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Date</TableHead>
-                                                            <TableHead>Items Sold</TableHead>
-                                                            <TableHead>Status</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {sellerOrders.slice(0, 5).map((order) => (
-                                                            <TableRow key={order.id}>
-                                                                <TableCell className="text-xs">{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
-                                                                <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
-                                                                <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
-                                                                <TableCell className="text-right">
-                                                                    <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
-                                                                        <Truck className="mr-2 h-4 w-4" /> Create Label
-                                                                    </Button>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-12 text-muted-foreground border rounded-md">
-                                                <p>Your recent sales will appear here.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {isProOrElite ? (
-                                        <Button asChild className="w-full">
-                                            <Link href="/seller/dashboard">
-                                                Go to Full Seller Dashboard
-                                                <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                    <div className="space-y-6">
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                             <Card className="lg:col-span-2">
+                                <CardHeader>
+                                    <CardTitle>Seller Tools Summary</CardTitle>
+                                    <CardDescription>A quick summary of your sales activity.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {sellerOrdersLoading ? (
+                                        <div className="flex justify-center items-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                                     ) : (
-                                        <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
-                                            <Link href="/subscription">
-                                                <Gem className="mr-2 h-4 w-4"/>
-                                                Upgrade to Pro to Access Full Dashboard
-                                            </Link>
-                                        </Button>
+                                        <div className="grid gap-6 grid-cols-2">
+                                            <StatCard 
+                                                title="Total Net Revenue"
+                                                value={totalRevenue}
+                                                icon={CircleDollarSign}
+                                                isCurrency
+                                                loading={sellerOrdersLoading}
+                                            />
+                                            <StatCard 
+                                                title="Total Items Sold" 
+                                                value={totalQuantitySold}
+                                                icon={Package}
+                                                loading={sellerOrdersLoading}
+                                            />
+                                        </div>
                                     )}
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Manage Finances</CardTitle>
+                                    <CardDescription>Connect with Stripe to manage payouts.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button asChild className="w-full">
+                                        <Link href="/seller/finances">
+                                            Go to Finances
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <div>
+                            <h3 className="text-xl font-semibold mb-4">Recent Sales</h3>
+                            <Card>
+                                <CardContent className="p-0">
+                                    {sellerOrdersLoading ? (
+                                        <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                                    ) : sellerOrders.length > 0 ? (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Items Sold</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead className="text-right">Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {sellerOrders.slice(0, 5).map((order) => (
+                                                    <TableRow key={order.id}>
+                                                        <TableCell className="text-xs">{format((order.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</TableCell>
+                                                        <TableCell>{renderOrderItemsForSeller(order.items)}</TableCell>
+                                                        <TableCell><Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge></TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="outline" size="sm" onClick={() => handleOpenLabelDialog(order)}>
+                                                                <Truck className="mr-2 h-4 w-4" /> Create Label
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-12 text-muted-foreground">
+                                            <p>Your recent sales will appear here.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                        <div className="pt-4">
+                        {isProOrElite ? (
+                            <Button asChild className="w-full">
+                                <Link href="/seller/dashboard">
+                                    Go to Full Seller Dashboard
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
+                                <Link href="/subscription">
+                                    <Gem className="mr-2 h-4 w-4"/>
+                                    Upgrade to Pro to Access Full Dashboard
+                                </Link>
+                            </Button>
+                        )}
+                        </div>
+                    </div>
                 </TabsContent>
             </>
         )}
