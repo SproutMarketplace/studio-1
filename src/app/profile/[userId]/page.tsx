@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck, CircleDollarSign, Gem } from "lucide-react";
+import { Loader2, User as UserIcon, Calendar, Leaf, Heart, Settings, Camera, LayoutDashboard, UserPlus, UserCheck, ClipboardList, Inbox, Package, ArrowRight, Truck, CircleDollarSign, Gem, CheckCircle2 } from "lucide-react";
 import { PlantCard } from "@/components/plant-card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -71,6 +71,7 @@ export default function ProfilePage() {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwner = loggedInUser?.uid === userId;
@@ -210,6 +211,33 @@ export default function ProfilePage() {
     }
   };
   
+  const handleStripeConnect = async () => {
+    if (!loggedInUser) return;
+    setIsConnectingStripe(true);
+    try {
+        const response = await fetch('/api/stripe/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: loggedInUser.uid }),
+        });
+
+        if (!response.ok) {
+            const { error } = await response.json();
+            throw new Error(error || 'Failed to create Stripe connection link.');
+        }
+
+        const { url } = await response.json();
+        window.location.href = url;
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Stripe Connection Failed',
+            description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+        setIsConnectingStripe(false);
+    }
+  };
+
   const handleOpenLabelDialog = (order: Order) => {
     setSelectedOrder(order);
     setIsLabelDialogOpen(true);
@@ -237,6 +265,40 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+  
+  const renderStripeConnectCard = () => {
+    let title = "Manage Payouts";
+    let description = "Connect your bank account to receive funds.";
+    let buttonText = "Connect Stripe to Get Paid";
+    let buttonIcon = <ArrowRight className="mr-2 h-4 w-4" />;
+    
+    if (authLoading) {
+        return <Card><CardContent className="p-6"><Loader2 className="h-5 w-5 animate-spin" /></CardContent></Card>;
+    }
+    
+    if (loggedInUserProfile?.stripeDetailsSubmitted) {
+        description = "Your account is connected and ready to receive payouts.";
+        buttonText = "Manage Payouts on Stripe";
+    } else if (loggedInUserProfile?.stripeAccountId) {
+        description = "Finish setting up your Stripe account to get paid.";
+        buttonText = "Continue Onboarding";
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Button onClick={handleStripeConnect} disabled={isConnectingStripe} className="w-full">
+                {isConnectingStripe ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : buttonIcon}
+                {buttonText}
+            </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -502,20 +564,7 @@ export default function ProfilePage() {
                                     loading={sellerOrdersLoading}
                                 />
                              </div>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Manage Finances</CardTitle>
-                                    <CardDescription>Connect with Stripe to manage payouts.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Button asChild className="w-full">
-                                        <Link href="/seller/finances">
-                                            Go to Finances
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                             {renderStripeConnectCard()}
                         </div>
 
                         <div>
@@ -562,7 +611,7 @@ export default function ProfilePage() {
                             <Button asChild className="w-full">
                                 <Link href="/seller/dashboard">
                                     <Gem className="mr-2 h-4 w-4"/>
-                                    Go to Full Seller Dashboard
+                                    Seller Dashboard
                                     <ArrowRight className="ml-auto h-4 w-4" />
                                 </Link>
                             </Button>
@@ -589,4 +638,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
