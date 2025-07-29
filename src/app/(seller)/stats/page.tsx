@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react";
@@ -5,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getOrdersForSeller } from "@/lib/firestoreService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Leaf, Loader2 } from "lucide-react";
+import { BarChart3, TrendingUp, Leaf, Loader2, Eye, Goal, MapPin } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -117,7 +118,7 @@ export default function StatsPage() {
             );
         }
         return (
-            <ChartContainer config={{ sales: { label: "Sales", color: "hsl(var(--secondary))" } }} className="h-[250px] w-full">
+            <ChartContainer config={{ sales: { label: "Sales", color: "hsl(var(--chart-3))" } }} className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={data} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
                         <CartesianGrid horizontal={false} />
@@ -130,14 +131,26 @@ export default function StatsPage() {
             </ChartContainer>
         );
     }
+
+    const StatPlaceholderCard = ({ title, description, icon: Icon }: { title: string, description: string, icon: React.ElementType }) => (
+        <Card>
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base"><Icon className="h-5 w-5 text-muted-foreground"/>{title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <p className="text-2xl font-bold text-muted-foreground">Coming Soon</p>
+                 <p className="text-xs text-muted-foreground">{description}</p>
+            </CardContent>
+        </Card>
+    );
     
     return (
         <div>
             <h1 className="text-3xl font-bold text-primary mb-6 flex items-center gap-3">
                 <BarChart3 className="h-8 w-8" /> Statistics
             </h1>
-            <div className="grid gap-6 md:grid-cols-2">
-                 <Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5"/>Sales Over Time</CardTitle>
                         <CardDescription>Your plant sales over the last 6 months.</CardDescription>
@@ -158,11 +171,28 @@ export default function StatsPage() {
             </div>
              <Card className="mt-6">
                 <CardHeader>
-                    <CardTitle>More Analytics Coming Soon</CardTitle>
+                    <CardTitle>In-Depth Analytics</CardTitle>
                     <CardDescription>
-                        We're working on adding more in-depth analytics, including views, conversion rates, and customer demographics. Check back for updates!
+                        Deeper insights into your shop's performance. These features are in development and will be available soon.
                     </CardDescription>
                 </CardHeader>
+                <CardContent className="grid gap-6 md:grid-cols-3">
+                    <StatPlaceholderCard 
+                        title="Total Listing Views"
+                        description="Track how many times buyers have viewed your items."
+                        icon={Eye}
+                    />
+                     <StatPlaceholderCard 
+                        title="Conversion Rate"
+                        description="The percentage of views that result in a sale."
+                        icon={Goal}
+                    />
+                     <StatPlaceholderCard 
+                        title="Top Buyer Location"
+                        description="See where most of your customers are from."
+                        icon={MapPin}
+                    />
+                </CardContent>
             </Card>
         </div>
     )
