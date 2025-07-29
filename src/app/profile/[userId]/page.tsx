@@ -549,22 +549,20 @@ export default function ProfilePage() {
                 <TabsContent value="seller-dashboard" className="mt-6">
                     <div className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-3">
-                             <div className="md:col-span-2 grid gap-6 grid-cols-1 sm:grid-cols-2">
-                                <StatCard 
-                                    title="Total Net Revenue"
-                                    value={totalRevenue}
-                                    icon={CircleDollarSign}
-                                    isCurrency
-                                    loading={sellerOrdersLoading}
-                                />
-                                <StatCard 
-                                    title="Total Items Sold" 
-                                    value={totalQuantitySold}
-                                    icon={Package}
-                                    loading={sellerOrdersLoading}
-                                />
-                             </div>
-                             {renderStripeConnectCard()}
+                            <StatCard 
+                                title="Total Net Revenue"
+                                value={totalRevenue}
+                                icon={CircleDollarSign}
+                                isCurrency
+                                loading={sellerOrdersLoading}
+                            />
+                            <StatCard 
+                                title="Total Items Sold" 
+                                value={totalQuantitySold}
+                                icon={Package}
+                                loading={sellerOrdersLoading}
+                            />
+                            {renderStripeConnectCard()}
                         </div>
 
                         <div>
@@ -606,23 +604,24 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
                         </div>
-                        <div className="pt-4">
-                        {isProOrElite ? (
-                            <Button asChild className="w-full">
-                                <Link href="/seller/dashboard">
-                                    <Gem className="mr-2 h-4 w-4"/>
-                                    Seller Dashboard
-                                    <ArrowRight className="ml-auto h-4 w-4" />
-                                </Link>
-                            </Button>
-                        ) : (
-                            <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
-                                <Link href="/subscription">
-                                    <Gem className="mr-2 h-4 w-4"/>
-                                    Upgrade to Pro to Access Full Dashboard
-                                </Link>
-                            </Button>
-                        )}
+                        <div className="pt-4 flex justify-center">
+                            <div className="w-full md:w-1/3">
+                                {isProOrElite ? (
+                                    <Button asChild className="w-full">
+                                        <Link href="/seller/dashboard">
+                                            <Gem className="mr-2 h-4 w-4"/>
+                                            Seller Dashboard
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
+                                        <Link href="/subscription">
+                                            <Gem className="mr-2 h-4 w-4"/>
+                                            Upgrade to Pro for Full Dashboard
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </TabsContent>
