@@ -3,13 +3,38 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { plantMatchFromPhoto, type PlantMatchFromPhotoOutput } from "@/ai/flows/plant-match-from-photo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Sparkles, UploadCloud, AlertTriangle, Leaf } from "lucide-react";
+import { Loader2, Sparkles, UploadCloud, AlertTriangle, Leaf, Gem } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
+
+function UpgradePrompt() {
+    return (
+        <div className="flex-1 flex items-center justify-center p-8">
+            <Card className="max-w-md w-full text-center shadow-lg">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 text-primary p-3 rounded-full w-fit mb-3">
+                        <Gem className="h-8 w-8" />
+                    </div>
+                    <CardTitle>Unlock the AI Item Finder</CardTitle>
+                    <CardDescription>
+                        This premium feature is available to Sprout Pro members. Upgrade your plan to use our powerful AI to identify and find items from a photo.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild size="lg">
+                        <Link href="/subscription">Upgrade to Pro</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
 
 export default function AiPlantFinderPage() {
   const [photoDataUri, setPhotoDataUri] = useState<string | null>(null);
@@ -18,6 +43,7 @@ export default function AiPlantFinderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { profile, loading: authLoading } = useAuth();
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -73,6 +99,19 @@ export default function AiPlantFinderPage() {
       setIsLoading(false);
     }
   };
+  
+  if (authLoading) {
+      return (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          </div>
+      );
+  }
+
+  const isProOrElite = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'elite';
+  if (!isProOrElite) {
+      return <UpgradePrompt/>;
+  }
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
@@ -95,7 +134,7 @@ export default function AiPlantFinderPage() {
               >
                 {imagePreview ? (
                   <div className="relative w-full h-full">
-                    <Image src={imagePreview} alt="Item preview" layout="fill" objectFit="contain" className="rounded-md" />
+                    <Image src={imagePreview} alt="Item preview" fill objectFit="contain" className="rounded-md" />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
