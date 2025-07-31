@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
                     priceId,
                 },
             });
-            return NextResponse.json({ sessionIds: [session.id] });
+            return NextResponse.json({ sessionId: session.id });
 
         } else if (type === 'one-time' && items && items.length > 0) {
             
