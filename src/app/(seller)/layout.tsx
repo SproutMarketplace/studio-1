@@ -82,7 +82,7 @@ function SellerSidebar() {
 
 function UpgradePrompt() {
     return (
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="flex-1 flex items-center justify-center p-8 bg-muted/40">
             <Card className="max-w-md w-full text-center shadow-lg">
                 <CardHeader>
                     <div className="mx-auto bg-primary/10 text-primary p-3 rounded-full w-fit mb-3">
@@ -106,8 +106,7 @@ function UpgradePrompt() {
 
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
     const { profile, loading } = useAuth();
-    const isProOrElite = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'elite';
-
+    
     if (loading) {
         return (
             <div className="flex h-screen bg-muted/40 items-center justify-center">
@@ -116,24 +115,35 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
         )
     }
 
+    const isProOrElite = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'elite';
+
+    if (!isProOrElite) {
+        return (
+            <div className="flex flex-col min-h-screen">
+                 <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
+                     <Link href="/catalog" passHref aria-label="Sprout Home">
+                        <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+                    </Link>
+                 </header>
+                <main className="flex-1 flex flex-col">
+                    <UpgradePrompt />
+                </main>
+                <footer className="py-4 px-6 text-center text-xs text-muted-foreground bg-background border-t">
+                     &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+                </footer>
+            </div>
+        );
+    }
+    
     return (
         <div className="flex h-screen bg-muted/40">
             <SellerSidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <main className="flex-1 overflow-x-hidden overflow-y-auto flex">
-                   {isProOrElite ? (
-                         <div className="container mx-auto px-6 py-8 w-full">
-                            {children}
-                        </div>
-                   ) : (
-                        <UpgradePrompt/>
-                   )}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto">
+                    <div className="container mx-auto px-6 py-8">
+                        {children}
+                    </div>
                 </main>
-                {!isProOrElite && (
-                    <footer className="py-4 px-6 text-center text-xs text-muted-foreground bg-background border-t">
-                         &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
-                    </footer>
-                )}
             </div>
         </div>
     );
