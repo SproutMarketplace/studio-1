@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { getOrdersForSeller } from "@/lib/firestoreService";
+import { getOrdersForSeller, getUserPlantListings } from "@/lib/firestoreService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Leaf, Loader2, Eye, Goal, MapPin } from "lucide-react";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/chart"
 import { format } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
+import type { PlantListing } from "@/models";
 
 interface MonthlySales {
     month: string;
@@ -31,19 +32,28 @@ export default function StatsPage() {
     const [topPlantsData, setTopPlantsData] = useState<TopPlant[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // New state for detailed analytics
+    const [totalViews, setTotalViews] = useState(0);
+    const [totalSales, setTotalSales] = useState(0);
+    const [conversionRate, setConversionRate] = useState(0);
+    const [topBuyerLocation, setTopBuyerLocation] = useState<string | null>(null);
+
+
     useEffect(() => {
         if (user) {
             const fetchAndProcessStats = async () => {
                 setIsLoading(true);
                 try {
-                    const orders = await getOrdersForSeller(user.uid);
+                    const [orders, plants] = await Promise.all([
+                        getOrdersForSeller(user.uid),
+                        getUserPlantListings(user.uid)
+                    ]);
                     
-                    // Process for monthly sales
+                    // --- Monthly Sales Chart ---
                     const monthlySales: { [key: string]: number } = {};
                     orders.forEach(order => {
                         const month = format((order.createdAt as Timestamp).toDate(), "MMM yy");
-                        const sellerItems = order.items.filter(item => item.sellerId === user.uid);
-                        const saleCount = sellerItems.reduce((acc, item) => acc + item.quantity, 0);
+                        const saleCount = order.items.reduce((acc, item) => acc + item.quantity, 0);
                         if (!monthlySales[month]) {
                             monthlySales[month] = 0;
                         }
@@ -60,19 +70,16 @@ export default function StatsPage() {
                         month: month.split(' ')[0], // just 'Jan', 'Feb'
                         sales: monthlySales[month] || 0
                     }));
-
                     setMonthlySalesData(formattedMonthlySales);
                     
-                    // Process for top plants
+                    // --- Top Plants Chart ---
                     const plantSales: { [key: string]: number } = {};
                     orders.forEach(order => {
                         order.items.forEach(item => {
-                            if (item.sellerId === user.uid) {
-                                if (!plantSales[item.name]) {
-                                    plantSales[item.name] = 0;
-                                }
-                                plantSales[item.name] += item.quantity;
+                            if (!plantSales[item.name]) {
+                                plantSales[item.name] = 0;
                             }
+                            plantSales[item.name] += item.quantity;
                         });
                     });
 
@@ -80,8 +87,33 @@ export default function StatsPage() {
                         .sort(([, a], [, b]) => b - a)
                         .slice(0, 5)
                         .map(([name, sales]) => ({ name, sales }));
-                        
                     setTopPlantsData(sortedTopPlants);
+
+                    // --- Detailed Analytics Calculations ---
+                    const views = plants.reduce((acc, plant) => acc + (plant.viewCount || 0), 0);
+                    setTotalViews(views);
+
+                    const sales = orders.reduce((acc, order) => acc + order.items.reduce((itemAcc, item) => itemAcc + item.quantity, 0), 0);
+                    setTotalSales(sales);
+                    
+                    if (views > 0) {
+                        setConversionRate((sales / views) * 100);
+                    } else {
+                        setConversionRate(0);
+                    }
+
+                    const locationCounts: { [key: string]: number } = {};
+                    orders.forEach(order => {
+                        if (order.buyerLocation) {
+                            locationCounts[order.buyerLocation] = (locationCounts[order.buyerLocation] || 0) + 1;
+                        }
+                    });
+
+                    if (Object.keys(locationCounts).length > 0) {
+                        const topLocation = Object.entries(locationCounts).sort(([,a],[,b]) => b-a)[0][0];
+                        setTopBuyerLocation(topLocation);
+                    }
+
 
                 } catch (error) {
                     console.error("Failed to fetch stats:", error);
@@ -132,13 +164,13 @@ export default function StatsPage() {
         );
     }
 
-    const StatPlaceholderCard = ({ title, description, icon: Icon }: { title: string, description: string, icon: React.ElementType }) => (
+    const StatCard = ({ title, value, description, icon: Icon, loading }: { title: string, value: string | number, description: string, icon: React.ElementType, loading: boolean }) => (
         <Card>
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-base"><Icon className="h-5 w-5 text-muted-foreground"/>{title}</CardTitle>
             </CardHeader>
             <CardContent>
-                 <p className="text-2xl font-bold text-muted-foreground">Coming Soon</p>
+                 {loading ? <Loader2 className="h-6 w-6 animate-spin"/> : <p className="text-2xl font-bold">{value}</p>}
                  <p className="text-xs text-muted-foreground">{description}</p>
             </CardContent>
         </Card>
@@ -173,24 +205,30 @@ export default function StatsPage() {
                 <CardHeader>
                     <CardTitle>In-Depth Analytics</CardTitle>
                     <CardDescription>
-                        Deeper insights into your shop's performance. These features are in development and will be available soon.
+                        Deeper insights into your shop's performance.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-3">
-                    <StatPlaceholderCard 
+                    <StatCard 
                         title="Total Listing Views"
-                        description="Track how many times buyers have viewed your items."
+                        description="How many times buyers have viewed your items."
                         icon={Eye}
+                        value={totalViews}
+                        loading={isLoading}
                     />
-                     <StatPlaceholderCard 
+                     <StatCard 
                         title="Conversion Rate"
                         description="The percentage of views that result in a sale."
                         icon={Goal}
+                        value={`${conversionRate.toFixed(2)}%`}
+                        loading={isLoading}
                     />
-                     <StatPlaceholderCard 
+                     <StatCard 
                         title="Top Buyer Location"
                         description="See where most of your customers are from."
                         icon={MapPin}
+                        value={topBuyerLocation || 'N/A'}
+                        loading={isLoading}
                     />
                 </CardContent>
             </Card>

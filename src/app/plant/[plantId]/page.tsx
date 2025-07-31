@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { deletePlantListing, getPlantListing, createOrGetChat, followUser, unfollowUser } from "@/lib/firestoreService";
+import { deletePlantListing, getPlantListing, createOrGetChat, followUser, unfollowUser, incrementPlantViewCount } from "@/lib/firestoreService";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/contexts/cart-context";
 import { addPlantToWishlist, removePlantFromWishlist } from "@/lib/firestoreService";
@@ -64,6 +64,10 @@ export default function PlantDetailPage() {
                     const fetchedPlant = await getPlantListing(plantId);
                     if (fetchedPlant) {
                         setPlant(fetchedPlant);
+                        // Increment view count if the user is logged in and not the owner
+                        if (user && user.uid !== fetchedPlant.ownerId) {
+                            await incrementPlantViewCount(plantId);
+                        }
                     } else {
                         setError("Plant not found.");
                     }
@@ -86,7 +90,7 @@ export default function PlantDetailPage() {
             router.replace(`/plant/${plantId}`, { scroll: false });
         }
 
-    }, [plantId, searchParams, router, toast]);
+    }, [plantId, searchParams, router, toast, user]);
 
     const handleMessageSeller = async () => {
         if (!user) {
@@ -489,5 +493,3 @@ function PlantDetailSkeleton() {
         </div>
     )
 }
-
-    

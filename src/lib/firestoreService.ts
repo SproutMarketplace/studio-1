@@ -180,7 +180,7 @@ export const uploadProfileImage = async (userId: string, file: File): Promise<st
 // --- Plant Functions (List Plant Page: /list-plant, General Listings) ---
 export const addPlantListing = async (plant: Omit<PlantListing, 'id' | 'listedDate'>): Promise<string> => {
     if (!db) throw new Error("Firebase Firestore is not configured.");
-    const docRef = await addDoc(collection(db, 'plants'), { ...plant, listedDate: serverTimestamp() });
+    const docRef = await addDoc(collection(db, 'plants'), { ...plant, listedDate: serverTimestamp(), viewCount: 0 });
     
     // Increment the user's plantsListed count
     const userRef = doc(db, 'users', plant.ownerId);
@@ -258,6 +258,14 @@ export const updatePlantListing = async (plantId: string, data: Partial<PlantLis
     if (!db) return;
     const plantDocRef = doc(db, 'plants', plantId);
     await updateDoc(plantDocRef, data);
+};
+
+export const incrementPlantViewCount = async (plantId: string): Promise<void> => {
+    if (!db) return;
+    const plantDocRef = doc(db, 'plants', plantId);
+    await updateDoc(plantDocRef, {
+        viewCount: increment(1)
+    });
 };
 
 export const deletePlantListing = async (plant: PlantListing): Promise<void> => {
@@ -817,7 +825,8 @@ export const createOrder = async (
                 status: 'processing',
                 createdAt: serverTimestamp(),
                 stripeSessionId: stripeSessionId,
-                buyerUsername: buyerProfile.username || 'Unknown Buyer'
+                buyerUsername: buyerProfile.username || 'Unknown Buyer',
+                buyerLocation: buyerProfile.location || 'Unknown',
             });
     
             // 2. Decrement plant quantity and mark as unavailable if needed

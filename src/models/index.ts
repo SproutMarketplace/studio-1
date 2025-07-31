@@ -49,6 +49,7 @@ export interface PlantListing {
     listedDate: Timestamp;
     tags?: string[];
     quantity?: number; // Number of items available
+    viewCount?: number; // To track listing views
 }
 
 export interface OrderItem {
@@ -71,6 +72,7 @@ export interface Order {
     createdAt: Timestamp;
     stripeSessionId: string;
     buyerUsername?: string; // Denormalized
+    buyerLocation?: string; // Denormalized from buyer's profile
 }
 
 
