@@ -3,61 +3,19 @@
 
 import type { ReactNode } from 'react';
 import Image from 'next/image';
-import Autoplay from "embla-carousel-autoplay"
-
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel"
-
-const carouselImages = [
-    {
-        src: "/plant-images/landing.jpeg",
-        alt: "A beautiful arrangement of plants for the landing page",
-        hint: "houseplants arrangement",
-    },
-    {
-        src: "/plant-images/landing-2.jpeg",
-        alt: "A person holding a small potted succulent",
-        hint: "potted succulent",
-    },
-    {
-        src: "/plant-images/landing-3.jpeg",
-        alt: "A collection of gourmet mushrooms growing",
-        hint: "gourmet mushrooms",
-    }
-]
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="w-full min-h-screen lg:grid lg:grid-cols-2 flex flex-col">
       <div className="hidden bg-muted lg:block relative">
-        <Carousel 
-            className="w-full h-full"
-            plugins={[
-                Autoplay({
-                  delay: 4000,
-                  stopOnInteraction: false,
-                }),
-              ]}
-        >
-            <CarouselContent>
-                {carouselImages.map((img, index) => (
-                     <CarouselItem key={index} className="relative w-full h-screen">
-                        <Image
-                            src={img.src}
-                            alt={img.alt}
-                            fill
-                            className="object-cover"
-                            priority={index === 0}
-                            data-ai-hint={img.hint}
-                        />
-                    </CarouselItem>
-                ))}
-            </CarouselContent>
-        </Carousel>
-
+        <Image
+            src="/plant-images/landing.jpeg"
+            alt="A beautiful arrangement of plants for the landing page"
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint="houseplants arrangement"
+        />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-8">
             <p className="text-2xl text-white font-semibold text-center drop-shadow-md max-w-md">
                 Effortlessly Buy, Sell, & Trade plants, fungi, and supplies with communities that share your interests.
