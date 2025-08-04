@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Gem, Leaf, ShoppingBag, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { icon: React.ElementType, title: string, description: string, image: string, imageHint: string }) => (
+const FeatureCard = ({ icon: Icon, title, description, image }: { icon: React.ElementType, title: string, description: string, image: string }) => (
     <div className="grid md:grid-cols-2 gap-8 items-center">
         <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg">
             <Image
@@ -14,7 +14,6 @@ const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { ico
                 alt={title}
                 fill
                 className="object-cover"
-                data-ai-hint={imageHint}
             />
         </div>
         <div className="space-y-4">
@@ -50,12 +49,11 @@ export default function LandingPage() {
             </div>
             <div className="relative w-full h-80 md:h-full min-h-[300px] rounded-2xl shadow-xl overflow-hidden">
                 <Image
-                    src="/plant-images/landing-hero.jpeg"
+                    src="/main.jpeg"
                     alt="A vibrant arrangement of various houseplants on shelves"
                     fill
                     className="object-cover"
                     priority
-                    data-ai-hint="vibrant houseplants arrangement"
                 />
             </div>
         </div>
@@ -72,8 +70,7 @@ export default function LandingPage() {
                     icon={ShoppingBag}
                     title="Discover & Trade"
                     description="Explore a vast, user-powered catalog of plants and fungi. From rare aroids to gourmet mushroom cultures, find exactly what you're looking for or list your own items for sale or trade with a community of trusted enthusiasts."
-                    image="https://placehold.co/600x600.png"
-                    imageHint="rare plant"
+                    image="/selltrade.jpeg"
                 />
 
                 <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -86,11 +83,10 @@ export default function LandingPage() {
                     </div>
                     <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg md:order-1">
                         <Image
-                            src="https://placehold.co/600x600.png"
+                            src="/community.jpeg"
                             alt="Community Feature"
                             fill
                             className="object-cover"
-                            data-ai-hint="plant community"
                         />
                     </div>
                 </div>
@@ -99,8 +95,7 @@ export default function LandingPage() {
                     icon={Gem}
                     title="Powerful Seller Tools"
                     description="Upgrade to a Pro plan to unlock a full suite of seller tools. Access advanced analytics, marketing features, pricing insights, and everything you need to manage and grow your business."
-                    image="https://placehold.co/600x600.png"
-                    imageHint="dashboard analytics"
+                    image="/seller.jpeg"
                 />
 
             </div>
