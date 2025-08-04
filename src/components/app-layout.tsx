@@ -216,7 +216,7 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
     const { open } = useSidebar();
 
     return (
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-muted backdrop-blur-sm relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <SidebarTrigger asChild>
                     <Button 
