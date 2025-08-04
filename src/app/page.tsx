@@ -129,7 +129,7 @@ export default function LandingPage() {
                     <div className="space-y-2">
                         <h3 className="text-lg font-semibold">Follow Our Journey</h3>
                         <div className="flex items-center gap-4">
-                            <Link href="#" aria-label="Instagram">
+                            <Link href="https://www.instagram.com/sprout.marketplace/?hl=en" aria-label="Instagram">
                                 <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                             </Link>
                              <Link href="#" aria-label="X (formerly Twitter)">
