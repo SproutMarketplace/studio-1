@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -8,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { icon: React.ElementType, title: string, description: string, image: string, imageHint: string }) => (
     <Card className="flex flex-col text-center bg-card/50 h-full shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="p-0">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-lg">
+        <CardHeader className="p-6 items-center">
+            <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-primary/10">
                 <Image
                     src={image}
                     alt={title}
@@ -19,7 +20,7 @@ const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { ico
                 />
             </div>
         </CardHeader>
-        <CardContent className="p-6 flex flex-col flex-grow items-center">
+        <CardContent className="p-6 pt-0 flex flex-col flex-grow items-center">
             <div className="p-3 bg-primary/10 rounded-full mb-4 w-fit">
                 <Icon className="w-8 h-8 text-primary" />
             </div>
