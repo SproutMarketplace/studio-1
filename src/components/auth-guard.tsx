@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-// The root / is now handled by the (public) route group
 const PUBLIC_ROUTES: string[] = ["/"]; 
 
 interface AuthGuardProps {

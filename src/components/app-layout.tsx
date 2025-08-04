@@ -66,6 +66,33 @@ const mainNavItems: NavItem[] = [
     { href: "/rewards", icon: Award, label: "Rewards" },
 ];
 
+function PublicHeader() {
+    return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container mx-auto flex h-16 items-center justify-between">
+                <Link href="/" className="flex items-center">
+                    <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+                </Link>
+                <nav className="flex items-center gap-2">
+                    <Button asChild variant="secondary" className="bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
+                        <Link href="/subscription">
+                            <Gem className="mr-2 h-4 w-4"/>
+                            Upgrade to Pro
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost">
+                        <Link href="/login">Login</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/signup">Sign Up</Link>
+                    </Button>
+                </nav>
+            </div>
+        </header>
+    );
+}
+
+
 function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
@@ -256,10 +283,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { unreadNotificationCount } = useAuth();
 
-    // The root page (landing page) is handled by its own layout in (public)/layout.tsx
-    // The auth pages are handled by their own layout in (auth)/layout.tsx
-    // This component will wrap all other pages.
-    if (isPublicRoute || isAuthRoute) {
+    if (isPublicRoute) {
+        return (
+            <div className="flex flex-col min-h-screen">
+                <PublicHeader />
+                <main className="flex-1">
+                     <AuthGuard>{children}</AuthGuard>
+                </main>
+                 <Toaster />
+            </div>
+        );
+    }
+    
+    if (isAuthRoute) {
       return (
         <>
             <AuthGuard>{children}</AuthGuard>
