@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/"]; 
+const PUBLIC_ROUTES: string[] = ["/", "/subscription"]; 
 
 interface AuthGuardProps {
   children: ReactNode;
