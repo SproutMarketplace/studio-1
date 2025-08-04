@@ -58,8 +58,23 @@ export default function LandingPage() {
         </div>
         </section>
 
-        <section className="py-20 md:py-28 bg-muted">
-            <div className="container mx-auto space-y-20">
+        <section className="relative bg-muted">
+            <div className="absolute top-0 left-0 w-full overflow-hidden leading-none">
+                <svg
+                    data-name="Layer 1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 1200 120"
+                    preserveAspectRatio="none"
+                    className="relative block w-full h-[150px]"
+                >
+                    <path
+                        d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+                        className="fill-muted"
+                    ></path>
+                </svg>
+            </div>
+
+            <div className="container mx-auto space-y-20 pt-20 md:pt-28 pb-20 md:pb-28">
                 <div className="text-center max-w-3xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-bold">Everything You Need to Grow</h2>
                     <p className="mt-4 text-lg text-muted-foreground">Sprout provides the tools and community to take your passion to the next level.</p>
