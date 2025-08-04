@@ -40,13 +40,13 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific colors */
-    --sidebar-background: 130 50% 95%; /* Very Light Sage Green */
+    --sidebar-background: 45 50% 92%; /* Muted Cream - Matches muted */
     --sidebar-foreground: 30 40% 20%; /* Deep Earthy Brown */
     --sidebar-primary: 151 55% 30%; /* New: Primary Green */
     --sidebar-primary-foreground: 45 60% 98%; /* Very Light Cream */
-    --sidebar-accent: 130 45% 88%; /* Lighter Sage for hover */
-    --sidebar-accent-foreground: 130 50% 25%; /* Dark Sage */
-    --sidebar-border: 130 40% 82%; /* Slightly darker Sage for border */
+    --sidebar-accent: 45 50% 88%; /* Slightly darker cream for hover */
+    --sidebar-accent-foreground: 30 40% 20%; /* Deep Earthy Brown */
+    --sidebar-border: 45 40% 85%; /* Slightly darker cream for border */
     --sidebar-ring: 151 55% 30%; /* New: Primary Green */
     
     --chart-1: 151 55% 30%; /* New: Primary Green */
@@ -88,13 +88,13 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific colors for dark mode */
-    --sidebar-background: 140 12% 12%; /* Almost Black-Green */
+    --sidebar-background: 140 15% 22%; /* Dark Muted Green/Brown - Matches muted */
     --sidebar-foreground: 45 40% 88%; /* Light Creamy Beige text */
     --sidebar-primary: 151 55% 45%; /* New: Dark Mode Primary Green */
     --sidebar-primary-foreground: 45 60% 98%; /* New: Light Creamy text */
-    --sidebar-accent: 140 15% 20%; /* Darker Green for hover, slightly lighter than bg */
+    --sidebar-accent: 140 15% 28%; /* Darker Green for hover, slightly lighter than input */
     --sidebar-accent-foreground: 45 35% 80%; /* Light Creamy text on hover */
-    --sidebar-border: 140 15% 22%; /* Darker Sidebar Border */
+    --sidebar-border: 140 15% 28%; /* Darker Sidebar Border */
     --sidebar-ring: 151 55% 45%; /* New: Dark Mode Primary Green */
 
     --chart-1: 151 55% 45%; /* New: Primary Green DM */
