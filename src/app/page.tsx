@@ -3,9 +3,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Gem, Leaf, ShoppingBag, Users } from "lucide-react";
+import { Gem, Leaf, ShoppingBag, Users, Instagram, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { icon: React.ElementType, title: string, description: string, image: string, imageHint: string }) => (
     <Card className="flex flex-col text-center bg-card/50 h-full shadow-md hover:shadow-lg transition-shadow">
@@ -65,17 +68,21 @@ export default function LandingPage() {
         </section>
 
        <section className="relative bg-muted pt-20 md:pt-28 pb-20 md:pb-28">
-            <div className="absolute top-0 left-0 right-0 w-full overflow-hidden leading-none">
+            <div className="absolute top-0 left-[-2%] right-[-2%] w-auto overflow-hidden leading-none">
                  <svg
                     data-name="Layer 1"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 1200 120"
                     preserveAspectRatio="none"
-                    className="relative block fill-background w-full h-[120px]"
+                    className="relative block w-full h-[120px]"
                 >
                     <path
                         d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-                        className="animate-wave"
+                        className="animate-wave fill-background"
+                    ></path>
+                    <path
+                        d="M985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83Z"
+                        className="animate-wave-behind fill-accent"
                     ></path>
                 </svg>
             </div>
@@ -108,6 +115,55 @@ export default function LandingPage() {
                         image="/seller.jpeg"
                         imageHint="analytics dashboard"
                     />
+                </div>
+            </div>
+        </section>
+
+        <section className="py-20 md:py-28 bg-background">
+            <div className="container mx-auto grid md:grid-cols-2 gap-12 items-start">
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-bold">About Sprout</h2>
+                    <p className="text-muted-foreground">
+                        We are passionate plant collectors who wanted a better way to connect with fellow enthusiasts. Sprout was born from a desire to create a beautiful, modern, and user-friendly platform for trading, selling, and discussing all things plants and fungi. Our mission is to cultivate a vibrant community where everyone, from novice growers to seasoned botanists, can share their passion and grow together.
+                    </p>
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-semibold">Follow Our Journey</h3>
+                        <div className="flex items-center gap-4">
+                            <Link href="#" aria-label="Instagram">
+                                <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                            </Link>
+                             <Link href="#" aria-label="X (formerly Twitter)">
+                                <Twitter className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                     <Card className="shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Contact Us</CardTitle>
+                            <CardDescription>Have a question or feedback? We'd love to hear from you.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form className="space-y-4">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Name</Label>
+                                        <Input id="name" placeholder="Jane Doe" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input id="email" type="email" placeholder="jane@example.com" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="message">Message</Label>
+                                    <Textarea id="message" placeholder="Your message..." />
+                                </div>
+                                <Button type="submit" className="w-full">Send Message</Button>
+                            </form>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </section>

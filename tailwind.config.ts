@@ -87,15 +87,19 @@ export default {
   				}
   			},
             'wave': {
-                '0%': { transform: 'translateX(0)' },
-                '50%': { transform: 'translateX(-25px)' },
-                '100%': { transform: 'translateX(0)' },
+                '0%, 100%': { transform: 'translateX(-25%)' },
+                '50%': { transform: 'translateX(-50%)' },
+            },
+            'wave-behind': {
+                '0%, 100%': { transform: 'translateX(0%)' },
+                '50%': { transform: 'translateX(-25%)' },
             }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
             'wave': 'wave 4s cubic-bezier( 0.36, 0.45, 0.63, 0.53) infinite',
+            'wave-behind': 'wave-behind 7s cubic-bezier( 0.36, 0.45, 0.63, 0.53) infinite',
   		}
   	}
   },
