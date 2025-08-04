@@ -132,7 +132,7 @@ export default function LandingPage() {
                             <Link href="https://www.instagram.com/sprout.marketplace/?hl=en" aria-label="Instagram">
                                 <Instagram className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                             </Link>
-                             <Link href="#" aria-label="X (formerly Twitter)">
+                             <Link href="https://x.com/SproutMarketApp" aria-label="X (formerly Twitter)">
                                 <Twitter className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
                             </Link>
                         </div>
