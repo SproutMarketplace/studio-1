@@ -68,7 +68,7 @@ const mainNavItems: NavItem[] = [
 
 function PublicHeader() {
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-muted backdrop-blur supports-[backdrop-filter]:bg-muted/60">
             <div className="container mx-auto flex h-16 items-center justify-between">
                 <Link href="/" className="flex items-center">
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
