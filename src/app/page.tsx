@@ -15,7 +15,7 @@ export default function RootPage() {
       if (user) {
         router.push("/catalog");
       } else {
-        router.push("/login");
+        router.push("/landing");
       }
     }
   }, [user, loading, router]);

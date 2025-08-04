@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/"]; // Root "/" is handled by the redirector page
+const PUBLIC_ROUTES: string[] = ["/", "/landing"];
 
 interface AuthGuardProps {
   children: ReactNode;

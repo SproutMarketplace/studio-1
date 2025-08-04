@@ -52,6 +52,7 @@ import { CartSheet } from "@/components/cart-sheet";
 import { NotificationPopover } from "@/components/notification-popover";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
+const PUBLIC_ROUTES = ["/landing"];
 
 interface NavItem {
     href: string;
@@ -255,6 +256,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isRootRoute = pathname === "/";
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || isRootRoute;
     const isSellerRoute = pathname.startsWith('/seller');
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { unreadNotificationCount } = useAuth();
@@ -268,6 +270,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Toaster />
         </>
       )
+    }
+
+    if (isPublicRoute) {
+        return (
+             <>
+                <AuthGuard>{children}</AuthGuard>
+                <Toaster />
+            </>
+        )
     }
 
     // Auth pages have a simpler layout
