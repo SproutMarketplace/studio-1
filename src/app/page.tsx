@@ -6,16 +6,18 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Loader2 } from "lucide-react";
 
-export default function RootPage() {
+// This page acts as a redirector.
+// It sends the user to the landing page or to the catalog.
+export default function AppRootPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.push("/catalog");
+        router.replace(`/catalog`);
       } else {
-        router.push("/landing");
+        router.replace(`/`);
       }
     }
   }, [user, loading, router]);

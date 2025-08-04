@@ -10,17 +10,15 @@ import {
     Award,
     Heart,
     Bell,
-    Users, // Changed from MessagesSquare
+    Users,
     PanelLeft,
     PlusSquare,
     ShoppingBag,
-    Sprout as SproutIcon,
     User as UserIcon,
     LogOut,
     LogIn as LogInIcon,
     X,
     ShoppingCart,
-    Globe,
     MessagesSquare,
     Gem,
 } from "lucide-react";
@@ -39,7 +37,6 @@ import {
     useSidebar,
     SidebarFooter,
     SidebarSeparator,
-    SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
@@ -52,7 +49,7 @@ import { CartSheet } from "@/components/cart-sheet";
 import { NotificationPopover } from "@/components/notification-popover";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES = ["/landing"];
+const PUBLIC_ROUTES = ["/"]; // The root page (/) is now the main public landing page
 
 interface NavItem {
     href: string;
@@ -73,7 +70,7 @@ function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
     const { setOpen, isMobile, setOpenMobile } = useSidebar();
-    const { user, profile, loading, refreshUserProfile, unreadNotificationCount } = useAuth();
+    const { user, loading, refreshUserProfile } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -255,53 +252,22 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
 export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
-    const isRootRoute = pathname === "/";
-    const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || isRootRoute;
-    const isSellerRoute = pathname.startsWith('/seller');
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { unreadNotificationCount } = useAuth();
 
-
-    // The root page has its own full-screen layout (for redirection)
-    if (isRootRoute) {
+    // The root page (landing page) is handled by its own layout in (public)/layout.tsx
+    // The auth pages are handled by their own layout in (auth)/layout.tsx
+    // This component will wrap all other pages.
+    if (isPublicRoute || isAuthRoute) {
       return (
         <>
-            {children}
+            <AuthGuard>{children}</AuthGuard>
             <Toaster />
         </>
       )
     }
 
-    if (isPublicRoute) {
-        return (
-             <>
-                <AuthGuard>{children}</AuthGuard>
-                <Toaster />
-            </>
-        )
-    }
-
-    // Auth pages have a simpler layout
-    if (isAuthRoute) {
-        return (
-            <>
-                <AuthGuard>{children}</AuthGuard>
-                <Toaster />
-            </>
-        );
-    }
-
-    // Seller dashboard has its own layout defined in (seller)/layout.tsx
-    if (isSellerRoute) {
-        return (
-            <>
-                <AuthGuard>{children}</AuthGuard>
-                <Toaster />
-            </>
-        )
-    }
-
-    // Main application pages get the full sidebar layout
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
