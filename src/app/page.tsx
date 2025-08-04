@@ -4,25 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { Gem, Leaf, ShoppingBag, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const FeatureCard = ({ icon: Icon, title, description, image }: { icon: React.ElementType, title: string, description: string, image: string }) => (
-    <div className="grid md:grid-cols-2 gap-8 items-center">
-        <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg">
-            <Image
-                src={image}
-                alt={title}
-                fill
-                className="object-cover"
-            />
-        </div>
-        <div className="space-y-4">
-            <div className="inline-flex items-center gap-3 bg-primary/10 text-primary px-4 py-2 rounded-full">
-                <Icon className="w-6 h-6" />
-                <h3 className="text-2xl font-bold">{title}</h3>
+const FeatureCard = ({ icon: Icon, title, description, image, imageHint }: { icon: React.ElementType, title: string, description: string, image: string, imageHint: string }) => (
+    <Card className="flex flex-col text-center bg-card/50 h-full shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="p-0">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-lg">
+                <Image
+                    src={image}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    data-ai-hint={imageHint}
+                />
             </div>
-            <p className="text-lg text-muted-foreground">{description}</p>
-        </div>
-    </div>
+        </CardHeader>
+        <CardContent className="p-6 flex flex-col flex-grow items-center">
+            <div className="p-3 bg-primary/10 rounded-full mb-4 w-fit">
+                <Icon className="w-8 h-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold mb-2">{title}</CardTitle>
+            <p className="text-muted-foreground flex-grow">{description}</p>
+        </CardContent>
+    </Card>
 )
 
 export default function LandingPage() {
@@ -53,19 +57,20 @@ export default function LandingPage() {
                     fill
                     className="object-cover"
                     priority
+                    data-ai-hint="vibrant houseplants"
                 />
             </div>
         </div>
         </section>
 
-       <section className="relative bg-muted">
-            <div className="absolute top-0 left-[-2%] right-[-2%] w-auto overflow-hidden leading-none">
-                <svg
+       <section className="relative bg-muted pt-20 md:pt-28 pb-20 md:pb-28">
+            <div className="absolute top-0 left-0 right-0 w-full overflow-hidden leading-none">
+                 <svg
                     data-name="Layer 1"
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 1200 120"
                     preserveAspectRatio="none"
-                    className="relative block fill-background w-full"
+                    className="relative block fill-background w-full h-[120px]"
                 >
                     <path
                         d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
@@ -74,44 +79,35 @@ export default function LandingPage() {
                 </svg>
             </div>
 
-            <div className="container mx-auto space-y-20 pt-20 md:pt-28 pb-20 md:pb-28">
-                <div className="text-center max-w-3xl mx-auto">
+            <div className="container mx-auto">
+                <div className="text-center max-w-3xl mx-auto mb-12">
                     <h2 className="text-3xl md:text-4xl font-bold">Everything You Need to Grow</h2>
                     <p className="mt-4 text-lg text-muted-foreground">Sprout provides the tools and community to take your passion to the next level.</p>
                 </div>
                 
-                <FeatureCard 
-                    icon={ShoppingBag}
-                    title="Discover & Trade"
-                    description="Explore a vast, user-powered catalog of plants and fungi. From rare aroids to gourmet mushroom cultures, find exactly what you're looking for or list your own items for sale or trade with a community of trusted enthusiasts."
-                    image="/selltrade.jpeg"
-                />
-
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                    <div className="space-y-4 md:order-2">
-                        <div className="inline-flex items-center gap-3 bg-primary/10 text-primary px-4 py-2 rounded-full">
-                            <Users className="w-6 h-6" />
-                            <h3 className="text-2xl font-bold">Join a Community</h3>
-                        </div>
-                        <p className="text-lg text-muted-foreground">Jump into topic-specific forums to ask questions, share your latest plant victories, diagnose problems, and connect with growers who share your specific interests. It's the social hub for all things that grow.</p>
-                    </div>
-                    <div className="relative aspect-square rounded-lg overflow-hidden shadow-lg md:order-1">
-                        <Image
-                            src="/community.jpeg"
-                            alt="Community Feature"
-                            fill
-                            className="object-cover"
-                        />
-                    </div>
+                <div className="grid md:grid-cols-3 gap-8">
+                    <FeatureCard
+                        icon={ShoppingBag}
+                        title="Discover & Trade"
+                        description="Explore a vast, user-powered catalog of plants and fungi. From rare aroids to gourmet mushroom cultures, find exactly what you're looking for or list your own items for sale or trade."
+                        image="/selltrade.jpeg"
+                        imageHint="plants market"
+                    />
+                    <FeatureCard
+                        icon={Users}
+                        title="Join a Community"
+                        description="Jump into topic-specific forums to ask questions, share your latest plant victories, diagnose problems, and connect with growers who share your specific interests."
+                        image="/community.jpeg"
+                        imageHint="people plants community"
+                    />
+                    <FeatureCard
+                        icon={Gem}
+                        title="Powerful Seller Tools"
+                        description="Upgrade to a Pro plan to unlock a full suite of seller tools. Access advanced analytics, marketing insights, and everything you need to manage and grow your business."
+                        image="/seller.jpeg"
+                        imageHint="analytics dashboard"
+                    />
                 </div>
-                
-                <FeatureCard 
-                    icon={Gem}
-                    title="Powerful Seller Tools"
-                    description="Upgrade to a Pro plan to unlock a full suite of seller tools. Access advanced analytics, marketing insights, and everything you need to manage and grow your business."
-                    image="/seller.jpeg"
-                />
-
             </div>
         </section>
     </>
