@@ -52,6 +52,17 @@ const SELLER_FEE_PERCENTAGE = 0.065; // 6.5%
 // --- General Utility Functions ---
 export const getTimestamp = () => serverTimestamp() as Timestamp;
 
+// --- Contact Message Function ---
+export const saveContactMessage = async (name: string, email: string, message: string): Promise<void> => {
+    if (!db) throw new Error("Firebase is not configured.");
+    await addDoc(collection(db, 'contact_messages'), {
+      name,
+      email,
+      message,
+      submittedAt: serverTimestamp(),
+    });
+};
+
 // --- Notification Functions ---
 const createNotification = async (
     userIdToNotify: string, 
