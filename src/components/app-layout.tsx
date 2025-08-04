@@ -290,6 +290,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <main className="flex-1">
                      <AuthGuard>{children}</AuthGuard>
                 </main>
+                <footer className="py-4 px-6 text-center text-xs text-muted-foreground bg-muted border-t">
+                    &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+                </footer>
                  <Toaster />
             </div>
         );
