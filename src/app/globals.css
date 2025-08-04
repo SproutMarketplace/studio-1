@@ -27,8 +27,8 @@ body {
     --muted: 45 50% 92%; /* Muted Cream */
     --muted-foreground: 30 30% 40%; /* Brownish Gray for muted text */
 
-    --accent: 25 75% 60%; /* Warm Coral/Terracotta */
-    --accent-foreground: 25 60% 15%; /* Dark Brown for text on accent */
+    --accent: 130 45% 88%; /* Lighter Sage for hover */
+    --accent-foreground: 130 50% 25%; /* Dark Sage for text on accent */
 
     --destructive: 0 72% 51%; /* Standard Red */
     --destructive-foreground: 0 0% 98%; /* White */

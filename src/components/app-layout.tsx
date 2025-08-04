@@ -74,7 +74,7 @@ function PublicHeader() {
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                 </Link>
                 <nav className="flex items-center gap-2">
-                    <Button asChild>
+                     <Button asChild variant="secondary" className="bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
                         <Link href="/subscription">
                             <Gem className="mr-2 h-4 w-4"/>
                             Upgrade to Pro
