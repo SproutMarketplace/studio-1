@@ -94,6 +94,14 @@ export default function LandingPage() {
                         />
                     </div>
                 </div>
+                
+                <FeatureCard 
+                    icon={Gem}
+                    title="Powerful Seller Tools"
+                    description="Upgrade to a Pro plan to unlock a full suite of seller tools. Access advanced analytics, marketing features, pricing insights, and everything you need to manage and grow your business."
+                    image="https://placehold.co/600x600.png"
+                    imageHint="dashboard analytics"
+                />
 
             </div>
         </section>
