@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -154,7 +153,7 @@ export default function LandingPage() {
         <section className="py-20 md:py-32 bg-background">
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center text-center md:text-left">
             <div className="space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-primary animate-typewriter overflow-hidden whitespace-nowrap border-r-4 border-r-primary">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-primary">
                 The Marketplace for Plant People.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto md:mx-0">
