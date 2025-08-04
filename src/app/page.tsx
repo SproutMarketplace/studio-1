@@ -62,7 +62,7 @@ export default function LandingPage() {
         <div className="relative bg-muted">
             <div className="absolute top-0 inset-x-0 transform -translate-y-px">
                 <svg className="w-full h-auto" viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <path d="M1440 120H0V0C144.258 48.3317 433.258 120.332 720 120C1006.74 119.668 1295.74 48.3317 1440 0V120Z" fill="hsl(var(--muted))"/>
+                    <path d="M0 22.4L144 32C288 41.6 576 60.8 864 64C1152 67.2 1440 54.4 1440 48L1440 120H0V22.4Z" fill="hsl(var(--muted))"/>
                 </svg>
             </div>
             <section className="py-20 md:py-28">
