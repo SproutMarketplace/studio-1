@@ -95,7 +95,7 @@ export default {
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-            'wave': 'wave 7s cubic-bezier( 0.36, 0.45, 0.63, 0.53) infinite',
+            'wave': 'wave 4s cubic-bezier( 0.36, 0.45, 0.63, 0.53) infinite',
   		}
   	}
   },
