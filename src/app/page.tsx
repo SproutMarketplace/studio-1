@@ -95,13 +95,6 @@ export default function LandingPage() {
                     </div>
                 </div>
 
-                <FeatureCard 
-                    icon={Leaf}
-                    title="AI-Powered Tools"
-                    description="Leverage our cutting-edge AI to enhance your experience. Use the AI Plant Finder to identify a plant from a photo and discover similar varieties, or consult the Pricing Tool to get real-time market data for your listings."
-                    image="https://placehold.co/600x600.png"
-                    imageHint="AI plant analysis"
-                />
             </div>
         </section>
     </>
