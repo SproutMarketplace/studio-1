@@ -4,13 +4,14 @@ import Stripe from 'stripe';
 import { createOrder, updateUserData } from '@/lib/firestoreService';
 import type { OrderItem } from '@/models';
 
+// Initialize Stripe outside the handler, but check for keys inside.
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET;
 
-const stripe = new Stripe(stripeSecretKey!, {
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
     apiVersion: '2024-06-20',
     typescript: true,
-});
+}) : null;
 
 export const config = {
     api: {
@@ -33,8 +34,8 @@ const getTierFromPriceId = (priceId: string): 'pro' | 'elite' | null => {
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
-        console.error("Webhook Error: Stripe or webhook secret not configured.");
-        return NextResponse.json({ error: 'Stripe webhook handler is not configured on the server.' }, { status: 500 });
+        console.error("CRITICAL: Stripe or webhook secret not configured on the server.");
+        return NextResponse.json({ error: 'Stripe webhook handler is not configured.' }, { status: 500 });
     }
     
     const buf = await req.arrayBuffer();
@@ -65,18 +66,23 @@ export async function POST(req: NextRequest) {
 
             if (session.mode === 'subscription' && priceId) {
                 // It's a subscription checkout
-                const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-                const tier = getTierFromPriceId(priceId);
-                
-                if (tier) {
-                     await updateUserData(userId, {
-                        subscriptionTier: tier,
-                        stripeSubscriptionId: subscription.id,
-                        stripeSubscriptionStatus: subscription.status,
-                        stripeCustomerId: subscription.customer as string,
-                    });
-                } else {
-                     console.error(`Webhook Error: Invalid priceId ${priceId} for subscription.`);
+                try {
+                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+                    const tier = getTierFromPriceId(priceId);
+                    
+                    if (tier) {
+                         await updateUserData(userId, {
+                            subscriptionTier: tier,
+                            stripeSubscriptionId: subscription.id,
+                            stripeSubscriptionStatus: subscription.status,
+                            stripeCustomerId: subscription.customer as string,
+                        });
+                    } else {
+                         console.error(`Webhook Error: Invalid priceId ${priceId} for subscription.`);
+                    }
+                } catch (subError) {
+                    console.error('Stripe Subscription retrieval failed:', subError);
+                    return NextResponse.json({ error: 'Failed to retrieve subscription details.' }, { status: 500 });
                 }
                
             } else if (session.mode === 'payment' && cartItemsString) {
@@ -102,7 +108,7 @@ export async function POST(req: NextRequest) {
                 //      subscriptionTier: subscriptionUpdated.status === 'active' ? 'pro' : 'free', // Add more logic here
                 //  });
              } else {
-                 console.error(`Webhook Error: No user found with stripeCustomerId ${customerId}`);
+                 console.warn(`Webhook Warning: No user found with stripeCustomerId ${customerId}. This is expected if the user document is not yet created or found.`);
              }
             break;
             
