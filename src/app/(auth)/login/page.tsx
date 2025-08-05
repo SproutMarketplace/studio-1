@@ -124,6 +124,7 @@ export default function LoginPage() {
                 favoritePlants: [],
                 followers: [],
                 following: [],
+                subscriptionTier: 'free' as const,
             };
             await createUserProfile(newProfileData);
             existingProfile = await getUserProfile(user.uid);
@@ -242,5 +243,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-    
