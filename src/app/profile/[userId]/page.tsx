@@ -609,8 +609,8 @@ export default function ProfilePage() {
                                 {isProOrElite ? (
                                     <Button asChild className="w-full">
                                         <Link href="/seller/dashboard">
-                                            <Gem className="mr-2 h-4 w-4"/>
-                                            Seller Dashboard
+                                            <LayoutDashboard className="mr-2 h-4 w-4"/>
+                                            Go to Seller Dashboard
                                         </Link>
                                     </Button>
                                 ) : (
@@ -637,5 +637,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
