@@ -51,7 +51,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const userId = params.userId as string;
 
-  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext, refreshUserProfile } = useAuth();
+  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext, refreshUserProfile, lastRefreshed } = useAuth();
   const { toast } = useToast();
   
   const [viewedProfile, setViewedProfile] = useState<User | null>(null);
@@ -140,7 +140,7 @@ export default function ProfilePage() {
     };
 
     fetchPageData();
-  }, [userId, loggedInUser?.uid, toast, router]);
+  }, [userId, loggedInUser?.uid, toast, router, lastRefreshed]); // Re-fetch data if lastRefreshed changes
 
 
   const handleAvatarClick = () => {

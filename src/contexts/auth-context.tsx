@@ -14,6 +14,7 @@ interface AuthContextType {
   profile: User | null;
   loading: boolean;
   unreadNotificationCount: number;
+  lastRefreshed: number | null; // Added for explicit refresh tracking
   refreshUserProfile: () => Promise<void>;
   updateUserProfileInContext: (updatedProfileData: Partial<User>) => void;
 }
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   unreadNotificationCount: 0,
+  lastRefreshed: null,
   refreshUserProfile: async () => {},
   updateUserProfileInContext: () => {},
 });
@@ -40,6 +42,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [lastRefreshed, setLastRefreshed] = useState<number | null>(null);
+
 
   useEffect(() => {
     if (!auth) {
@@ -106,7 +110,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             const docSnap = await getDoc(userDocRef);
             if (docSnap.exists()) {
-                setProfile({ id: docSnap.id, ...docSnap.data() } as User);
+                const newProfile = { id: docSnap.id, ...docSnap.data() } as User;
+                setProfile(newProfile);
+                setLastRefreshed(Date.now()); // Trigger refresh
             }
         } catch (error) {
             console.error("Error manually refreshing profile:", error);
@@ -125,9 +131,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     profile,
     loading,
     unreadNotificationCount,
+    lastRefreshed,
     refreshUserProfile,
     updateUserProfileInContext,
-  }), [user, profile, loading, unreadNotificationCount, refreshUserProfile, updateUserProfileInContext]);
+  }), [user, profile, loading, unreadNotificationCount, lastRefreshed, refreshUserProfile, updateUserProfileInContext]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

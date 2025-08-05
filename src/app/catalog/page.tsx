@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/cart-context";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/auth-context";
 
 
 const CATEGORY_OPTIONS = [
@@ -53,14 +54,17 @@ export default function PlantCatalogPage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { clearCart } = useCart();
+    const { refreshUserProfile } = useAuth();
     
-    // Memoize toast and clearCart functions with useCallback to prevent re-creation on each render,
-    // which was causing an infinite loop in the useEffect hook.
-    const memoizedToast = useCallback(toast, []);
-    const memoizedClearCart = useCallback(clearCart, []);
+    // Using useCallback to prevent functions from being recreated on each render,
+    // which could cause infinite loops in useEffect.
+    const memoizedToast = useCallback(toast, [toast]);
+    const memoizedClearCart = useCallback(clearCart, [clearCart]);
+    const memoizedRefreshProfile = useCallback(refreshUserProfile, [refreshUserProfile]);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
+        const subscriptionSuccess = searchParams.get('subscription_success');
         const checkoutCanceled = searchParams.get('canceled');
         let hasParams = false;
         
@@ -71,6 +75,16 @@ export default function PlantCatalogPage() {
                 description: "Thank you for your purchase. Your order is being processed.",
             });
             memoizedClearCart();
+        }
+
+        if (subscriptionSuccess === 'true') {
+            hasParams = true;
+            memoizedToast({
+                title: "Subscription Activated!",
+                description: "Welcome to Sprout Pro! Your profile is being updated.",
+            });
+            // Force a refresh of the user profile from the server
+            memoizedRefreshProfile();
         }
 
         if (checkoutCanceled === 'true') {
@@ -100,7 +114,7 @@ export default function PlantCatalogPage() {
         );
         
         return () => unsubscribe();
-    }, [router, searchParams, memoizedToast, memoizedClearCart]);
+    }, [router, searchParams, memoizedToast, memoizedClearCart, memoizedRefreshProfile]);
 
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
