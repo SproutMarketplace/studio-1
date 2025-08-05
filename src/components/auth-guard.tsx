@@ -8,8 +8,8 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/"];
-const ALLOWED_FOR_LOGGED_IN = ["/subscription"];
+const PUBLIC_ROUTES: string[] = ["/"]; // Landing page
+const ALLOWED_FOR_LOGGED_IN = ["/subscription"]; // Routes logged-in users can access even if they are "public-like"
 
 
 interface AuthGuardProps {
@@ -23,28 +23,35 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (loading) {
-      return;
+      return; // Wait until auth state is resolved
     }
 
-    const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
-    const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
-    const pathIsAllowed = ALLOWED_FOR_LOGGED_IN.includes(pathname);
+    const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    const isAllowedForLoggedIn = ALLOWED_FOR_LOGGED_IN.includes(pathname);
 
-    // If user is logged in, redirect them away from auth routes or the public landing page.
-    // They are allowed to visit pages in ALLOWED_FOR_LOGGED_IN.
-    if (user && (pathIsAuthRoute || (pathIsPublicRoute && !pathIsAllowed))) {
-      router.replace("/catalog");
-      return;
+    // If a user is logged in:
+    if (user) {
+      // If they are on an auth route (login/signup) or the public landing page,
+      // redirect them to the main app page (catalog), unless it's an explicitly allowed page like /subscription.
+      if ((isAuthRoute || isPublicRoute) && !isAllowedForLoggedIn) {
+        router.replace("/catalog");
+        return;
+      }
     }
-    
-    // If user is NOT logged in, and they try to access a protected route, redirect them to the landing page.
-    if (!user && !pathIsAuthRoute && !pathIsPublicRoute && !pathIsAllowed) {
-      router.replace("/");
-      return;
+    // If a user is NOT logged in:
+    else {
+      // If they try to access any page that is NOT public, an auth route, or an allowed route,
+      // send them to the landing page to log in or sign up.
+      if (!isPublicRoute && !isAuthRoute && !isAllowedForLoggedIn) {
+        router.replace("/");
+        return;
+      }
     }
-
   }, [user, loading, router, pathname]);
   
+  // --- Loading State and Content Flash Prevention ---
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -53,7 +60,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Prevent flash of content on protected routes for non-logged-in users.
+  // Prevent flash of protected pages for logged-out users
   if (!user && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname) && !ALLOWED_FOR_LOGGED_IN.includes(pathname)) {
     return (
        <div className="flex items-center justify-center min-h-screen">
@@ -62,7 +69,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
   
-  // Prevent flash of auth/public pages for logged-in users.
+  // Prevent flash of auth/public pages for logged-in users
   if (user && (AUTH_ROUTES.includes(pathname) || (PUBLIC_ROUTES.includes(pathname) && !ALLOWED_FOR_LOGGED_IN.includes(pathname)))) {
       return (
       <div className="flex items-center justify-center min-h-screen">

@@ -63,8 +63,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'Missing userId in metadata.' }, { status: 400 });
             }
 
-            if (session.mode === 'subscription' && priceId) {
+            if (session.mode === 'subscription') {
                 // It's a subscription checkout
+                if (!priceId) {
+                    console.error('Webhook Error: Missing priceId in subscription metadata.', session.id);
+                    return NextResponse.json({ error: 'Missing priceId for subscription.' }, { status: 400 });
+                }
+
                 try {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
                     const tier = getTierFromPriceId(priceId);
