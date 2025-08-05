@@ -349,9 +349,9 @@ export default function ProfilePage() {
         </div>
     );
   };
-
-  const isProOrElite = loggedInUserProfile?.subscriptionTier === 'pro' || loggedInUserProfile?.subscriptionTier === 'elite';
-
+  
+  const subscriptionTier = loggedInUserProfile?.subscriptionTier;
+  const isProOrElite = subscriptionTier === 'pro' || subscriptionTier === 'elite';
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -436,7 +436,7 @@ export default function ProfilePage() {
           <TabsTrigger value="listings"><Leaf className="mr-2 h-4 w-4" />My Listings</TabsTrigger>
           {isOwner && <TabsTrigger value="wishlist"><Heart className="mr-2 h-4 w-4" />Wishlist</TabsTrigger>}
           {isOwner && <TabsTrigger value="order-history"><ClipboardList className="mr-2 h-4 w-4" />Order History</TabsTrigger>}
-          {isOwner && isProOrElite && <TabsTrigger value="seller-dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Seller Tools</TabsTrigger>}
+          {isOwner && <TabsTrigger value="seller-dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Seller Tools</TabsTrigger>}
           {isOwner && <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />Edit Profile</TabsTrigger>}
         </TabsList>
         <TabsContent value="listings" className="mt-6">
