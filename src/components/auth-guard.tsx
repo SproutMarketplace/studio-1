@@ -8,7 +8,9 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/"]; 
+const PUBLIC_ROUTES: string[] = ["/"];
+const ALLOWED_FOR_LOGGED_IN = ["/subscription"];
+
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -26,17 +28,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
     const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
-    const pathIsSubscriptionRoute = pathname === '/subscription';
+    const pathIsAllowed = ALLOWED_FOR_LOGGED_IN.includes(pathname);
 
     // If user is logged in, redirect them away from auth routes or the public landing page.
-    // They are allowed to visit the subscription page, however.
-    if (user && (pathIsAuthRoute || (pathIsPublicRoute && !pathIsSubscriptionRoute))) {
+    // They are allowed to visit pages in ALLOWED_FOR_LOGGED_IN.
+    if (user && (pathIsAuthRoute || (pathIsPublicRoute && !pathIsAllowed))) {
       router.replace("/catalog");
       return;
     }
     
     // If user is NOT logged in, and they try to access a protected route, redirect them to the landing page.
-    if (!user && !pathIsAuthRoute && !pathIsPublicRoute && !pathIsSubscriptionRoute) {
+    if (!user && !pathIsAuthRoute && !pathIsPublicRoute && !pathIsAllowed) {
       router.replace("/");
       return;
     }
@@ -52,7 +54,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Prevent flash of content on protected routes for non-logged-in users.
-  if (!user && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname) && pathname !== '/subscription') {
+  if (!user && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname) && !ALLOWED_FOR_LOGGED_IN.includes(pathname)) {
     return (
        <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -61,7 +63,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
   
   // Prevent flash of auth/public pages for logged-in users.
-  if (user && (AUTH_ROUTES.includes(pathname) || (PUBLIC_ROUTES.includes(pathname) && pathname !== '/subscription'))) {
+  if (user && (AUTH_ROUTES.includes(pathname) || (PUBLIC_ROUTES.includes(pathname) && !ALLOWED_FOR_LOGGED_IN.includes(pathname)))) {
       return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

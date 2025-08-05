@@ -4,11 +4,10 @@ import Stripe from 'stripe';
 import { createOrder, updateUserData } from '@/lib/firestoreService';
 import type { OrderItem } from '@/models';
 
-// Initialize Stripe outside the handler, but check for keys inside.
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CHECKOUT_WEBHOOK_SECRET;
 
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
+const stripe = (stripeSecretKey && webhookSecret) ? new Stripe(stripeSecretKey, {
     apiVersion: '2024-06-20',
     typescript: true,
 }) : null;
