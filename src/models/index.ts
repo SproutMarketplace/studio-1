@@ -50,6 +50,7 @@ export interface PlantListing {
     tags?: string[];
     quantity?: number; // Number of items available
     viewCount?: number; // To track listing views
+    total?: number; // Total number of listings for pagination
 }
 
 export interface OrderItem {

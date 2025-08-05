@@ -26,6 +26,7 @@ import {
     QuerySnapshot,
     DocumentData,
     writeBatch,
+    getCountFromServer,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from 'firebase/auth';
@@ -163,7 +164,7 @@ export const getUserByStripeCustomerId = async (stripeCustomerId: string): Promi
     return null;
 };
 
-export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): Promise<void> => {
+export const createUserProfile = async (user: User): Promise<void> => {
     if (!db) return;
     const userRef = doc(db, 'users', user.userId); // Use userId as doc ID
     await setDoc(userRef, { 
@@ -235,39 +236,38 @@ export const getPlantListing = async (plantId: string): Promise<PlantListing | n
     return null;
 };
 
-// REQUIRED FIRESTORE INDEX:
-// Collection: 'plants'
-// Fields: 1. isAvailable (Ascending), 2. listedDate (Descending)
-export const subscribeToAvailablePlantListings = (
-    onUpdate: (plants: PlantListing[]) => void,
-    onError: (error: Error) => void
-): (() => void) => {
+export const getAvailablePlantListings = async (
+    pageSize: number,
+    lastDoc?: DocumentSnapshot<DocumentData>
+): Promise<{ plants: PlantListing[], nextDoc?: DocumentSnapshot<DocumentData>, total: number }> => {
     if (!db) {
-        onError(new Error("Firestore is not initialized."));
-        return () => {};
+        throw new Error("Firestore is not initialized.");
+    }
+    const plantsRef = collection(db, 'plants');
+    const countQuery = query(plantsRef, where('isAvailable', '==', true));
+    const totalSnapshot = await getCountFromServer(countQuery);
+    const total = totalSnapshot.data().count;
+
+    let q = query(
+        plantsRef,
+        where('isAvailable', '==', true),
+        orderBy('listedDate', 'desc'),
+        limit(pageSize)
+    );
+
+    if (lastDoc) {
+        q = query(q, startAfter(lastDoc));
     }
 
-    const q = query(
-        collection(db, 'plants'),
-        where('isAvailable', '==', true),
-        orderBy('listedDate', 'desc')
-    );
+    const querySnapshot = await getDocs(q);
+    const plants: PlantListing[] = [];
+    querySnapshot.forEach((doc: DocumentSnapshot) => {
+        plants.push({ id: doc.id, ...doc.data() } as PlantListing);
+    });
 
-    const unsubscribe = onSnapshot(q, 
-        (querySnapshot: QuerySnapshot) => {
-            const plants: PlantListing[] = [];
-            querySnapshot.forEach((doc: DocumentSnapshot) => {
-                plants.push({ id: doc.id, ...doc.data() } as PlantListing);
-            });
-            onUpdate(plants);
-        },
-        (error) => {
-            console.error("Error in plant subscription:", error);
-            onError(error);
-        }
-    );
+    const nextDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
 
-    return unsubscribe; // Return the unsubscribe function for cleanup
+    return { plants, nextDoc, total };
 };
 
 
@@ -1042,6 +1042,7 @@ export const registerUser = async (email: string, password: string, username: st
         followers: [],
         following: [],
         subscriptionTier: 'free',
+        joinedDate: serverTimestamp() as Timestamp,
     });
 
     return newUser;

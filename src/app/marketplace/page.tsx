@@ -9,9 +9,9 @@ import { PlantCard } from "@/components/plant-card";
 import type { PlantListing } from "@/models";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Loader2 } from "lucide-react";
-import { subscribeToAvailablePlantListings } from "@/lib/firestoreService";
-import type { Timestamp } from "firebase/firestore";
+import { Search, ListFilter, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
+import { getAvailablePlantListings } from "@/lib/firestoreService";
+import type { Timestamp, DocumentSnapshot, DocumentData } from "firebase/firestore";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -35,11 +35,20 @@ const CATEGORY_OPTIONS = [
   { id: "beginner-friendly", label: "Beginner Friendly" },
 ];
 
+const PAGE_SIZE = 50;
+
 export default function PlantMarketplacePage() {
     const [plants, setPlants] = useState<PlantListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastDoc, setLastDoc] = useState<DocumentSnapshot<DocumentData> | undefined>(undefined);
+    const [pageHistory, setPageHistory] = useState<(DocumentSnapshot<DocumentData> | undefined)[]>([undefined]);
+    const [totalListings, setTotalListings] = useState(0);
+
     const [filters, setFilters] = useState<{
         tradeOnly: 'all' | 'sale' | 'trade';
         sortBy: 'newest' | 'price-asc' | 'price-desc';
@@ -54,7 +63,7 @@ export default function PlantMarketplacePage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { clearCart } = useCart();
-    const { profile } = useAuth(); // We just need the profile to react to changes
+    const { profile } = useAuth();
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -91,26 +100,30 @@ export default function PlantMarketplacePage() {
         if (hasParams) {
             router.replace('/marketplace', {scroll: false});
         }
-
-        const unsubscribe = subscribeToAvailablePlantListings(
-            (fetchedPlants) => {
-                setPlants(fetchedPlants);
-                setIsLoading(false);
-                setError(null);
-            },
-            (err) => {
-                console.error("Error fetching plants:", err);
-                setError("Failed to load items. Please try again later.");
-                setIsLoading(false);
-            }
-        );
-        
-        return () => unsubscribe();
-    // We only want this effect to run once on mount for the query params, so deps are limited.
-    // The profile dependency ensures that if the user's subscription changes, this doesn't re-trigger toasts.
+    // We only want this effect to run once on mount for the query params
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [profile]);
+    }, []);
 
+    useEffect(() => {
+        fetchPlants(pageHistory[currentPage - 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage]);
+
+    const fetchPlants = async (startAfterDoc?: DocumentSnapshot<DocumentData>) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const { plants: fetchedPlants, nextDoc, total } = await getAvailablePlantListings(PAGE_SIZE, startAfterDoc);
+            setPlants(fetchedPlants);
+            setLastDoc(nextDoc);
+            setTotalListings(total);
+        } catch (err) {
+            console.error("Error fetching plants:", err);
+            setError("Failed to load items. Please try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value.toLowerCase());
@@ -173,7 +186,22 @@ export default function PlantMarketplacePage() {
             categories: [],
         });
     };
+    
+    const handleNextPage = () => {
+        if (lastDoc) {
+            setPageHistory(prev => [...prev, lastDoc]);
+            setCurrentPage(prev => prev + 1);
+        }
+    };
 
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setPageHistory(prev => prev.slice(0, -1));
+            setCurrentPage(prev => prev - 1);
+        }
+    };
+    
+    const totalPages = Math.ceil(totalListings / PAGE_SIZE);
 
     return (
         <div className="container mx-auto space-y-8">
@@ -297,11 +325,24 @@ export default function PlantMarketplacePage() {
                     <h2 className="text-2xl font-semibold">{error}</h2>
                 </div>
             ) : processedPlants.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {processedPlants.map((plant) => (
-                        <PlantCard key={plant.id} plant={plant} />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {processedPlants.map((plant) => (
+                            <PlantCard key={plant.id} plant={plant} />
+                        ))}
+                    </div>
+                    <div className="flex justify-center items-center gap-4 mt-8">
+                        <Button variant="outline" onClick={handlePrevPage} disabled={currentPage === 1 || isLoading}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                        </Button>
+                        <span className="text-sm font-medium">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <Button variant="outline" onClick={handleNextPage} disabled={!lastDoc || currentPage >= totalPages || isLoading}>
+                            Next <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </div>
+                </>
             ) : (
                 <div className="text-center py-12">
                     <h2 className="text-2xl font-semibold text-muted-foreground">No items found.</h2>
