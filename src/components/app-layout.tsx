@@ -235,12 +235,12 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
             </Link>
 
             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                 <Link href="/subscription" passHref>
-                    <Button size="sm" className="h-8 bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow">
+                 <Button asChild size="sm" className="h-8 bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow">
+                    <Link href="/subscription">
                         <Gem className="mr-2 h-4 w-4"/>
                         Upgrade to Pro
-                    </Button>
-                </Link>
+                    </Link>
+                </Button>
                  <NotificationPopover>
                      <Button
                         variant="ghost"

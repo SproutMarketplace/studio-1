@@ -12,12 +12,16 @@ import {
     CircleDollarSign,
     ArrowLeft,
     Tag,
+    Gem,
+    Loader2
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/auth-context";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 
 interface NavItem {
@@ -76,8 +80,61 @@ function SellerSidebar() {
     );
 }
 
+function UpgradePrompt() {
+    return (
+        <div className="flex-1 flex items-center justify-center p-8 bg-muted/40">
+            <Card className="max-w-md w-full text-center shadow-lg">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 text-primary p-3 rounded-full w-fit mb-3">
+                        <Gem className="h-8 w-8" />
+                    </div>
+                    <CardTitle>Unlock Seller Tools</CardTitle>
+                    <CardDescription>
+                        Upgrade to a Sprout Pro plan to access the seller dashboard, advanced analytics, marketing tools, and more.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild size="lg">
+                        <Link href="/subscription">Upgrade to Pro</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
+    const { profile, loading } = useAuth();
+    
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-muted/40 items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary"/>
+            </div>
+        )
+    }
+
+    const isProOrElite = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'elite';
+
+    if (!isProOrElite) {
+        return (
+            <div className="flex flex-col min-h-screen">
+                 <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
+                     <Link href="/catalog" passHref aria-label="Sprout Home">
+                        <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+                    </Link>
+                 </header>
+                <main className="flex-1 flex flex-col">
+                    <UpgradePrompt />
+                </main>
+                <footer className="py-4 px-6 text-center text-xs text-muted-foreground bg-background border-t">
+                     &copy; {new Date().getFullYear()} Sprout Marketplace, LLC. All Rights Reserved.
+                </footer>
+            </div>
+        );
+    }
+    
     return (
         <div className="flex h-screen bg-muted/40">
             <SellerSidebar />
