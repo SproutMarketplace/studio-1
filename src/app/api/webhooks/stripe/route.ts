@@ -1,7 +1,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import Stripe from 'stripe';
-import { createOrder, updateUserData } from '@/lib/firestoreService';
+import { createOrder, updateUserData, getUserByStripeCustomerId } from '@/lib/firestoreService';
 import type { OrderItem } from '@/models';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -102,22 +102,20 @@ export async function POST(req: NextRequest) {
              const customerId = subscriptionUpdated.customer as string;
 
              // You need a way to find your user by stripeCustomerId
-             // This assumes you store the stripeCustomerId on your user object
-             const user = null; // FIND USER BY customerId
+             const user = await getUserByStripeCustomerId(customerId);
              
-             if (user) {
-                //  await updateUserData(user.id, {
-                //      stripeSubscriptionStatus: subscriptionUpdated.status,
-                //      // If deleted, maybe revert their tier to 'free'
-                //      subscriptionTier: subscriptionUpdated.status === 'active' ? 'pro' : 'free', // Add more logic here
-                //  });
+             if (user && user.id) {
+                 await updateUserData(user.id, {
+                     stripeSubscriptionStatus: subscriptionUpdated.status,
+                     subscriptionTier: subscriptionUpdated.status === 'active' ? getTierFromPriceId(subscriptionUpdated.items.data[0].price.id) : 'free',
+                 });
              } else {
                  console.warn(`Webhook Warning: No user found with stripeCustomerId ${customerId}. This is expected if the user document is not yet created or found.`);
              }
             break;
             
         default:
-            console.log(`Unhandled event type: ${event.type}`);
+            // console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });

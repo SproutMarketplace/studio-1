@@ -3,8 +3,8 @@
 
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, onSnapshot, Unsubscribe, collection, query, where, QuerySnapshot } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, onSnapshot, Unsubscribe, collection, query, where, QuerySnapshot, DocumentData } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import type { User } from "@/models";
@@ -14,6 +14,7 @@ interface AuthContextType {
   user: FirebaseAuthUser | null;
   profile: User | null;
   loading: boolean;
+  logout: () => Promise<void>;
   unreadNotificationCount: number;
   updateUserProfileInContext: (updates: Partial<User>) => void;
 }
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  logout: async () => {},
   unreadNotificationCount: 0,
   updateUserProfileInContext: () => {},
 });
@@ -43,6 +45,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateUserProfileInContext = useCallback((updates: Partial<User>) => {
     setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updates } : updates as User);
   }, []);
+
+  const logout = useCallback(async () => {
+    if (auth) {
+        await signOut(auth);
+        // Auth state listener will handle resetting user/profile state
+    }
+  }, []);
+
 
   useEffect(() => {
     if (!isFirebaseEnabled || !auth) {
@@ -86,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Listen for notification updates
         const notificationsRef = collection(db, 'users', firebaseUser.uid, 'notifications');
         const q = query(notificationsRef, where('isRead', '==', false));
-        notificationUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot) => {
+        notificationUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
             setUnreadNotificationCount(snapshot.size);
         });
 
@@ -107,9 +117,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     profile,
     loading,
+    logout,
     unreadNotificationCount,
     updateUserProfileInContext,
-  }), [user, profile, loading, unreadNotificationCount, updateUserProfileInContext]);
+  }), [user, profile, loading, logout, unreadNotificationCount, updateUserProfileInContext]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

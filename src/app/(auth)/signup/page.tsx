@@ -78,9 +78,10 @@ export default function SignupPage() {
                 favoritePlants: [],
                 followers: [],
                 following: [],
+                subscriptionTier: 'free' as const,
             };
             await createUserProfile(newProfileData);
-            existingProfile = await getUserProfile(user.uid);
+            existingProfile = newProfileData;
              toast({
                 title: "Sign Up Successful!",
                 description: "Welcome to Sprout!",
@@ -239,5 +240,3 @@ export default function SignupPage() {
     </>
   );
 }
-
-    

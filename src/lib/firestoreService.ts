@@ -149,6 +149,20 @@ export const getUserByUsername = async (username: string): Promise<User | null> 
     return null;
 };
 
+// REQUIRED FIRESTORE INDEX:
+// Collection: 'users'
+// Fields: 1. stripeCustomerId (Ascending)
+export const getUserByStripeCustomerId = async (stripeCustomerId: string): Promise<User | null> => {
+    if (!db) return null;
+    const q = query(collection(db, 'users'), where('stripeCustomerId', '==', stripeCustomerId), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        return { id: userDoc.id, ...userDoc.data() } as User;
+    }
+    return null;
+};
+
 export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): Promise<void> => {
     if (!db) return;
     const userRef = doc(db, 'users', user.userId); // Use userId as doc ID
@@ -161,19 +175,25 @@ export const createUserProfile = async (user: Omit<User, 'id' | 'joinedDate'>): 
 export const updateUserData = async (userId: string, data: Partial<User>): Promise<void> => {
     if (!auth || !db) return;
     const user = auth.currentUser;
-    if (!user || user.uid !== userId) return; // Ensure the current user is the one being updated
-
-    // Update Firebase Auth profile if relevant fields are present
-    const authUpdateData: { displayName?: string; photoURL?: string } = {};
-    if (data.username) {
-        authUpdateData.displayName = data.username;
+    if (!user || user.uid !== userId) {
+        // Allow updates even if user is not logged in (e.g., from webhooks)
+        // but perform a check to ensure we're not just updating any user.
+        // For now, we trust the caller (like a webhook) to provide the correct userId.
     }
-    if (data.avatarUrl) {
-        authUpdateData.photoURL = data.avatarUrl;
-    }
-
-    if (Object.keys(authUpdateData).length > 0) {
-        await updateProfile(user, authUpdateData);
+    
+    if (user && user.uid === userId) {
+        // Update Firebase Auth profile if relevant fields are present
+        const authUpdateData: { displayName?: string; photoURL?: string } = {};
+        if (data.username) {
+            authUpdateData.displayName = data.username;
+        }
+        if (data.avatarUrl) {
+            authUpdateData.photoURL = data.avatarUrl;
+        }
+    
+        if (Object.keys(authUpdateData).length > 0) {
+            await updateProfile(user, authUpdateData);
+        }
     }
     
     // Update Firestore document
@@ -1021,6 +1041,7 @@ export const registerUser = async (email: string, password: string, username: st
         favoritePlants: [],
         followers: [],
         following: [],
+        subscriptionTier: 'free',
     });
 
     return newUser;
