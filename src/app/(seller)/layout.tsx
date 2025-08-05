@@ -107,7 +107,7 @@ function UpgradePrompt() {
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
     const { profile, loading } = useAuth();
     
-    // Explicitly wait for both loading to be false AND profile to be loaded.
+    // Wait until loading is false and we have a profile to check.
     if (loading || !profile) {
         return (
             <div className="flex h-screen bg-muted/40 items-center justify-center">
@@ -120,7 +120,7 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
 
     if (!isProOrElite) {
         return (
-            <div className="flex flex-col min-h-screen">
+             <div className="flex flex-col min-h-screen bg-muted/40">
                  <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
                      <Link href="/catalog" passHref aria-label="Sprout Home">
                         <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
@@ -136,6 +136,7 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
         );
     }
     
+    // If the user is Pro or Elite, render the full dashboard layout
     return (
         <div className="flex h-screen bg-muted/40">
             <SellerSidebar />
