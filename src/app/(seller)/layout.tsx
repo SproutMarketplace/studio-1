@@ -107,7 +107,8 @@ function UpgradePrompt() {
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
     const { profile, loading } = useAuth();
     
-    if (loading) {
+    // Explicitly wait for both loading to be false AND profile to be loaded.
+    if (loading || !profile) {
         return (
             <div className="flex h-screen bg-muted/40 items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary"/>
@@ -115,7 +116,7 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
         )
     }
 
-    const isProOrElite = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'elite';
+    const isProOrElite = profile.subscriptionTier === 'pro' || profile.subscriptionTier === 'elite';
 
     if (!isProOrElite) {
         return (
