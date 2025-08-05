@@ -81,7 +81,9 @@ export default function SignupPage() {
                 subscriptionTier: 'free' as const,
             };
             await createUserProfile(newProfileData);
-            existingProfile = newProfileData;
+            const fetchedProfile = await getUserProfile(user.uid);
+            existingProfile = fetchedProfile;
+
              toast({
                 title: "Sign Up Successful!",
                 description: "Welcome to Sprout!",
