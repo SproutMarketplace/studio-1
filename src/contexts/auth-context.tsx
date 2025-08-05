@@ -4,9 +4,9 @@
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, onSnapshot, type Timestamp, collection, query, where, Timestamp as FirestoreTimestamp } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import type { User } from "@/models";
 
 interface AuthContextType {
@@ -14,8 +14,6 @@ interface AuthContextType {
   profile: User | null;
   loading: boolean;
   unreadNotificationCount: number;
-  refreshUserProfile: () => Promise<void>;
-  updateUserProfileInContext: (updatedProfileData: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,8 +21,6 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   unreadNotificationCount: 0,
-  refreshUserProfile: async () => {},
-  updateUserProfileInContext: () => {},
 });
 
 export function useAuth() {
@@ -48,18 +44,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    let profileUnsubscribe: () => void = () => {};
-    let notificationUnsubscribe: () => void = () => {};
-
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      // Clean up previous listeners
-      profileUnsubscribe();
-      notificationUnsubscribe();
+      let profileUnsubscribe: (() => void) | undefined = undefined;
+      let notificationUnsubscribe: (() => void) | undefined = undefined;
 
       if (firebaseUser && db) {
         setUser(firebaseUser);
         
-        // Listener for user profile document
         const userDocRef = doc(db, "users", firebaseUser.uid);
         profileUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -68,6 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 console.warn(`No profile document found for user ${firebaseUser.uid}`);
                 setProfile(null);
             }
+             // Crucially, set loading to false only *after* the first snapshot is received.
             setLoading(false); 
         }, (error) => {
             console.error("AuthContext: Error listening to user profile:", error);
@@ -75,51 +67,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setLoading(false);
         });
 
-        // Listener for unread notifications count
-        const notificationsRef = collection(db, 'users', firebaseUser.uid, 'notifications');
-        const q = query(notificationsRef, where('isRead', '==', false));
-        notificationUnsubscribe = onSnapshot(q, (snapshot) => {
-            setUnreadNotificationCount(snapshot.size);
-        }, (error) => {
-            console.error("AuthContext: Error listening to notifications:", error);
-            setUnreadNotificationCount(0);
-        });
-
       } else {
+        // User is signed out
         setUser(null);
         setProfile(null);
         setUnreadNotificationCount(0);
         setLoading(false);
       }
+      
+      // Return a cleanup function for the auth state change.
+      return () => {
+        if (profileUnsubscribe) profileUnsubscribe();
+        if (notificationUnsubscribe) notificationUnsubscribe();
+      };
     });
 
-    return () => {
-        authUnsubscribe();
-        profileUnsubscribe();
-        notificationUnsubscribe();
-    };
-  }, []);
-
-  const refreshUserProfile = useCallback(async () => {
-    if (auth?.currentUser && db) {
-        setLoading(true);
-        const userDocRef = doc(db, "users", auth.currentUser.uid);
-        try {
-            const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-                const newProfile = { id: docSnap.id, ...docSnap.data() } as User;
-                setProfile(newProfile);
-            }
-        } catch (error) {
-            console.error("Error manually refreshing profile:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
-  }, []);
-
-  const updateUserProfileInContext = useCallback((updatedProfileData: Partial<User>) => {
-    setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updatedProfileData } : null);
+    return () => authUnsubscribe();
   }, []);
   
   const value = useMemo(() => ({
@@ -127,9 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     profile,
     loading,
     unreadNotificationCount,
-    refreshUserProfile,
-    updateUserProfileInContext,
-  }), [user, profile, loading, unreadNotificationCount, refreshUserProfile, updateUserProfileInContext]);
+  }), [user, profile, loading, unreadNotificationCount]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
