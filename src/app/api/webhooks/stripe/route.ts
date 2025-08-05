@@ -18,7 +18,7 @@ export const config = {
     },
 };
 
-const getTierFromPriceId = (priceId: string): 'pro' | 'elite' | null => {
+const getTierFromPriceId = (priceId: string): 'pro' | 'elite' | undefined => {
     switch (priceId) {
         case process.env.STRIPE_PRO_MONTHLY_PRICE_ID:
         case process.env.STRIPE_PRO_YEARLY_PRICE_ID:
@@ -27,7 +27,7 @@ const getTierFromPriceId = (priceId: string): 'pro' | 'elite' | null => {
         case process.env.STRIPE_ELITE_YEARLY_PRICE_ID:
             return 'elite';
         default:
-            return null;
+            return undefined;
     }
 }
 
@@ -98,20 +98,31 @@ export async function POST(req: NextRequest) {
             
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted':
-             const subscriptionUpdated = event.data.object as Stripe.Subscription;
-             const customerId = subscriptionUpdated.customer as string;
+            const subscriptionUpdated = event.data.object as Stripe.Subscription;
+            const customerId = subscriptionUpdated.customer as string;
 
-             // You need a way to find your user by stripeCustomerId
-             const user = await getUserByStripeCustomerId(customerId);
-             
-             if (user && user.id) {
-                 await updateUserData(user.id, {
-                     stripeSubscriptionStatus: subscriptionUpdated.status,
-                     subscriptionTier: subscriptionUpdated.status === 'active' ? getTierFromPriceId(subscriptionUpdated.items.data[0].price.id) : 'free',
-                 });
-             } else {
-                 console.warn(`Webhook Warning: No user found with stripeCustomerId ${customerId}. This is expected if the user document is not yet created or found.`);
-             }
+            // First, try to get the userId from the subscription metadata.
+            // This is more reliable than querying Firestore by customerId.
+            const subUserId = subscriptionUpdated.metadata.userId;
+
+            if (subUserId) {
+                await updateUserData(subUserId, {
+                    stripeSubscriptionStatus: subscriptionUpdated.status,
+                    subscriptionTier: subscriptionUpdated.status === 'active' ? getTierFromPriceId(subscriptionUpdated.items.data[0].price.id) : 'free',
+                });
+            } else {
+                // Fallback for older subscriptions that might not have the userId in metadata.
+                console.warn(`Webhook Warning: No userId in subscription metadata. Falling back to querying by customerId ${customerId}.`);
+                const user = await getUserByStripeCustomerId(customerId);
+                if (user && user.id) {
+                    await updateUserData(user.id, {
+                        stripeSubscriptionStatus: subscriptionUpdated.status,
+                        subscriptionTier: subscriptionUpdated.status === 'active' ? getTierFromPriceId(subscriptionUpdated.items.data[0].price.id) : 'free',
+                    });
+                } else {
+                    console.error(`Webhook Error: No user found for stripeCustomerId ${customerId} after fallback.`);
+                }
+            }
             break;
             
         default:
