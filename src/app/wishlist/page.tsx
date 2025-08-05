@@ -91,9 +91,9 @@ export default function WishlistPage() {
                         <Frown className="w-16 h-16 text-muted-foreground" />
                     </div>
                     <h2 className="text-2xl font-semibold text-muted-foreground">Your wishlist is empty.</h2>
-                    <p className="mt-2 text-muted-foreground">Browse the catalog and click the heart icon to save plants here.</p>
+                    <p className="mt-2 text-muted-foreground">Browse the marketplace and click the heart icon to save plants here.</p>
                     <Button asChild className="mt-6">
-                        <Link href="/catalog">Find Plants</Link>
+                        <Link href="/marketplace">Find Plants</Link>
                     </Button>
                 </CardContent>
             </Card>

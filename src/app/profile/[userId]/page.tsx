@@ -91,7 +91,7 @@ export default function ProfilePage() {
         try {
             const profileData = profileToUse || await getUserProfile(userId);
             if (!profileData) {
-                router.push('/catalog');
+                router.push('/marketplace');
                 toast({ variant: 'destructive', title: 'User not found' });
                 return;
             }
@@ -271,7 +271,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <p>This profile could not be found.</p>
-            <Button asChild className="mt-4"><Link href="/catalog">Go to Catalog</Link></Button>
+            <Button asChild className="mt-4"><Link href="/marketplace">Go to Marketplace</Link></Button>
           </CardContent>
         </Card>
       </div>
@@ -487,9 +487,9 @@ export default function ProfilePage() {
                         ) : (
                         <div className="text-center py-12">
                             <h3 className="text-xl font-semibold">Your wishlist is empty.</h3>
-                            <p className="text-muted-foreground mt-2">Browse the catalog to find items to add.</p>
+                            <p className="text-muted-foreground mt-2">Browse the marketplace to find items to add.</p>
                             <Button asChild className="mt-4">
-                            <Link href="/catalog">Find Items</Link>
+                            <Link href="/marketplace">Find Items</Link>
                             </Button>
                         </div>
                         )}
@@ -547,7 +547,7 @@ export default function ProfilePage() {
                                 <Inbox className="w-16 h-16 mx-auto text-muted-foreground" />
                                 <h3 className="mt-4 text-xl font-semibold">No orders yet</h3>
                                 <p className="mt-1 text-muted-foreground">When you purchase an item, your order will appear here.</p>
-                                <Button asChild className="mt-4"><Link href="/catalog">Browse Items</Link></Button>
+                                <Button asChild className="mt-4"><Link href="/marketplace">Browse Items</Link></Button>
                             </div>
                         )}
                     </CardContent>

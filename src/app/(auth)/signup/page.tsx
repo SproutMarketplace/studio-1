@@ -79,6 +79,7 @@ export default function SignupPage() {
                 followers: [],
                 following: [],
                 subscriptionTier: 'free' as const,
+                joinedDate: new Date(),
             };
             await createUserProfile(newProfileData);
             const fetchedProfile = await getUserProfile(user.uid);
@@ -102,7 +103,7 @@ export default function SignupPage() {
         if (isNewUser) {
             router.push("/subscription");
         } else {
-            router.push("/catalog");
+            router.push("/marketplace");
         }
     } catch (error: any) {
         if (error.code !== "auth/popup-closed-by-user") {

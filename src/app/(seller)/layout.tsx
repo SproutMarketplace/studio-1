@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+
 interface NavItem {
     href: string;
     icon: React.ElementType;
@@ -44,7 +45,7 @@ function SellerSidebar() {
     return (
         <aside className="hidden md:flex flex-col w-64 bg-background border-r">
             <div className="p-4 border-b flex flex-col items-center text-center gap-4">
-                <Link href="/catalog">
+                <Link href="/marketplace">
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} />
                 </Link>
                 <Separator/>
@@ -83,7 +84,7 @@ function UpgradePrompt() {
     return (
         <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
-                <Link href="/catalog" passHref aria-label="Sprout Home">
+                <Link href="/marketplace" passHref aria-label="Sprout Home">
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                 </Link>
                 <div className="absolute right-4">
@@ -120,8 +121,7 @@ function UpgradePrompt() {
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
     const { profile, loading } = useAuth();
 
-    // The most robust loading check: wait for auth to finish AND the profile object to be available.
-    if (loading || !profile) {
+    if (loading) {
         return (
             <div className="flex h-screen bg-muted/40 items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary"/>
@@ -129,14 +129,13 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
         )
     }
 
-    // This check is now robust. It handles undefined or null tiers by treating them as 'free'.
-    const isProOrElite = profile.subscriptionTier === 'pro' || profile.subscriptionTier === 'elite';
+    const tier = profile?.subscriptionTier;
+    const isProOrElite = tier === 'pro' || tier === 'elite';
 
     if (!isProOrElite) {
         return <UpgradePrompt />;
     }
     
-    // If the user is Pro or Elite, render the full dashboard layout
     return (
         <div className="flex h-screen bg-muted/40">
             <SellerSidebar />

@@ -59,7 +59,7 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-    { href: "/catalog", icon: ShoppingBag, label: "Catalog" },
+    { href: "/marketplace", icon: ShoppingBag, label: "Marketplace" },
     { href: "/list-plant", icon: PlusSquare, label: "List an Item" },
     { href: "/forums", icon: Users, label: "Community Forums" },
     { href: "/messages", icon: MessagesSquare, label: "Messages" },
@@ -127,7 +127,7 @@ function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader className="p-2 flex items-center relative w-full justify-start">
-                <Link href="/catalog" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
+                <Link href="/marketplace" passHref aria-label="Sprout Home" onClick={closeMobileSidebarPanel}>
                     <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                 </Link>
                 {!isMobile && (
@@ -229,7 +229,7 @@ function PersistentHeader({ onCartClick, unreadCount }: { onCartClick: () => voi
                 </SidebarTrigger>
             </div>
             
-            <Link href="/catalog" passHref aria-label="Sprout Home">
+            <Link href="/marketplace" passHref aria-label="Sprout Home">
                 <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
             </Link>
 

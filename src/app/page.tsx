@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -164,7 +165,7 @@ export default function LandingPage() {
                 <Link href="/signup">Get Started</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                <Link href="/catalog">Browse Listings</Link>
+                <Link href="/marketplace">Browse Listings</Link>
                 </Button>
             </div>
             </div>
@@ -207,7 +208,7 @@ export default function LandingPage() {
                     <FeatureCard
                         icon={ShoppingBag}
                         title="Discover & Trade"
-                        description="Explore a vast, user-powered catalog of plants and fungi. From rare aroids to gourmet mushroom cultures, find exactly what you're looking for or list your own items for sale or trade."
+                        description="Explore a vast, user-powered marketplace of plants and fungi. From rare aroids to gourmet mushroom cultures, find exactly what you're looking for or list your own items for sale or trade."
                         image="/selltrade.jpeg"
                         imageHint="plants market"
                     />

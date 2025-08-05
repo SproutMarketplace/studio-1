@@ -75,7 +75,7 @@ export default function LoginPage() {
         title: "Login Successful!",
         description: "Welcome back! Redirecting...",
       });
-      router.push("/catalog");
+      router.push("/marketplace");
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = "An unexpected error occurred. Please try again.";
@@ -125,6 +125,7 @@ export default function LoginPage() {
                 followers: [],
                 following: [],
                 subscriptionTier: 'free' as const,
+                joinedDate: new Date(),
             };
             await createUserProfile(newProfileData);
             existingProfile = await getUserProfile(user.uid);
@@ -146,7 +147,7 @@ export default function LoginPage() {
         if (isNewUser) {
             router.push("/subscription");
         } else {
-            router.push("/catalog");
+            router.push("/marketplace");
         }
     } catch (error: any) {
         if (error.code !== "auth/popup-closed-by-user") {

@@ -34,9 +34,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     // If a user is logged in (and we have their profile)
     if (user && profile) {
       // If they are on an auth route (login/signup) or the public landing page,
-      // redirect them to the main app page (catalog), unless it's an explicitly allowed page.
+      // redirect them to the main app page (marketplace), unless it's an explicitly allowed page.
       if ((isAuthRoute || isPublicRoute) && !isAllowedForLoggedIn) {
-        router.replace("/catalog");
+        router.replace("/marketplace");
         return;
       }
     }
