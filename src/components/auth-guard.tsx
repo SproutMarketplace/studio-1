@@ -17,23 +17,24 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    // Wait until auth state and profile are fully resolved
     if (loading) {
-      return; // Wait until auth state is resolved
+      return; 
     }
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const isAllowedForLoggedIn = ALLOWED_FOR_LOGGED_IN.includes(pathname);
 
-    // If a user is logged in:
-    if (user) {
+    // If a user is logged in (and we have their profile)
+    if (user && profile) {
       // If they are on an auth route (login/signup) or the public landing page,
-      // redirect them to the main app page (catalog), unless it's an explicitly allowed page like /subscription.
+      // redirect them to the main app page (catalog), unless it's an explicitly allowed page.
       if ((isAuthRoute || isPublicRoute) && !isAllowedForLoggedIn) {
         router.replace("/catalog");
         return;
@@ -48,7 +49,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
     }
-  }, [user, loading, router, pathname]);
+  }, [user, profile, loading, router, pathname]);
   
   // --- Loading State and Content Flash Prevention ---
 
@@ -69,7 +70,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
   
-  // Prevent flash of auth/public pages for logged-in users
+  // Prevent flash of auth/public pages for logged-in users who haven't been redirected yet
   if (user && (AUTH_ROUTES.includes(pathname) || (PUBLIC_ROUTES.includes(pathname) && !ALLOWED_FOR_LOGGED_IN.includes(pathname)))) {
       return (
       <div className="flex items-center justify-center min-h-screen">
