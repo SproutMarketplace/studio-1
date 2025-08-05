@@ -46,6 +46,7 @@ const GoogleLogo = () => (
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { updateUserProfileInContext } = useAuth();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -62,12 +63,12 @@ export default function SignupPage() {
         const result = await signInWithGooglePopup();
         const { user } = result;
 
-        const existingProfile = await getUserProfile(user.uid);
+        let existingProfile = await getUserProfile(user.uid);
         let isNewUser = false;
 
         if (!existingProfile) {
             isNewUser = true;
-            await createUserProfile({
+            const newProfileData = {
                 userId: user.uid,
                 username: user.displayName || 'Sprout User',
                 email: user.email!,
@@ -77,7 +78,9 @@ export default function SignupPage() {
                 favoritePlants: [],
                 followers: [],
                 following: [],
-            });
+            };
+            await createUserProfile(newProfileData);
+            existingProfile = await getUserProfile(user.uid);
              toast({
                 title: "Sign Up Successful!",
                 description: "Welcome to Sprout!",
@@ -89,6 +92,10 @@ export default function SignupPage() {
             });
         }
         
+        if (existingProfile) {
+            updateUserProfileInContext(existingProfile);
+        }
+
         if (isNewUser) {
             router.push("/subscription");
         } else {
@@ -108,7 +115,11 @@ export default function SignupPage() {
   async function onSubmit(data: SignupFormValues) {
     form.clearErrors();
     try {
-      await registerUser(data.email, data.password, data.name);
+      const newUser = await registerUser(data.email, data.password, data.name);
+      const profile = await getUserProfile(newUser.uid);
+      if (profile) {
+        updateUserProfileInContext(profile);
+      }
       toast({
         title: "Welcome to Sprout!",
         description: "Your account has been created successfully. Please choose a plan to continue.",
@@ -228,3 +239,5 @@ export default function SignupPage() {
     </>
   );
 }
+
+    

@@ -45,6 +45,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const { updateUserProfileInContext } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -65,7 +66,11 @@ export default function LoginPage() {
       return;
     }
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const profile = await getUserProfile(userCredential.user.uid);
+      if (profile) {
+        updateUserProfileInContext(profile);
+      }
       toast({
         title: "Login Successful!",
         description: "Welcome back! Redirecting...",
@@ -104,12 +109,12 @@ export default function LoginPage() {
         const { user } = result;
 
         // Check if a profile exists, if not, create one.
-        const existingProfile = await getUserProfile(user.uid);
+        let existingProfile = await getUserProfile(user.uid);
         let isNewUser = false;
 
         if (!existingProfile) {
             isNewUser = true;
-            await createUserProfile({
+            const newProfileData = {
                 userId: user.uid,
                 username: user.displayName || 'Sprout User',
                 email: user.email!,
@@ -119,7 +124,9 @@ export default function LoginPage() {
                 favoritePlants: [],
                 followers: [],
                 following: [],
-            });
+            };
+            await createUserProfile(newProfileData);
+            existingProfile = await getUserProfile(user.uid);
              toast({
                 title: "Welcome to Sprout!",
                 description: "Your account has been created.",
@@ -131,6 +138,10 @@ export default function LoginPage() {
             });
         }
         
+        if (existingProfile) {
+            updateUserProfileInContext(existingProfile);
+        }
+
         if (isNewUser) {
             router.push("/subscription");
         } else {
@@ -231,3 +242,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    
