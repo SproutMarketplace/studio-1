@@ -70,10 +70,12 @@ const mainNavItems: NavItem[] = [
 function PublicHeader() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-muted backdrop-blur supports-[backdrop-filter]:bg-muted/60">
-            <div className="container mx-auto flex h-16 items-center justify-between">
-                <Link href="/" className="flex items-center">
-                    <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
-                </Link>
+            <div className="container mx-auto flex h-16 items-center">
+                <div className="mr-auto">
+                    <Link href="/" className="flex items-center">
+                        <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
+                    </Link>
+                </div>
                 <nav className="flex items-center gap-2">
                      <Button asChild variant="secondary" className="bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
                         <Link href="/subscription">
