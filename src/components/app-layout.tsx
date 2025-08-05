@@ -50,6 +50,7 @@ import { NotificationPopover } from "@/components/notification-popover";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 const PUBLIC_ROUTES = ["/"]; // The root page (/) is now the main public landing page
+const FULL_PAGE_ROUTES = ["/seller"]; // Paths that manage their own layout
 
 interface NavItem {
     href: string;
@@ -97,13 +98,11 @@ function AppSidebar() {
     const pathname = usePathname();
     const { toast } = useToast();
     const { setOpen, isMobile, setOpenMobile } = useSidebar();
-    const { user, loading, refreshUserProfile } = useAuth();
+    const { user, loading, logout } = useAuth();
 
     const handleLogout = async () => {
         try {
-            await logoutUser();
-            await refreshUserProfile();
-            
+            await logout();
             toast({
                 title: "Logged Out",
                 description: "You have been successfully logged out.",
@@ -280,6 +279,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    const isFullPageRoute = FULL_PAGE_ROUTES.some(path => pathname.startsWith(path));
+
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { unreadNotificationCount } = useAuth();
 
@@ -298,7 +299,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         );
     }
     
-    if (isAuthRoute) {
+    if (isAuthRoute || isFullPageRoute) {
       return (
         <>
             <AuthGuard>{children}</AuthGuard>

@@ -23,7 +23,6 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-
 interface NavItem {
     href: string;
     icon: React.ElementType;
@@ -103,11 +102,10 @@ function UpgradePrompt() {
     )
 }
 
-
 export default function SellerDashboardLayout({ children }: { children: ReactNode }) {
     const { profile, loading } = useAuth();
-    
-    // Wait until loading is false and we have a profile to check.
+
+    // The most robust loading check: wait for auth to finish AND the profile object to be available.
     if (loading || !profile) {
         return (
             <div className="flex h-screen bg-muted/40 items-center justify-center">
@@ -120,11 +118,16 @@ export default function SellerDashboardLayout({ children }: { children: ReactNod
 
     if (!isProOrElite) {
         return (
-             <div className="flex flex-col min-h-screen bg-muted/40">
+             <div className="flex flex-col min-h-screen bg-background">
                  <header className="sticky top-0 z-10 flex h-14 items-center justify-center px-4 border-b bg-background/80 backdrop-blur-sm relative">
                      <Link href="/catalog" passHref aria-label="Sprout Home">
                         <Image src="/logo.png" alt="Sprout Logo" width={120} height={34} priority />
                     </Link>
+                    <div className="absolute right-4">
+                        <Button asChild>
+                            <Link href="/profile">Back to Profile</Link>
+                        </Button>
+                    </div>
                  </header>
                 <main className="flex-1 flex flex-col">
                     <UpgradePrompt />
