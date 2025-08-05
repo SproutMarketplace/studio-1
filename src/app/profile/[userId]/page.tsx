@@ -51,7 +51,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const userId = params.userId as string;
 
-  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext, refreshUserProfile, lastRefreshed } = useAuth();
+  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext, refreshUserProfile } = useAuth();
   const { toast } = useToast();
   
   const [viewedProfile, setViewedProfile] = useState<User | null>(null);
@@ -83,10 +83,13 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!userId) return;
 
+    // Use loggedInUserProfile if viewing own profile, otherwise fetch
+    const profileToUse = isOwner ? loggedInUserProfile : null;
+
     const fetchPageData = async () => {
         setPageLoading(true);
         try {
-            const profileData = await getUserProfile(userId);
+            const profileData = profileToUse || await getUserProfile(userId);
             if (!profileData) {
                 router.push('/catalog');
                 toast({ variant: 'destructive', title: 'User not found' });
@@ -139,8 +142,16 @@ export default function ProfilePage() {
         }
     };
 
-    fetchPageData();
-  }, [userId, loggedInUser?.uid, toast, router, lastRefreshed]); // Re-fetch data if lastRefreshed changes
+    if (isOwner) {
+        // If it's the owner, we can react to changes in their profile from the context
+        setViewedProfile(loggedInUserProfile);
+        if (loggedInUserProfile) { // only fetch rest if profile is loaded
+             fetchPageData();
+        }
+    } else {
+        fetchPageData();
+    }
+  }, [userId, loggedInUser?.uid, loggedInUserProfile, isOwner, toast, router]);
 
 
   const handleAvatarClick = () => {

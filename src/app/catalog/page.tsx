@@ -55,12 +55,6 @@ export default function PlantCatalogPage() {
     const { toast } = useToast();
     const { clearCart } = useCart();
     const { refreshUserProfile } = useAuth();
-    
-    // Using useCallback to prevent functions from being recreated on each render,
-    // which could cause infinite loops in useEffect.
-    const memoizedToast = useCallback(toast, []);
-    const memoizedClearCart = useCallback(clearCart, []);
-    const memoizedRefreshProfile = useCallback(refreshUserProfile, []);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -70,26 +64,26 @@ export default function PlantCatalogPage() {
         
         if (checkoutSuccess === 'true') {
             hasParams = true;
-            memoizedToast({
+            toast({
                 title: "Payment Successful!",
                 description: "Thank you for your purchase. Your order is being processed.",
             });
-            memoizedClearCart();
+            clearCart();
         }
 
         if (subscriptionSuccess === 'true') {
             hasParams = true;
-            memoizedToast({
+            toast({
                 title: "Subscription Activated!",
                 description: "Welcome to Sprout Pro! Your profile is being updated.",
             });
             // Force a refresh of the user profile from the server
-            memoizedRefreshProfile();
+            refreshUserProfile();
         }
 
         if (checkoutCanceled === 'true') {
             hasParams = true;
-            memoizedToast({
+            toast({
                 variant: "destructive",
                 title: "Payment Canceled",
                 description: "Your order was not completed. Your cart has been saved.",
@@ -114,7 +108,7 @@ export default function PlantCatalogPage() {
         );
         
         return () => unsubscribe();
-    }, [router, searchParams, memoizedToast, memoizedClearCart, memoizedRefreshProfile]);
+    }, [router, searchParams, toast, clearCart, refreshUserProfile]);
 
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
