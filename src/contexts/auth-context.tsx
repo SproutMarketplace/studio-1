@@ -4,11 +4,11 @@
 import type { User as FirebaseAuthUser } from "firebase/auth";
 import { auth, db, isFirebaseEnabled } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, onSnapshot, Unsubscribe } from "firebase/firestore";
+import { doc, onSnapshot, Unsubscribe, collection, query, where, QuerySnapshot } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import type { User } from "@/models";
-import { getNotificationsForUser } from "@/lib/firestoreService";
+import { getUserProfile } from "@/lib/firestoreService";
 
 interface AuthContextType {
   user: FirebaseAuthUser | null;
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Listen for notification updates
         const notificationsRef = collection(db, 'users', firebaseUser.uid, 'notifications');
         const q = query(notificationsRef, where('isRead', '==', false));
-        notificationUnsubscribe = onSnapshot(q, (snapshot) => {
+        notificationUnsubscribe = onSnapshot(q, (snapshot: QuerySnapshot) => {
             setUnreadNotificationCount(snapshot.size);
         });
 
