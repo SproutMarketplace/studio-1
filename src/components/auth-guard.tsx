@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES: string[] = ["/", "/subscription"]; 
+const PUBLIC_ROUTES: string[] = ["/"]; 
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -26,36 +26,33 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     const pathIsAuthRoute = AUTH_ROUTES.includes(pathname);
     const pathIsPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    const pathIsSubscriptionRoute = pathname === '/subscription';
 
-    // If user is logged in, and they try to access an auth route (like /login)
-    // or the main public landing page, redirect them to the app's catalog.
-    // We make an exception for the subscription page.
-    if (user && (pathIsAuthRoute || (pathIsPublicRoute && pathname !== '/subscription'))) {
+    // If user is logged in, redirect them away from auth routes or the public landing page.
+    // They are allowed to visit the subscription page, however.
+    if (user && (pathIsAuthRoute || (pathIsPublicRoute && !pathIsSubscriptionRoute))) {
       router.replace("/catalog");
       return;
     }
     
-    // If user is NOT logged in, and they try to access a protected route
-    // (any route that is not public or for authentication), redirect them to the landing page.
-    if (!user && !pathIsAuthRoute && !pathIsPublicRoute) {
+    // If user is NOT logged in, and they try to access a protected route, redirect them to the landing page.
+    if (!user && !pathIsAuthRoute && !pathIsPublicRoute && !pathIsSubscriptionRoute) {
       router.replace("/");
       return;
     }
 
   }, [user, loading, router, pathname]);
   
-  // While loading, show a spinner to prevent content flashing,
-  // especially on protected routes.
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-theme(spacing.28))]">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
   // Prevent flash of content on protected routes for non-logged-in users.
-  if (!user && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname)) {
+  if (!user && !AUTH_ROUTES.includes(pathname) && !PUBLIC_ROUTES.includes(pathname) && pathname !== '/subscription') {
     return (
        <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
