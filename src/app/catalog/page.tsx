@@ -58,9 +58,9 @@ export default function PlantCatalogPage() {
     
     // Using useCallback to prevent functions from being recreated on each render,
     // which could cause infinite loops in useEffect.
-    const memoizedToast = useCallback(toast, [toast]);
-    const memoizedClearCart = useCallback(clearCart, [clearCart]);
-    const memoizedRefreshProfile = useCallback(refreshUserProfile, [refreshUserProfile]);
+    const memoizedToast = useCallback(toast, []);
+    const memoizedClearCart = useCallback(clearCart, []);
+    const memoizedRefreshProfile = useCallback(refreshUserProfile, []);
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
