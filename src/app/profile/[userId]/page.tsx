@@ -614,7 +614,7 @@ export default function ProfilePage() {
                                         </Link>
                                     </Button>
                                 ) : (
-                                    <Button asChild variant="secondary" className="w-full bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900 hover:from-amber-300 hover:to-yellow-400 hover:text-amber-900 shadow-sm">
+                                    <Button asChild variant="upgrade" className="w-full">
                                         <Link href="/subscription">
                                             <Gem className="mr-2 h-4 w-4"/>
                                             Upgrade to Pro for Full Dashboard
@@ -637,3 +637,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
