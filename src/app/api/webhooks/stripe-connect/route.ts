@@ -6,13 +6,13 @@ import { updateUserData } from '@/lib/firestoreService';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
 
-let stripe: Stripe | null = null;
-if (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_')) {
-    stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-06-20',
-        typescript: true,
-    });
-}
+const stripe = (stripeSecretKey && !stripeSecretKey.includes('_PUT_YOUR_STRIPE_SECRET_KEY_HERE_'))
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2024-06-20',
+      typescript: true,
+    })
+  : null;
+
 
 export async function POST(req: NextRequest) {
     if (!stripe || !webhookSecret) {
