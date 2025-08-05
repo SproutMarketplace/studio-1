@@ -29,7 +29,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     // If user is logged in, and they try to access an auth route (like /login)
     // or the main public landing page, redirect them to the app's catalog.
-    if (user && (pathIsAuthRoute || pathIsPublicRoute)) {
+    // We make an exception for the subscription page.
+    if (user && (pathIsAuthRoute || (pathIsPublicRoute && pathname !== '/subscription'))) {
       router.replace("/catalog");
       return;
     }
@@ -63,7 +64,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
   
   // Prevent flash of auth/public pages for logged-in users.
-  if (user && (AUTH_ROUTES.includes(pathname) || PUBLIC_ROUTES.includes(pathname))) {
+  if (user && (AUTH_ROUTES.includes(pathname) || (PUBLIC_ROUTES.includes(pathname) && pathname !== '/subscription'))) {
       return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
