@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,7 +54,7 @@ export default function PlantCatalogPage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { clearCart } = useCart();
-    const { refreshUserProfile } = useAuth();
+    const { profile } = useAuth(); // We just need the profile to react to changes
 
     useEffect(() => {
         const checkoutSuccess = searchParams.get('checkout_success');
@@ -75,10 +75,8 @@ export default function PlantCatalogPage() {
             hasParams = true;
             toast({
                 title: "Subscription Activated!",
-                description: "Welcome to Sprout Pro! Your profile is being updated.",
+                description: "Welcome to Sprout Pro! Your profile has been updated.",
             });
-            // Force a refresh of the user profile from the server
-            refreshUserProfile();
         }
 
         if (checkoutCanceled === 'true') {
@@ -108,7 +106,10 @@ export default function PlantCatalogPage() {
         );
         
         return () => unsubscribe();
-    }, [router, searchParams, toast, clearCart, refreshUserProfile]);
+    // We only want this effect to run once on mount for the query params, so deps are limited.
+    // The profile dependency ensures that if the user's subscription changes, this doesn't re-trigger toasts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profile]);
 
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {

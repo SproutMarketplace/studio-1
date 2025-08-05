@@ -8,12 +8,14 @@ import { doc, onSnapshot } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import type { User } from "@/models";
+import { getNotificationsForUser } from "@/lib/firestoreService"; // We might not need this if we listen directly
 
 interface AuthContextType {
   user: FirebaseAuthUser | null;
   profile: User | null;
   loading: boolean;
   unreadNotificationCount: number;
+  updateUserProfileInContext: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   unreadNotificationCount: 0,
+  updateUserProfileInContext: () => {},
 });
 
 export function useAuth() {
@@ -36,6 +39,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  
+  const updateUserProfileInContext = (updates: Partial<User>) => {
+    setProfile(prevProfile => prevProfile ? { ...prevProfile, ...updates } : null);
+  };
 
 
   useEffect(() => {
@@ -85,11 +92,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => authUnsubscribe();
   }, []);
   
-  const value = useMemo(() => ({
+   const value = useMemo(() => ({
     user,
     profile,
     loading,
     unreadNotificationCount,
+    updateUserProfileInContext,
   }), [user, profile, loading, unreadNotificationCount]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

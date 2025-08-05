@@ -44,7 +44,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { refreshUserProfile } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -67,7 +66,6 @@ export default function LoginPage() {
     }
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      await refreshUserProfile();
       toast({
         title: "Login Successful!",
         description: "Welcome back! Redirecting...",
@@ -133,7 +131,6 @@ export default function LoginPage() {
             });
         }
         
-        await refreshUserProfile();
         if (isNewUser) {
             router.push("/subscription");
         } else {

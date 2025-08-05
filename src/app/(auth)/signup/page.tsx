@@ -46,7 +46,6 @@ const GoogleLogo = () => (
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { refreshUserProfile } = useAuth();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -90,7 +89,6 @@ export default function SignupPage() {
             });
         }
         
-        await refreshUserProfile();
         if (isNewUser) {
             router.push("/subscription");
         } else {
@@ -111,7 +109,6 @@ export default function SignupPage() {
     form.clearErrors();
     try {
       await registerUser(data.email, data.password, data.name);
-      await refreshUserProfile();
       toast({
         title: "Welcome to Sprout!",
         description: "Your account has been created successfully. Please choose a plan to continue.",

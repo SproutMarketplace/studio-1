@@ -51,7 +51,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const userId = params.userId as string;
 
-  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext, refreshUserProfile } = useAuth();
+  const { user: loggedInUser, profile: loggedInUserProfile, loading: authLoading, updateUserProfileInContext } = useAuth();
   const { toast } = useToast();
   
   const [viewedProfile, setViewedProfile] = useState<User | null>(null);
@@ -213,7 +213,6 @@ export default function ProfilePage() {
             await followUser(loggedInUser.uid, userId);
             toast({ title: "Followed!", description: `You are now following ${viewedProfile?.username}.` });
         }
-        await refreshUserProfile();
     } catch (error) {
         console.error("Follow/unfollow error:", error);
         toast({ variant: "destructive", title: "Something went wrong", description: "Could not update follow status." });
