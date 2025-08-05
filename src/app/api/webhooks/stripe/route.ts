@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
             
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted':
-             const subscription = event.data.object as Stripe.Subscription;
-             const customerId = subscription.customer as string;
+             const subscriptionUpdated = event.data.object as Stripe.Subscription;
+             const customerId = subscriptionUpdated.customer as string;
 
              // You need a way to find your user by stripeCustomerId
              // This assumes you store the stripeCustomerId on your user object
@@ -97,9 +97,9 @@ export async function POST(req: NextRequest) {
              
              if (user) {
                 //  await updateUserData(user.id, {
-                //      stripeSubscriptionStatus: subscription.status,
+                //      stripeSubscriptionStatus: subscriptionUpdated.status,
                 //      // If deleted, maybe revert their tier to 'free'
-                //      subscriptionTier: subscription.status === 'active' ? 'pro' : 'free', // Add more logic here
+                //      subscriptionTier: subscriptionUpdated.status === 'active' ? 'pro' : 'free', // Add more logic here
                 //  });
              } else {
                  console.error(`Webhook Error: No user found with stripeCustomerId ${customerId}`);
