@@ -49,7 +49,7 @@ function TierCard({
     originalPrice,
     discount,
     features, 
-    tier,
+    tier, 
     priceId,
     isHighlighted = false, 
     onChoosePlan 
@@ -139,9 +139,9 @@ export default function SubscriptionPage() {
         if (tier === 'free') {
             toast({
                 title: "Welcome to the Free plan!",
-                description: "You are being redirected to the catalog.",
+                description: "You are being redirected to the marketplace.",
             });
-            router.push('/catalog');
+            router.push('/marketplace');
             return;
         }
         
@@ -215,8 +215,8 @@ export default function SubscriptionPage() {
             <TierCard
                 title="Sprout Pro"
                 description="For serious sellers looking to boost sales and visibility."
-                price={billingCycle === 'monthly' ? "$10" : "$8.50"}
-                priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed yearly"}
+                price={billingCycle === 'monthly' ? "$9.99" : "$8.33"}
+                priceDescription={billingCycle === 'monthly' ? "/month" : "/month, billed as $100 yearly"}
                 features={proFeatures}
                 tier="pro"
                 priceId={billingCycle === 'monthly' ? "pro-monthly" : "pro-yearly"}
